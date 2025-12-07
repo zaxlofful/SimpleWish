@@ -34,10 +34,6 @@ jobs:
         run: |
           python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html" --preserve-manual
 
-      - name: Show git status
-        run: |
-          git status --porcelain || true
-
       - name: Check for changes
         id: git-changes
         run: |
