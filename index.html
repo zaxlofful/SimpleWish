@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <!-- QR metadata: set per-page QR colors and decoration; generator reads these meta tags.
+       Examples:
+         <meta name="qr-dark" content="#0b6623">      (foreground color)
+         <meta name="qr-light" content="#ffffff">     (background color)
+         <meta name="qr-decorate" content="true">     (true/false)
+         <meta name="qr-tree-style" content="fancy">   (fancy/plain)
+  -->
+  <title>Christmas List Template</title>
+  <!-- Inline SVG Favicon-->
+  <link rel="icon" href="data:image/svg+xml,%0A%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ccircle%20cx='50'%20cy='50'%20r='46'%20fill='%239a9a9a'/%3E%3Cpolygon%20points='50,36%2086,78%2014,78'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,22%2075,60%2025,60'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,10%2062,36%2038,36'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,4%2055,18%2070,18%2058,26%2064,40%2050,32%2036,40%2042,26%2030,18%2045,18'%20fill='%23ffd54a'/%3E%3C/svg%3E">
+  <style>
+  /* Inlined styles from styles.css for a single-file template */
+  :root{
+    --bg:#f6f8fb;
+    --card:#fff;
+    --accent:#b71c1c;
+    --muted:#6b7280;
+    --shadow: 0 6px 20px rgba(11,15,30,0.08);
+    --radius:14px;
+    --max-width:880px;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;background:linear-gradient(180deg,#fff 0%,var(--bg) 100%);margin:0;padding:32px}
+  .card{max-width:var(--max-width);margin:0 auto;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;padding:28px;display:block}
+  /* Reserve space on the right for a 250px QR + margin */
+  .card-header{position:relative;padding-right:290px}
+  .title h1{margin:0;font-size:1.6rem;color:var(--accent);line-height:1.05}
+  .title .sub{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
+  .qrcode-box{position:absolute;top:28px;right:28px;width:250px;text-align:center}
+  /* Ensure embedded SVG or img inside the qrcode box renders at the intended 250px size */
+  .qrcode-box svg, .qrcode-box img {width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:block}
+  #qrcode{width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center}
+  .qr-label{margin-top:8px;margin-bottom:0;font-size:0.8rem;color:var(--muted)}
+  .list-section{margin-top:20px}
+  .list-section h2{margin:0 0 8px 0;color:#111;font-size:1.1rem}
+  .hint{margin:0 0 12px 0;color:var(--muted);font-size:0.9rem}
+  .gift-list{padding-left:1.05rem;margin:0;color:#111}
+  .gift-list li{padding:10px 12px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg,#fff,#fafafa);box-shadow:0 1px 0 rgba(0,0,0,0.02);list-style:disc}
+  .gift-list li{padding:10px 12px;border-radius:8px;margin-bottom:8px;background:linear-gradient(180deg,#fff,#fafafa);box-shadow:0 1px 0 rgba(0,0,0,0.02);list-style:disc}
+  .notes{margin-top:18px}
+  .notes h3{margin:0 0 6px 0;font-size:1rem}
+  .card-footer{margin-top:22px;padding-top:8px;border-top:1px dashed #eee}
+  .meta{color:var(--muted);font-size:0.85rem;margin:0}
+
+  /* Focus styles for interactive elements (links) */
+  a:focus{outline:2px dashed rgba(183,28,28,0.15);outline-offset:4px}
+
+  /* Ensure keyboard focus is visible on gift links for accessibility */
+  .gift-list li a:focus{outline:2px dashed rgba(183,28,28,0.15);outline-offset:4px}
+
+  /* Print styles */
+  @media print{
+   /* Remove outer margins/padding for print so content can use full page area
+     but add a small top padding so the title isn't flush to the page edge */
+   html,body{background:transparent;padding:0;margin:0}
+   .card{box-shadow:none;border-radius:0;padding:6mm 0 0 0;margin:0;max-width:100%;width:100%}
+    /* Reserve minimal right-side space in the header so large QR doesn't overlap content */
+    .card-header{position:relative;padding-right:260px}
+    /* Pin QR to the absolute top-right of the page in print */
+    .qrcode-box{position:absolute;top:0;right:0;width:250px;text-align:center;z-index:10}
+    /* Print: keep QR at 250px (use !important to override any inline SVG attributes) */
+    .qrcode-box svg, .qrcode-box img, #qrcode{width:250px !important;height:250px !important;display:block;margin:0}
+    /* Fix footer to bottom of the printed page and ensure it doesn't overlap content */
+    .card-footer{
+      position:fixed;
+      bottom:2mm;
+      left:6mm;
+      right:6mm;
+      background:transparent;
+      padding:6px 0;
+      text-align:center;
+      font-size:0.9rem;
+    }
+    /* Ensure main content leaves space for the fixed footer */
+    .card{padding-bottom:16mm}
+  }
+
+  /* Small screens: move QR below header content but keep it at 250px */
+  @media (max-width:640px){
+    .card{padding:18px}
+    /* Remove the reserved right padding so header content spans full width */
+    .card-header{position:relative;padding-right:0;display:block}
+    /* Make QR box flow below the header content but snap to the left (left-indent) and keep it large */
+    .qrcode-box{position:static;width:250px;margin:12px 0 0 0;text-align:left}
+    .qrcode-box svg, .qrcode-box img {width:250px;height:250px;margin:0;border-radius:8px}
+  /* Allow the list to use full width beneath the title, but add left padding so bullets aren't flush to the edge */
+  .gift-list{padding-left:1.2rem}
+  }
+
+  /* Accessibility helpers */
+  h1,h2,h3{word-break:break-word}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <header class="card-header">
+      <div class="title">
+        <h1 id="recipient">Christmas List for [Recipient Name]</h1>
+        <p class="sub">A curated list of gift suggestions</p>
+      </div>
+      <div class="qrcode-box">
+        <!-- QR-PLACEHOLDER-START -->
+            <svg class="segno" data-qr-default-color="#0b6623" width="250" height="250" viewBox="0 0 33 33"><path fill="#fff" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#0b6623" d="M0 0.5h7m1 0h3m1 0h7m2 0h1m1 0h2m1 0h7m-33 1h1m5 0h1m1 0h1m5 0h2m5 0h2m1 0h1m1 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m2 0h5m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m8 0h2m1 0h1m4 0h2m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m2 0h1m3 0h6m1 0h2m4 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h2m1 0h5m2 0h2m1 0h4m1 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h1m6 0h3m1 0h5m-22 1h3m1 0h1m1 0h2m1 0h3m1 0h3m4 0h6m2 0h3m-33 1h2m1 0h1m1 0h1m3 0h1m1 0h2m2 0h2m1 0h2m1 0h3m1 0h2m2 0h1m1 0h2m-33 1h2m4 0h3m2 0h1m1 0h1m1 0h4m2 0h1m2 0h4m1 0h1m1 0h1m-32 1h2m1 0h3m2 0h1m4 0h4m1 0h1m1 0h3m2 0h1m3 0h3m-32 1h1m1 0h1m1 0h1m1 0h1m1 0h2m9 0h1m1 0h1m2 0h2m1 0h2m2 0h1m-32 1h3m4 0h2m3 0h9m1 0h2m1 0h2m5 0h1m-32 1h1m1 0h1m2 0h1m1 0h2m4 0h1m1 0h1m2 0h1m2 0h1m1 0h1m1 0h1m3 0h2m-32 1h2m2 0h2m1 0h1m2 0h1m3 0h3m4 0h2m2 0h1m2 0h3m1 0h1m-33 1h1m2 0h1m1 0h3m2 0h4m2 0h1m1 0h1m1 0h1m2 0h1m1 0h1m1 0h3m1 0h2m-29 1h2m1 0h2m1 0h3m2 0h1m1 0h2m1 0h1m2 0h2m1 0h1m5 0h1m-33 1h2m4 0h1m2 0h1m1 0h4m2 0h1m4 0h1m2 0h2m1 0h1m1 0h2m-32 1h1m6 0h1m3 0h2m2 0h1m1 0h3m1 0h1m1 0h2m3 0h3m1 0h1m-33 1h1m1 0h1m1 0h3m1 0h2m1 0h1m2 0h1m2 0h1m2 0h1m1 0h1m1 0h1m2 0h3m1 0h2m-33 1h2m1 0h3m5 0h2m6 0h1m4 0h1m7 0h1m-33 1h1m2 0h9m2 0h3m1 0h1m1 0h2m2 0h1m5 0h2m-32 1h1m1 0h2m4 0h4m2 0h2m2 0h1m2 0h1m2 0h1m2 0h1m1 0h4m-33 1h1m1 0h1m2 0h2m1 0h1m1 0h1m2 0h1m1 0h2m3 0h1m3 0h5m-21 1h1m3 0h2m2 0h1m1 0h3m3 0h1m3 0h2m2 0h1m-33 1h7m5 0h1m5 0h2m2 0h3m1 0h1m1 0h4m-32 1h1m5 0h1m2 0h1m3 0h1m1 0h1m3 0h2m2 0h2m3 0h1m1 0h3m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h2m2 0h1m1 0h2m1 0h5m2 0h2m-33 1h1m1 0h3m1 0h1m1 0h4m1 0h1m3 0h4m4 0h1m2 0h4m-32 1h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h5m2 0h2m1 0h1m1 0h2m3 0h1m-31 1h1m5 0h1m3 0h1m1 0h1m4 0h1m1 0h1m1 0h1m5 0h1m1 0h2m-31 1h7m4 0h3m1 0h3m1 0h1m1 0h1m1 0h2m6 0h1"/>
+
+              <g id="xmas-tree" transform="translate(18.81,16.17) scale(0.099000)" aria-hidden="true">
+
+                <g>
+                    <!-- layered green foliage -->
+                    <polygon points="50,185 100,115 150,185" fill="#0b6623" />
+                    <polygon points="60,155 100,95 140,155" fill="#0b6623" />
+                    <polygon points="70,130 100,70 130,130" fill="#0b6623" />
+                        <!-- decorative star (~20% smaller than before) -->
+                        <polygon points="100,54.11 105.04,67.07 118.72,67.07 108.64,75.71 113.68,88.67 100,80.03 86.32,88.67 91.36,75.71 81.28,67.07 94.96,67.07" fill="#ffd54a" />
+                        <!-- garland (shorter, lower ribbon) -->
+                        <path d="M74,128 C84,117 116,117 126,128" fill="none" stroke="#8fbf5f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+                        <path d="M64,155 C80,142 120,142 136,155" fill="none" stroke="#6aa144" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.95" />
+                        <!-- baubles with subtle stroke and highlight -->
+                        <g stroke="#8b0000" stroke-width="0.8">
+                        <ellipse cx="92" cy="98" rx="4" ry="4.6" fill="#b71c1c" />
+                        <circle cx="118" cy="118" r="3.6" fill="#b71c1c" />
+                        </g>
+                        <g stroke="#b58a00" stroke-width="0.6">
+                        <circle cx="76" cy="126" r="3.2" fill="#ffd54a" />
+                        <circle cx="128" cy="138" r="2.8" fill="#fff176" />
+                        </g>
+                            <!-- small blue baubles -->
+                            <circle cx="106" cy="112" r="2.6" fill="#1976D2" />
+                            <circle cx="84" cy="140" r="2.2" fill="#2196F3" />
+                        <!-- tiny lights (glossy dots) -->
+                        <circle cx="104" cy="92" r="1.8" fill="#ffffff" opacity="0.95" />
+                        <circle cx="88" cy="118" r="1.6" fill="#fff8e1" opacity="0.95" />
+                        <circle cx="112" cy="142" r="1.6" fill="#ffe082" opacity="0.95" />
+                            <!-- more visible bow: loops, tails, knot and highlight -->
+                            <g id="xmas-bow" transform="translate(0,0)" aria-hidden="true">
+                            <!-- left loop -->
+                            <path d="M92,158 C86,150 88,142 96,150 C100,154 96,158 92,158" fill="#e53935" stroke="#7b1f1f" stroke-width="0.7" />
+                            <!-- right loop -->
+                            <path d="M108,158 C114,150 112,142 104,150 C100,154 104,158 108,158" fill="#e53935" stroke="#7b1f1f" stroke-width="0.7" />
+                            <!-- left tail -->
+                            <path d="M96,162 C92,168 84,174 78,180" fill="none" stroke="#c62828" stroke-width="2" stroke-linecap="round" />
+                            <!-- right tail -->
+                            <path d="M104,162 C108,168 116,174 122,180" fill="none" stroke="#c62828" stroke-width="2" stroke-linecap="round" />
+                            <!-- knot -->
+                            <circle cx="100" cy="156" r="2.6" fill="#7b1f1f" />
+                            <!-- tiny highlight on knot -->
+                            <circle cx="101" cy="155.2" r="0.7" fill="#fff8e1" opacity="0.9" />
+                            </g>
+                        <!-- decorative gloss spots on larger baubles -->
+                        <circle cx="116" cy="116" r="0.9" fill="#ffffff" opacity="0.9" />
+                        <circle cx="92" cy="96" r="0.8" fill="#ffffff" opacity="0.9" />
+                    <!-- trunk removed to simplify the decoration -->
+                </g>
+
+              </g>
+            </svg>
+        <!-- QR-PLACEHOLDER-END -->
+        <p class="qr-label">Scan to open this online list</p>
+      </div>
+      <section class="list-section">
+        <h2>Gift Ideas</h2>
+        <p class="hint">Demo list</p>
+        <ul id="gift-list" class="gift-list">
+          <li><a href="https://example.com/cozy-socks" target="_blank" rel="noopener">Cozy wool socks — medium</a></li>
+          <li><a href="https://example.com/board-game" target="_blank" rel="noopener">Strategy board game — 2-4 players</a></li>
+          <li><a href="https://example.com/novel" target="_blank" rel="noopener">Paperback novel — literary fiction</a></li>
+          <li><a href="https://example.com/wool-scarf" target="_blank" rel="noopener">Handmade wool scarf — grey</a></li>
+          <li><a href="https://example.com/headphones" target="_blank" rel="noopener">Noise-cancelling headphones</a></li>
+          <li><a href="https://example.com/gift-card" target="_blank" rel="noopener">Gift card — favorite store</a></li>
+        </ul>
+      </section>
+    </header>
+
+    <section class="notes">
+      <h3>Notes</h3>
+      <p>Sizes: S/M/L as noted. Shipping &amp; availability may vary. Blue text/links mean direct purchase options.</p>
+    </section>
+
+    <footer class="card-footer">
+  <p class="meta">Recursive Christmas List • Static HTML/CSS • GitHub Pages Compatible</p>
+    </footer>
+  </main>
+
+  <!-- Static, no-JS QR image is used so this template is fully static and GitHub Pages friendly. -->
+</body>
+</html>
