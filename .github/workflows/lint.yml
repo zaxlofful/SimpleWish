@@ -17,6 +17,7 @@ jobs:
       packages: read
     container:
       image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+      options: --user 0
     steps:
       - uses: actions/checkout@v4
       - name: Log in to GHCR
