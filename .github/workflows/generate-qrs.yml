@@ -10,8 +10,8 @@ on:
 
 jobs:
   generate:
-    # Run when not triggered by workflow_run, or when the workflow_run completed successfully
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # Only run when manually dispatched, or when the Build workflow completed successfully
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
