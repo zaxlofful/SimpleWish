@@ -42,25 +42,24 @@ jobs:
           fi
 
       - name: Build and push image (SHA tag)
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: .github/ci/Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+          docker build -f .github/ci/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
 
       - name: Push main tag (when on main)
         if: steps.vars.outputs.PUSH_MAIN == 'true'
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          file: .github/ci/Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:main
+          docker build -f .github/ci/Dockerfile -t "$IMAGE" .
+          docker push "$IMAGE"
 
       - name: Trivy scan pushed image
         run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
           echo "Scanning pushed image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
           docker run --rm --network host aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
@@ -74,7 +73,8 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
-          cosign sign --keyless ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          cosign sign --keyless ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
 
       - name: Publish CI image tag to repository variable
         env:
