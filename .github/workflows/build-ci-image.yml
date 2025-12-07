@@ -19,7 +19,7 @@ jobs:
       - name: Trivy scan repository (filesystem)
         run: |
           echo "Running Trivy filesystem scan on repository (fails on HIGH/CRITICAL)..."
-          docker run --rm -v "${{ github.workspace }}:/project" --network host aquasecurity/trivy:latest fs /project --exit-code 1 --severity HIGH,CRITICAL || {
+          docker run --rm -v "${{ github.workspace }}:/project" --network host aquasec/trivy:latest fs /project --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
@@ -62,7 +62,7 @@ jobs:
         run: |
           IMAGE=ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
           echo "Scanning pushed image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
-          docker run --rm --network host aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+          docker run --rm --network host aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
