@@ -19,12 +19,12 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install deps
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r scripts/requirements.txt
 
-      - name: Generate SVG QR files
+      - name: Generate URL SVG QR files
         env:
           ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN || 'https://example.com' }}
         run: |
@@ -32,9 +32,24 @@ jobs:
 
       - name: Inject SVGs into HTML files
         run: |
-          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html" --preserve-manual
+
+      - name: Show git status
+        run: |
+          git status --porcelain || true
+
+      - name: Check for changes
+        id: git-changes
+        run: |
+          echo "CHANGED=$(git status --porcelain)" >> $GITHUB_OUTPUT
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit changes
+        if: steps.git-changes.outputs.changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           commit_message: "chore: generate and inject QR SVGs"
