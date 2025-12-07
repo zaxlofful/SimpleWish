@@ -14,7 +14,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ toLower(github.repository_owner) }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
+      image: ghcr.io/${{ vars.CI_IMAGE_OWNER }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
