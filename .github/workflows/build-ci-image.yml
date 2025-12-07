@@ -60,8 +60,11 @@ jobs:
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
-          echo "Scanning pushed image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
-          docker run --rm --network host aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+          echo "Pulling image $IMAGE locally for scanning..."
+          docker pull "$IMAGE"
+          echo "Scanning pulled image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
+          # Mount the Docker socket so Trivy can inspect the local docker image
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
