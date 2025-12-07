@@ -2,13 +2,16 @@ name: Generate QR SVGs
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - 'scripts/**'
-      - '*.html'
+  workflow_run:
+    workflows:
+      - 'Build and publish CI image'
+    types:
+      - completed
 
 jobs:
   generate:
+    # Run when not triggered by workflow_run, or when the workflow_run completed successfully
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}

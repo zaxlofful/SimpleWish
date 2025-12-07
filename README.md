@@ -98,6 +98,9 @@ TODO: Re-evaluate image signing and verification
   
 For now the CI image workflow publishes an image tagged with the commit SHA and, when on `main`, a `:main` tag; consuming workflows should pin to the SHA tag exposed via the `CI_IMAGE_TAG` repository variable.
 
+Note about CI workflow linter warnings
+- You may see linter/editor warnings about `vars.CI_IMAGE_TAG` being unavailable for `container.image` at workflow-compile time. These are expected because the variable is created by the build workflow and may not exist at compile-time for consumer workflows. The repository intentionally uses `workflow_run` and fallbacks to ensure jobs run even when the variable is not set.
+
 Build and publish the CI image (done automatically on push to `main`):
 
 ```bash
