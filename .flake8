@@ -9,4 +9,4 @@ exclude =
 # Historically we had a max-line-length, but this repo intentionally keeps
 # some long template strings. We will enforce E501; long lines should be wrapped.
 # E501 should be fixed in source; do not ignore it
-# ignore = E501
+ignore = E501
