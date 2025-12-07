@@ -12,22 +12,50 @@ jobs:
   pytest:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/${{ vars.CI_IMAGE_OWNER }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Download CI image metadata artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-image-meta
+
+      - name: Set CI image metadata env
+        run: |
+          if [ -f ci-image-meta/CI_IMAGE_TAG.txt ]; then
+            echo "CI_IMAGE_TAG=$(cat ci-image-meta/CI_IMAGE_TAG.txt)" >> $GITHUB_ENV
+          fi
+          if [ -f ci-image-meta/CI_IMAGE_OWNER.txt ]; then
+            echo "CI_IMAGE_OWNER=$(cat ci-image-meta/CI_IMAGE_OWNER.txt)" >> $GITHUB_ENV
+          fi
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      # NOTE: image verification/signing has been removed; workflows pin to the SHA-tagged image
+
+      - name: Run tests inside CI image when available
+        id: run_in_image
+        run: |
+          if [ -n "${CI_IMAGE_TAG}" ] && [ -n "${CI_IMAGE_OWNER}" ]; then
+            IMAGE=ghcr.io/${CI_IMAGE_OWNER}/simplewish-ci:${CI_IMAGE_TAG}
+            echo "CI_IMAGE_TAG present; pulling and running tests inside $IMAGE"
+            docker pull "$IMAGE"
+            docker run --rm -v "${{ github.workspace }}:/work" -w /work "$IMAGE" /bin/sh -lc "python -m venv .venv && ./.venv/bin/python -m pip install --upgrade pip && ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt && ./.venv/bin/python -m pytest -q"
+            echo "ran_in_image=true" >> $GITHUB_OUTPUT
+          else
+            echo "ran_in_image=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create venv and install deps
+        if: steps.run_in_image.outputs.ran_in_image != 'true'
         run: |
           python -m venv .venv
           ./.venv/bin/python -m pip install --upgrade pip
           ./.venv/bin/python -m pip install -r scripts/requirements.txt
           ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
+
       - name: Run tests
+        if: steps.run_in_image.outputs.ran_in_image != 'true'
         run: |
           ./.venv/bin/python -m pytest -q

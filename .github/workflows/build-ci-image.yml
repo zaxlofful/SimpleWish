@@ -70,19 +70,15 @@ jobs:
 
 
 
-      - name: Publish CI image tag to repository variable
-        env:
-          REPO: ${{ github.repository }}
-          OWNER: ${{ github.repository_owner }}
-          IMAGE_TAG: ${{ steps.vars.outputs.IMAGE_TAG }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create CI image metadata artifact
         run: |
-          # Set repository variable CI_IMAGE_TAG so consuming workflows can pin to this SHA-tag
-          API_URL="https://api.github.com/repos/${REPO}/actions/variables/CI_IMAGE_TAG"
-          PAYLOAD=$(jq -n --arg name "CI_IMAGE_TAG" --arg value "$IMAGE_TAG" '{name:$name, value:$value}')
-          curl -sS -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" -d "$PAYLOAD" "$API_URL"
-          # Also set CI_IMAGE_OWNER to the lowercased repository owner for consumers to use
-          OWNER_LC=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
-          API_URL_OWNER="https://api.github.com/repos/${REPO}/actions/variables/CI_IMAGE_OWNER"
-          PAYLOAD_OWNER=$(jq -n --arg name "CI_IMAGE_OWNER" --arg value "$OWNER_LC" '{name:$name, value:$value}')
-          curl -sS -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" -d "$PAYLOAD_OWNER" "$API_URL_OWNER"
+          mkdir -p artifacts/ci-image
+          echo "${{ steps.vars.outputs.IMAGE_TAG }}" > artifacts/ci-image/CI_IMAGE_TAG.txt
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "$OWNER_LC" > artifacts/ci-image/CI_IMAGE_OWNER.txt
+
+      - name: Upload CI image metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-image-meta
+          path: artifacts/ci-image
