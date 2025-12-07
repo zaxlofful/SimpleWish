@@ -16,13 +16,9 @@ jobs:
 
       - name: Trivy scan repository (filesystem)
         run: |
-          echo "Listing repository root to validate mount:"
-          ls -la "${{ github.workspace }}" || true
-          echo "Listing scripts/ to check for requirement files:"
-          ls -la "${{ github.workspace }}/scripts" || true
           echo "Running Trivy filesystem scan on repository (debug mode; fails on HIGH/CRITICAL)..."
-          # Run with --debug and explicitly scan the repo root and scripts folder to help detection
-          docker run --rm -v "${{ github.workspace }}:/project" --network host aquasec/trivy:latest fs --debug /project /project/scripts --exit-code 1 --severity HIGH,CRITICAL || {
+          # Mount the runner workspace into the container read-only.
+          docker run --rm -v "${{ github.workspace }}:/workspace:ro" aquasec/trivy:latest fs --debug /workspace --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
