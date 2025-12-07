@@ -1,6 +1,3 @@
-import sys
-
-
 def main():
     path = 'scripts/generated_qr/index.svg'
     try:

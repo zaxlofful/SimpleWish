@@ -48,11 +48,9 @@ def test_viewbox_and_size():
     assert re.search(
         r'viewBox="0 0 \d+ \d+"', svg
     ), 'Expected a viewBox attribute on the generated SVG'
-    has_size = (
-        re.search(r'width="250"\s+height="250"', svg) or
-        re.search(r'height="250"\s+width="250"', svg)
-    )
-    assert has_size
+    a = re.search(r'width="250"\s+height="250"', svg)
+    b = re.search(r'height="250"\s+width="250"', svg)
+    assert (a or b)
 
 
 def test_read_meta_tags_from_html(tmp_path):

@@ -57,10 +57,15 @@ def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> b
 
     # Insert the indented SVG and then re-insert the start-marker leading
     # whitespace before the end marker
-    new_content = (
-        content[: start_idx + len(MARKER_START)] + '\n' +
-        indented_svg + '\n' + end_line_leading + content[end_idx:]
-    )
+    parts = [
+        content[: start_idx + len(MARKER_START)],
+        '\n',
+        indented_svg,
+        '\n',
+        end_line_leading,
+        content[end_idx:],
+    ]
+    new_content = ''.join(parts)
 
     if new_content == content:
         print(f'No changes for {html_path}')
