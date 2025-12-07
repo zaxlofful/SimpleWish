@@ -15,7 +15,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
+      image: ghcr.io/${{ toLower(github.repository_owner) }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
     timeout-minutes: 20
     permissions:
       contents: read
