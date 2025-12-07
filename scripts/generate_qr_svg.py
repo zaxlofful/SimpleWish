@@ -169,13 +169,13 @@ def generate_svg(url: str, foreground_color: str = '#0b6623', background_color: 
     </g>
 '''
 
-        chosen_inner = fancy_inner if tree_style == 'fancy' else plain_inner
+    chosen_inner = fancy_inner if tree_style == 'fancy' else plain_inner
 
-        quiet_tree_group = f'''
-    <g id="xmas-tree" transform="translate({q_tx:.2f}, {q_ty:.2f}) scale({tree_width/200.0:.6f})" aria-hidden="true">
+    quiet_tree_group = f'''
+        <g id="xmas-tree" transform="translate({q_tx:.2f}, {q_ty:.2f}) scale({tree_width/200.0:.6f})" aria-hidden="true">
 {chosen_inner}
-    </g>
-'''
+        </g>
+    '''
 
     # If reserve_mode is overlay, compute placement based on reserved rect and allow an overlay multiplier and shift
     tree_group = quiet_tree_group
@@ -215,12 +215,12 @@ def generate_svg(url: str, foreground_color: str = '#0b6623', background_color: 
         overlay_shift_y = float(globals().get('__overlay_shift_y__', 0.0))
         ty = ty + (rect_h * overlay_shift_y)
 
-    # Build overlay variant using the chosen inner content
+        # Build overlay variant using the chosen inner content
         tree_group = f'''
-    <g id="xmas-tree" transform="translate({tx:.2f}, {ty:.2f}) scale({scale:.6f})" aria-hidden="true">
+            <g id="xmas-tree" transform="translate({tx:.2f}, {ty:.2f}) scale({scale:.6f})" aria-hidden="true">
 {chosen_inner}
-    </g>
-'''
+            </g>
+        '''
 
     # Insert the tree_group before the closing </svg> only when decoration is enabled
     if decorate and svg.strip().endswith('</svg>'):
