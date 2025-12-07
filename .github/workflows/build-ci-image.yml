@@ -70,15 +70,4 @@ jobs:
 
 
 
-      - name: Create CI image metadata artifact
-        run: |
-          mkdir -p artifacts/ci-image
-          echo "${{ steps.vars.outputs.IMAGE_TAG }}" > artifacts/ci-image/CI_IMAGE_TAG.txt
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          echo "$OWNER_LC" > artifacts/ci-image/CI_IMAGE_OWNER.txt
-
-      - name: Upload CI image metadata artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ci-image-meta
-          path: artifacts/ci-image
+      # (Previously created an artifact with CI_IMAGE_TAG/CI_IMAGE_OWNER; removed per request.)

@@ -13,23 +13,11 @@ jobs:
     # Only run when manually dispatched, or when the Build workflow completed successfully
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Download CI image metadata artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ci-image-meta
-
-      - name: Set CI image metadata env
-        run: |
-          if [ -f ci-image-meta/CI_IMAGE_TAG.txt ]; then
-            echo "CI_IMAGE_TAG=$(cat ci-image-meta/CI_IMAGE_TAG.txt)" >> $GITHUB_ENV
-          fi
-          if [ -f ci-image-meta/CI_IMAGE_OWNER.txt ]; then
-            echo "CI_IMAGE_OWNER=$(cat ci-image-meta/CI_IMAGE_OWNER.txt)" >> $GITHUB_ENV
-          fi
 
       - name: Set up Python
         uses: actions/setup-python@v4
