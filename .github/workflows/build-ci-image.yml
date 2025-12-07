@@ -11,15 +11,18 @@ jobs:
     permissions:
       packages: write
       contents: read
-      id-token: write
-      actions: write
     steps:
       - uses: actions/checkout@v4
 
       - name: Trivy scan repository (filesystem)
         run: |
-          echo "Running Trivy filesystem scan on repository (fails on HIGH/CRITICAL)..."
-          docker run --rm -v "${{ github.workspace }}:/project" --network host aquasec/trivy:latest fs /project --exit-code 1 --severity HIGH,CRITICAL || {
+          echo "Listing repository root to validate mount:"
+          ls -la "${{ github.workspace }}" || true
+          echo "Listing scripts/ to check for requirement files:"
+          ls -la "${{ github.workspace }}/scripts" || true
+          echo "Running Trivy filesystem scan on repository (debug mode; fails on HIGH/CRITICAL)..."
+          # Run with --debug and explicitly scan the repo root and scripts folder to help detection
+          docker run --rm -v "${{ github.workspace }}:/project" --network host aquasec/trivy:latest fs --debug /project /project/scripts --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
@@ -69,15 +72,7 @@ jobs:
             exit 1;
           }
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v2
 
-      - name: Sign image with cosign (keyless)
-        env:
-          COSIGN_EXPERIMENTAL: "1"
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          cosign sign --keyless ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
 
       - name: Publish CI image tag to repository variable
         env:

@@ -89,7 +89,14 @@ Keep changes small and preserve the single-file guarantee for per-recipient HTML
 ## CI image and secure runner notes
 
 - This repository builds and publishes a minimal Alpine-based CI image to GitHub Container Registry (GHCR) and uses that curated image for all CI runs on Linux runners. The image is built from `.github/ci/Dockerfile` and pushed to `ghcr.io/<owner>/simplewish-ci:<sha>` and `:main` by the automated build workflow.
-- Workflows pin to the `main` image tag and perform a cryptographic image verification (cosign) before running tests or other steps. This provides immutability and provenance for the CI environment.
+- Workflows pin to the `main` image tag and the SHA-tagged image for immutability. Cryptographic signing was previously used but has been removed from the automated build workflow and will be rethought.
+  
+TODO: Re-evaluate image signing and verification
+- The repository previously used `cosign` (keyless) to sign published images. That signing step has been removed from the automated build workflow. Consider one of the following approaches in future iterations:
+	- Reintroduce cosign with a vetted key-management approach (e.g., short-lived KMS-backed keys and GitHub OIDC), or
+	- Use GitHub Container Registry immutability settings and repository variables to pin approved SHA tags, and document a manual verification procedure.
+  
+For now the CI image workflow publishes an image tagged with the commit SHA and, when on `main`, a `:main` tag; consuming workflows should pin to the SHA tag exposed via the `CI_IMAGE_TAG` repository variable.
 
 Build and publish the CI image (done automatically on push to `main`):
 
@@ -104,5 +111,5 @@ docker push ghcr.io/<owner>/simplewish-ci:main
 
 Security notes:
 - The CI image is pinned by tag in workflows; for fully immutable runs the image is also published with the commit SHA as a tag (the build workflow does this).
-- The build workflow also runs a vulnerability scan (Trivy) and signs the image with `cosign` (keyless) so the consuming workflows validate the signature before use.
+- The build workflow also runs a vulnerability scan (Trivy). Image signing via `cosign` was previously used but is not performed by the automated build workflow anymore.
 - CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
