@@ -10,6 +10,8 @@ on:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -19,20 +21,43 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies
+      - name: Verify CI image signature
+        uses: sigstore/cosign-installer@v2
+      - name: Verify image with cosign (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
         run: |
-          python -m pip install --upgrade pip
-          pip install -r scripts/requirements.txt
+          cosign verify --keyless ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+
+      - name: Create venv and install dependencies
+        run: |
+          python -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+
+      - name: Set ROOT_DOMAIN (with default)
+        env:
+          SECRET_ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
+        run: |
+          if [ -n "$SECRET_ROOT_DOMAIN" ]; then
+            echo "ROOT_DOMAIN=$SECRET_ROOT_DOMAIN" >> $GITHUB_ENV
+          else
+            echo "ROOT_DOMAIN=https://example.com" >> $GITHUB_ENV
+          fi
 
       - name: Generate URL SVG QR files
-        env:
-          ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN || 'https://example.com' }}
         run: |
-          python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+          ./.venv/bin/python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+
+      - name: Install dev deps & run tests
+        run: |
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
+          ./.venv/bin/python -m pytest -q
 
       - name: Inject SVGs into HTML files
         run: |
-          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html" --preserve-manual
+          ./.venv/bin/python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Check for changes
         id: git-changes

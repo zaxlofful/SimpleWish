@@ -1,0 +1,46 @@
+name: PR checks (lint & tests)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  pr-checks:
+    name: Lint and Test (secure Linux runner)
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ vars.CI_IMAGE_TAG }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Verify CI image signature
+        uses: sigstore/cosign-installer@v2
+      - name: Verify image with cosign (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign verify --keyless ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+
+      - name: Create venv and install deps
+        run: |
+          python -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
+
+      - name: Run flake8
+        run: |
+          ./.venv/bin/flake8 --max-line-length=120
+
+      - name: Run tests
+        run: |
+          ./.venv/bin/python -m pytest -q

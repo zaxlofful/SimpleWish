@@ -3,9 +3,14 @@
 Generate per-file SVG QR images and write them to an output directory.
 
 Usage:
-  python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
+    python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
 
 This script produces one SVG per input HTML file named <basename>.svg (basename without extension).
+
+Notes on recent refactor:
+- The CLI and per-page meta keys use `foreground`/`background` instead of the older dark/light names.
+- The `--transparent` option was removed; transparency handling was unfinished and is no longer supported.
+- Reserve options are unified in `--reserve` which encodes mode+position (e.g. "overlay-bottom-right", "quietzone").
 """
 import argparse
 import glob
@@ -16,7 +21,7 @@ import segno
 
 
 def read_meta_tags_from_html(path: str):
-    """Return a dict of meta tag name->content for qr-dark, qr-light, qr-decorate if present."""
+    """Return a dict of meta tag name->content for qr-foreground, qr-background, qr-decorate if present."""
     res = {}
     try:
         with open(path, 'r', encoding='utf-8') as f:
@@ -31,7 +36,9 @@ def read_meta_tags_from_html(path: str):
         name = m.group(1).strip()
         val = m.group(2).strip()
         # collect known per-page QR metadata. Add new keys here as the generator grows.
-        if name in ('qr-dark', 'qr-light', 'qr-decorate', 'qr-tree-style'):
+        if name in (
+            'qr-foreground-color', 'qr-background-color',
+            'qr-decorate', 'qr-tree-style'):
             res[name] = val
     return res
 
@@ -40,7 +47,7 @@ def clean_filename_to_path(filename: str) -> str:
     return urllib.parse.quote(filename)
 
 
-def generate_svg(url: str, dark: str = '#0b6623', light: str = '#ffffff', decorate: bool = True, border: int = 8, reserve_mode: str = 'overlay', logo_pos: str = 'bottom-right', logo_size_pct: float = 20.0, ecc: str = 'H', tree_style: str = 'fancy') -> str:
+def generate_svg(url: str, foreground_color: str = '#0b6623', background_color: str = '#ffffff', decorate: bool = True, border: int = 8, reserve_mode: str = 'overlay', logo_pos: str = 'bottom-right', logo_size_pct: float = 20.0, ecc: str = 'H', tree_style: str = 'fancy') -> str:
     """Generate an embeddable SVG string for the given URL with optional decoration.
 
     The SVG returned is safe to inline into HTML (no prolog/doctype) and will have
@@ -48,7 +55,7 @@ def generate_svg(url: str, dark: str = '#0b6623', light: str = '#ffffff', decora
     """
     # Create QR with requested error correction level.
     qr = segno.make(url, micro=False, error=ecc)
-    svg = qr.svg_inline(dark=dark, light=light, border=border)
+    svg = qr.svg_inline(dark=foreground_color, light=background_color, border=border)
 
     # Replace black fills with currentColor so CSS can recolor the QR
     svg = re.sub(r'(?i)fill=["\']\s*rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)\s*["\']', 'fill="currentColor"', svg)
@@ -63,14 +70,15 @@ def generate_svg(url: str, dark: str = '#0b6623', light: str = '#ffffff', decora
 
     svg = re.sub(r'(?i)style\s*=\s*"([^"]*)"', _fix_style, svg)
 
-    # Ensure the root <svg> has a helpful class and a data attribute with the default color
+    # Ensure the root <svg> has a helpful class and a data attribute with the default foreground color
     def _add_data_attr(m):
         tag = m.group(1)
         attrs = m.group(2) or ''
         if re.search(r'\bclass\s*=\s*"', attrs) is None:
             attrs += ' class="qr-svg"'
-        if re.search(r'\bdata-qr-default-color\s*=\s*"', attrs) is None:
-            attrs += f' data-qr-default-color="{dark}"'
+        # expose the default foreground color so CSS can override via currentColor
+        if re.search(r'\bdata-qr-default-foreground-color\s*=\s*"', attrs) is None:
+            attrs += f' data-qr-default-foreground-color="{foreground_color}"'
         return f'{tag}{attrs}'
 
     svg = re.sub(r'(<svg\b)([^>]*)', _add_data_attr, svg, count=1)
@@ -257,12 +265,10 @@ def main():
     parser.add_argument('--root-domain', required=True)
     parser.add_argument('--pattern', default='*.html')
     parser.add_argument('--out-dir', default='scripts/generated_qr')
-    parser.add_argument('--dark', default='#0b6623', help='Foreground color for QR modules')
-    parser.add_argument('--light', default='#ffffff', help='Background color for QR')
-    parser.add_argument('--transparent', action='store_true', help='Produce SVGs with transparent background (remove background rect)')
+    parser.add_argument('--foreground-color', dest='foreground_color', default='#0b6623', help='Foreground color for QR modules')
+    parser.add_argument('--background-color', dest='background_color', default='#ffffff', help='Background color for QR')
     parser.add_argument('--no-decorate', dest='decorate', action='store_false', default=True, help='Disable decorative tree (opt-out)')
-    parser.add_argument('--reserve-mode', choices=['quietzone', 'overlay'], default='overlay', help='How to reserve space for a tree/logo')
-    parser.add_argument('--logo-position', choices=['center','top-left','top-right','bottom-left','bottom-right'], default='bottom-right')
+    # Decoration is opt-out via --no-decorate; when decorating we reserve a bottom-right overlay by default.
     parser.add_argument('--logo-size', type=float, default=20.0, help='Percentage size for reserved logo area (percent of SVG width)')
     parser.add_argument('--overlay-mult', type=float, default=3.0, help='Multiplier to make overlayed tree slightly larger than reserved rect')
     parser.add_argument('--overlay-shift-x', type=float, default=0.90, help='Horizontal shift for overlay tree as fraction of reserved rect width (positive shifts right)')
@@ -284,8 +290,9 @@ def main():
 
         # Read per-file meta tags to override color/decorate if provided
         meta = read_meta_tags_from_html(path)
-        dark = meta.get('qr-dark', args.dark)
-        light = meta.get('qr-light', args.light)
+        # Use per-page meta keys if present, otherwise use CLI defaults
+        foreground = meta.get('qr-foreground-color', args.foreground_color)
+        background = meta.get('qr-background-color', args.background_color)
         decorate = args.decorate
         if 'qr-decorate' in meta:
             decorate = meta.get('qr-decorate', 'true').lower() in ('1', 'true', 'yes')
@@ -299,25 +306,23 @@ def main():
                 # ignore invalid values and leave as CLI/default
                 pass
 
-        # If transparent flag is set, instruct generator to use transparent background
-        use_light = light
-        if args.transparent:
-            use_light = 'none'
+        # Decide reserve behavior: this project places the decorative tree/logo in the
+        # bottom-right by default when decoration is enabled. Decoration is opt-out via --no-decorate.
+        if decorate:
+            reserve_mode = 'overlay'
+            logo_pos = 'bottom-right'
+        else:
+            reserve_mode = None
+            logo_pos = 'center'
 
         # If using overlay, render QR with no border so it fills the viewBox entirely
-        border = 0 if args.reserve_mode == 'overlay' else 8
+        border = 0 if reserve_mode == 'overlay' else 8
         # expose overlay multiplier & horizontal/vertical shift globally for the generator (quick way to pass through)
         globals()['__overlay_multiplier__'] = args.overlay_mult
         globals()['__overlay_shift_x__'] = args.overlay_shift_x
         globals()['__overlay_shift_y__'] = args.overlay_shift_y
 
-        svg = generate_svg(public_url, dark=dark, light=use_light, decorate=decorate, border=border, reserve_mode=args.reserve_mode, logo_pos=args.logo_position, logo_size_pct=args.logo_size, ecc=args.ecc, tree_style=tree_style)
-
-        # If transparent requested, remove or neutralize any background rects to ensure transparency
-        if args.transparent:
-            # remove first full-size rect (common background element) or set its fill to none
-            # remove patterns like <rect ... /> that appear before the QR group
-            svg = re.sub(r'<rect[^>]*?/>', '', svg, count=1)
+        svg = generate_svg(public_url, foreground_color=foreground, background_color=background, decorate=decorate, border=border, reserve_mode=reserve_mode, logo_pos=logo_pos, logo_size_pct=args.logo_size, ecc=args.ecc, tree_style=tree_style)
 
         out_path = os.path.join(args.out_dir, f'{basename}.svg')
         svg = sanitize_svg_for_html(svg)

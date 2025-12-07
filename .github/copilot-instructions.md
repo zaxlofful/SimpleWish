@@ -21,13 +21,13 @@ Two-step: produce SVGs then inject (useful for review or separate CI jobs):
   2. python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
 Notes on flags you'll likely need:
-`generate_qr_svg.py` supports `--no-decorate`, `--dark`, `--light`, `--transparent`, `--reserve-mode`, `--logo-position`, `--logo-size`, `--overlay-mult`, `--overlay-shift-x`, `--overlay-shift-y`, and `--ecc` for QR generation tuning.
+`generate_qr_svg.py` supports `--no-decorate` (decoration is enabled by default), `--foreground-color` (alias `--foreground`), `--background-color` (alias `--background`), `--logo-size`, `--overlay-mult`, `--overlay-shift-x`, `--overlay-shift-y`, and `--ecc` for QR generation tuning. When decorating, the decorative tree/logo is placed in the bottom-right overlay by design; its exact placement can be nudged with the overlay shift flags.
 `inject_qr_svg.py` has `--preserve-manual` to skip replacing manually edited placeholders.
 
 ## Per-file meta tags and how the generator uses them
-- The HTML may include meta tags the generators read to adjust color/decoration. Look for examples in `index.html` header comments. Supported keys (checked by scripts): `qr-dark`, `qr-light`, `qr-decorate`, `qr-tree-style`.
+-- The HTML may include meta tags the generators read to adjust color/decoration. Look for examples in `index.html` header comments. Supported keys (checked by scripts): `qr-foreground-color`, `qr-background-color`, `qr-decorate`, `qr-tree-style` (legacy `qr-foreground`/`qr-background` are also accepted).
   - Example:
-    <meta name="qr-dark" content="#0b6623">
+    <meta name="qr-foreground" content="#0b6623">
     <meta name="qr-decorate" content="true">
     <meta name="qr-tree-style" content="fancy">
 
@@ -41,7 +41,7 @@ Notes on flags you'll likely need:
 - Make recipient editable in-place (small, well-scoped change):
   - Edit `index.html` and change `<h1 id="recipient">` to `<h1 id="recipient" contenteditable="true">` and update `README.md` to document in-browser editing.
 - Replace placeholder with a data-URI image (keeps single-file):
-  - Remove the inline placeholder SVG between the markers and insert `<img src="data:image/svg+xml;utf8,..." class="qr-svg" data-qr-default-color="#0b6623">`. Ensure size and id/class follow CSS selectors.
+  - Remove the inline placeholder SVG between the markers and insert `<img src="data:image/svg+xml;utf8,..." class="qr-svg" data-qr-default-foreground="#0b6623">`. Ensure size and id/class follow CSS selectors.
 
 ## What to avoid / gotchas (concrete)
  - Don't rename or remove the QR markers unless you also update the scripts. The generator relies on those exact strings.
@@ -62,6 +62,3 @@ Notes on flags you'll likely need:
 - `index.html` — layout, markers, and example QR placeholder
 - `README.md` — user-facing instructions and privacy notes
  - `scripts/generate_qr_svg.py`, `scripts/inject_qr_svg.py` — canonical automation scripts (read before modifying CI)
-
-## If anything is unclear
-Tell me which section you want stricter rules for (for example: "always require `--force` on generate to prevent accidental overwrite") and I'll update this guidance.

@@ -1,0 +1,77 @@
+name: Build and publish CI image
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-22.04
+    permissions:
+      packages: write
+      contents: read
+      id-token: write
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set image tags
+        id: vars
+        run: |
+          echo "IMAGE_TAG=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          if [ "${GITHUB_REF}" = "refs/heads/main" ]; then
+            echo "PUSH_MAIN=true" >> $GITHUB_OUTPUT
+          else
+            echo "PUSH_MAIN=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and push image (SHA tag)
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: .github/ci/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+
+      - name: Push main tag (when on main)
+        if: steps.vars.outputs.PUSH_MAIN == 'true'
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: .github/ci/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+
+      - name: Trivy scan the built image
+        uses: aquasecurity/trivy-action@v1
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v2
+
+      - name: Sign image with cosign (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign sign --keyless ghcr.io/${{ github.repository_owner }}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+
+      - name: Publish CI image tag to repository variable
+        env:
+          REPO: ${{ github.repository }}
+          OWNER: ${{ github.repository_owner }}
+          IMAGE_TAG: ${{ steps.vars.outputs.IMAGE_TAG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Set repository variable CI_IMAGE_TAG so consuming workflows can pin to this SHA-tag
+          API_URL="https://api.github.com/repos/${REPO}/actions/variables/CI_IMAGE_TAG"
+          PAYLOAD=$(jq -n --arg name "CI_IMAGE_TAG" --arg value "$IMAGE_TAG" '{name:$name, value:$value}')
+          curl -sS -X PUT -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" -H "Content-Type: application/json" -d "$PAYLOAD" "$API_URL"

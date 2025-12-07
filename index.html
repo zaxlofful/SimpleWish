@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <!-- QR metadata: set per-page QR colors and decoration; generator reads these meta tags.
        Examples:
-         <meta name="qr-dark" content="#0b6623">      (foreground color)
-         <meta name="qr-light" content="#ffffff">     (background color)
-         <meta name="qr-decorate" content="true">     (true/false)
-         <meta name="qr-tree-style" content="fancy">   (fancy/plain)
+         <meta name="qr-foreground-color" content="#0b6623">  (foreground color; legacy qr-foreground accepted)
+         <meta name="qr-background-color" content="#ffffff">  (background color; legacy qr-background accepted)
+         <meta name="qr-decorate" content="true">            (true/false; decoration enabled by default)
+         <meta name="qr-tree-style" content="fancy">         (fancy/plain)
   -->
   <title>Christmas List Template</title>
   <!-- Inline SVG Favicon-->
@@ -28,11 +28,13 @@
   *{box-sizing:border-box}
   html,body{height:100%;background:linear-gradient(180deg,#fff 0%,var(--bg) 100%);margin:0;padding:32px}
   .card{max-width:var(--max-width);margin:0 auto;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;padding:28px;display:block}
+  
   /* Reserve space on the right for a 250px QR + margin */
   .card-header{position:relative;padding-right:290px}
   .title h1{margin:0;font-size:1.6rem;color:var(--accent);line-height:1.05}
   .title .sub{margin:6px 0 0;color:var(--muted);font-size:0.95rem}
   .qrcode-box{position:absolute;top:28px;right:28px;width:250px;text-align:center}
+  
   /* Ensure embedded SVG or img inside the qrcode box renders at the intended 250px size */
   .qrcode-box svg, .qrcode-box img {width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:block}
   #qrcode{width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center}

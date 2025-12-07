@@ -1,3 +1,7 @@
+![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)
+![Test](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)
+![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)
+
 Christmas list template (HTML + CSS)
 
 What this is
@@ -19,14 +23,15 @@ QR code approach and single-file guarantee
 	- Data-URI images: `data:image/svg+xml;utf8,...`
 - Embedding QR images in the page preserves the single-file guarantee (no runtime network calls or JS required).
 
+
 Coloring by CSS
-- The generator now emits SVGs whose modules use currentColor; each injected SVG receives class `qr-svg` and a `data-qr-default-color` attribute containing the default color. To change QR color via CSS, add a rule such as:
+- The generator now emits SVGs whose modules use currentColor; each injected SVG receives class `qr-svg` and a `data-qr-default-foreground-color` attribute containing the default color. To change QR color via CSS, add a rule such as:
 
 ```css
 .qr-svg { color: #b71c1c; } /* makes the QR modules red */
 ```
 
-Per-file metadata (`qr-dark`, `qr-light`) still work and are used as defaults by the generator when generating the SVG.
+Per-file metadata (`qr-foreground-color`, `qr-background-color`) are used by the generator when present and otherwise the CLI defaults are used.
 
 Generating/updating SVGs via CI (recommended)
 - Use CI (GitHub Actions or other) to generate per-page QR images and inject them into the corresponding HTML files before publishing.
@@ -59,4 +64,45 @@ Two-step quick example:
 1. python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
 2. python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
+- CLI highlights
+- `--foreground-color` (default: #0b6623)
+- `--background-color` (default: #ffffff)
+- `--no-decorate` to disable the bottom-right decoration
+- `--logo-size`, `--overlay-mult`, `--overlay-shift-x`, `--overlay-shift-y` to nudge placement
+
 Enjoy! Happy holidays.
+
+## Contributing
+
+Small, focused changes are welcome. Typical workflow:
+
+1. Fork and branch from `main`.
+2. Run lint/tests locally (see `scripts/requirements-dev.txt`).
+3. Open a PR describing the change and linking CI checks.
+
+Keep changes small and preserve the single-file guarantee for per-recipient HTML files.
+
+## Changelog (brief)
+
+- 2025-12-07: Refactor CLI and meta keys to use `foreground_color`/`background_color`, removed unfinished transparency flow, simplified decoration model to bottom-right overlay, added lint/test workflows and a basic unit test.
+
+## CI image and secure runner notes
+
+- This repository builds and publishes a minimal Alpine-based CI image to GitHub Container Registry (GHCR) and uses that curated image for all CI runs on Linux runners. The image is built from `.github/ci/Dockerfile` and pushed to `ghcr.io/<owner>/simplewish-ci:<sha>` and `:main` by the automated build workflow.
+- Workflows pin to the `main` image tag and perform a cryptographic image verification (cosign) before running tests or other steps. This provides immutability and provenance for the CI environment.
+
+Build and publish the CI image (done automatically on push to `main`):
+
+```bash
+# Build locally (optional)
+docker build -f .github/ci/Dockerfile -t ghcr.io/$GITHUB_ACTOR/simplewish-ci:local .
+
+# Push (requires GHCR login)
+docker tag ghcr.io/$GITHUB_ACTOR/simplewish-ci:local ghcr.io/<owner>/simplewish-ci:main
+docker push ghcr.io/<owner>/simplewish-ci:main
+```
+
+Security notes:
+- The CI image is pinned by tag in workflows; for fully immutable runs the image is also published with the commit SHA as a tag (the build workflow does this).
+- The build workflow also runs a vulnerability scan (Trivy) and signs the image with `cosign` (keyless) so the consuming workflows validate the signature before use.
+- CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
