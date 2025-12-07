@@ -1,4 +1,3 @@
-````instructions
 ## Purpose
 This repository is a tiny, single-file static HTML template for printable Christmas gift lists. These instructions help an AI coding agent be productive quickly: understand the minimal architecture, the QR injection workflow, and safe edits that preserve the single-file, GitHub-Pages-friendly output.
 
@@ -66,4 +65,3 @@ Notes on flags you'll likely need:
 
 ## If anything is unclear
 Tell me which section you want stricter rules for (for example: "always require `--force` on generate to prevent accidental overwrite") and I'll update this guidance.
-````

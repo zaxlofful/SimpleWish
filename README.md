@@ -1,4 +1,3 @@
-```markdown
 Christmas list template (HTML + CSS)
 
 What this is
@@ -61,4 +60,3 @@ Two-step quick example:
 2. python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
 Enjoy! Happy holidays.
-```
