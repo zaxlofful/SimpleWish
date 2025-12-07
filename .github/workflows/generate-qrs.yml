@@ -23,12 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # Note: do NOT run docker login inside the job container (docker binary is unavailable
+      # inside many job containers). Job-level permissions 'packages: read' are set so the
+      # container runtime can pull images when appropriate.
 
       - name: Set up Python
         uses: actions/setup-python@v4
