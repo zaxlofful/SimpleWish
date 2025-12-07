@@ -84,7 +84,7 @@ Keep changes small and preserve the single-file guarantee for per-recipient HTML
 
 ## Changelog (brief)
 
-- 2025-12-07: Refactor CLI and meta keys to use `foreground_color`/`background_color`, removed unfinished transparency flow, simplified decoration model to bottom-right overlay, added lint/test workflows and a basic unit test.
+- 2025-12-07: First list made and workflows created
 
 ## CI image and secure runner notes
 
