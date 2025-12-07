@@ -1,0 +1,11 @@
+[flake8]
+# Exclude virtualenv, git metadata, GitHub workflow files, and generated QR svgs
+exclude =
+    .venv,
+    .git,
+    .github,
+    scripts/generated_qr,
+
+# Historically we had a max-line-length, but this repo intentionally keeps
+# some long template strings. Disable the E501 line-too-long check globally.
+ignore = E501

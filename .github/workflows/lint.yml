@@ -32,4 +32,4 @@ jobs:
           ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
       - name: Run flake8
         run: |
-          ./.venv/bin/flake8 --max-line-length=120
+          ./.venv/bin/flake8

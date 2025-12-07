@@ -26,7 +26,7 @@ def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> b
         print(f'Markers not found in {html_path}; skipping')
         return False
 
-    existing_block = content[start_idx + len(MARKER_START) : end_idx]
+    existing_block = content[start_idx + len(MARKER_START):end_idx]
     # If requested, preserve manual edits: skip replacement when the placeholder already
     # contains any non-whitespace (i.e. someone manually edited it). --force overrides.
     if preserve_manual and existing_block.strip():
@@ -48,7 +48,7 @@ def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> b
 
     # Insert the indented SVG and then re-insert the start-marker leading whitespace before the end marker
     new_content = (
-        content[: start_idx + len(MARKER_START)] + '\n' + indented_svg + '\n' + end_line_leading + content[end_idx:]
+        content[:start_idx + len(MARKER_START)] + '\n' + indented_svg + '\n' + end_line_leading + content[end_idx:]
     )
 
     if new_content == content:

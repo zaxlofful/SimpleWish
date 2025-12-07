@@ -37,8 +37,11 @@ def read_meta_tags_from_html(path: str):
         val = m.group(2).strip()
         # collect known per-page QR metadata. Add new keys here as the generator grows.
         if name in (
-            'qr-foreground-color', 'qr-background-color',
-            'qr-decorate', 'qr-tree-style'):
+            'qr-foreground-color',
+            'qr-background-color',
+            'qr-decorate',
+            'qr-tree-style',
+        ):
             res[name] = val
     return res
 
@@ -166,12 +169,12 @@ def generate_svg(url: str, foreground_color: str = '#0b6623', background_color: 
     </g>
 '''
 
-    chosen_inner = fancy_inner if tree_style == 'fancy' else plain_inner
+        chosen_inner = fancy_inner if tree_style == 'fancy' else plain_inner
 
-    quiet_tree_group = f'''
-  <g id="xmas-tree" transform="translate({q_tx:.2f},{q_ty:.2f}) scale({tree_width/200.0:.6f})" aria-hidden="true">
+        quiet_tree_group = f'''
+    <g id="xmas-tree" transform="translate({q_tx:.2f}, {q_ty:.2f}) scale({tree_width/200.0:.6f})" aria-hidden="true">
 {chosen_inner}
-  </g>
+    </g>
 '''
 
     # If reserve_mode is overlay, compute placement based on reserved rect and allow an overlay multiplier and shift
@@ -213,10 +216,10 @@ def generate_svg(url: str, foreground_color: str = '#0b6623', background_color: 
         ty = ty + (rect_h * overlay_shift_y)
 
     # Build overlay variant using the chosen inner content
-    tree_group = f'''
-  <g id="xmas-tree" transform="translate({tx:.2f},{ty:.2f}) scale({scale:.6f})" aria-hidden="true">
+        tree_group = f'''
+    <g id="xmas-tree" transform="translate({tx:.2f}, {ty:.2f}) scale({scale:.6f})" aria-hidden="true">
 {chosen_inner}
-  </g>
+    </g>
 '''
 
     # Insert the tree_group before the closing </svg> only when decoration is enabled
