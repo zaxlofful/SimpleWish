@@ -1,3 +1,5 @@
+import hashlib
+import os
 import re
 
 from scripts.generate_qr_svg import generate_svg
@@ -69,3 +71,49 @@ def test_read_meta_tags_from_html(tmp_path):
     assert meta.get('qr-foreground-color') == '#abc123'
     assert meta.get('qr-background-color') == '#ffffff'
     assert meta.get('qr-decorate') == 'false'
+
+
+def test_qr_generation_matches_reference():
+    """Test that QR generation with default settings produces consistent output.
+    
+    This test generates a QR code with default settings and compares its hash
+    to a reference file to ensure the QR generation is deterministic and correct.
+    """
+    # Generate QR with default settings (same as reference)
+    svg = generate_svg(
+        url='https://example.com/reference',
+        foreground_color='#0b6623',
+        background_color='#ffffff',
+        decorate=True,
+        border=0,
+        logo_size_pct=20.0,
+        logo_pos='bottom-right',
+        reserve_mode='overlay',
+        ecc='H',
+        tree_style='fancy'
+    )
+    
+    # Calculate hash of generated SVG
+    generated_hash = hashlib.sha256(svg.encode('utf-8')).hexdigest()
+    
+    # Read reference file and calculate its hash
+    reference_path = os.path.join(
+        os.path.dirname(__file__), 'reference_qr.svg'
+    )
+    with open(reference_path, 'r', encoding='utf-8') as f:
+        reference_svg = f.read()
+    reference_hash = hashlib.sha256(reference_svg.encode('utf-8')).hexdigest()
+    
+    # Hashes should match exactly
+    assert generated_hash == reference_hash, (
+        f'Generated QR hash {generated_hash} does not match '
+        f'reference hash {reference_hash}. '
+        'This indicates the QR generation algorithm has changed.'
+    )
+    
+    # Also verify the SVG content is identical
+    assert svg == reference_svg, (
+        'Generated SVG content does not match reference. '
+        'This indicates the QR generation is not deterministic.'
+    )
+

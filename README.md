@@ -1,7 +1,6 @@
 ![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)
 ![Test](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)
 ![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)
-![Deploy Pages](https://github.com/ZaxLofful/SimpleWish/actions/workflows/deploy-pages.yml/badge.svg)
 
 # SimpleWish - Christmas List Template
 
@@ -13,7 +12,8 @@ A printable, single-file HTML template for creating personalized Christmas gift 
 - **Printable** — Optimized layout for printing or saving as PDF
 - **QR codes** — Automatically generated QR codes for easy sharing
 - **Customizable** — Change colors, add your own items, personalize for each recipient
-- **CI/CD ready** — Automated QR generation and GitHub Pages deployment
+- **Cloudflare Pages ready** — Designed to work seamlessly with Cloudflare Pages and custom domains
+- **CI/CD ready** — Automated QR generation workflows
 
 ## 🚀 Quick Start
 
@@ -103,7 +103,25 @@ This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
 - **Test** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
-- **Deploy Pages** — Deploys to GitHub Pages for easy sharing
+
+### Deployment Options
+
+This repository is designed to work with **Cloudflare Pages** and custom domains. The single-file HTML design makes deployment simple:
+
+1. **Cloudflare Pages** (Recommended):
+   - Connect your repository to Cloudflare Pages
+   - Set build command: (none needed - static files)
+   - Set output directory: `/`
+   - Your lists will be available at your custom domain
+
+2. **GitHub Pages** (Optional):
+   - A manual workflow is available if you prefer GitHub Pages
+   - Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+   - Enable GitHub Pages in repository settings if needed
+
+3. **Self-hosted**:
+   - Simply copy the HTML files to any web server
+   - No build process required
 
 ### Per-file Metadata
 
