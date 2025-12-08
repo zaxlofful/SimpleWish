@@ -26,19 +26,7 @@ jobs:
       # Note: do NOT run docker login inside the job container (docker binary is unavailable
       # inside many job containers). Job-level permissions 'packages: read' are set so the
       # container runtime can pull images when appropriate.
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      # NOTE: image verification/signing has been removed; workflows pin to the SHA-tagged image
-
-      - name: Create venv and install dependencies
-        run: |
-          python -m venv .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+      # Dependencies are pre-installed system-wide in the container image
 
       - name: Set ROOT_DOMAIN (with default)
         env:
@@ -52,17 +40,15 @@ jobs:
 
       - name: Generate URL SVG QR files
         run: |
-          ./.venv/bin/python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+          python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
 
-      - name: Install dev deps & run tests
+      - name: Run tests
         run: |
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
-          ./.venv/bin/python -m pytest -q
+          python -m pytest -q
 
       - name: Inject SVGs into HTML files
         run: |
-          ./.venv/bin/python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Check for changes
         id: git-changes

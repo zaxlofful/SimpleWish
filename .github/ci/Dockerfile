@@ -21,13 +21,13 @@ RUN apt-get update \
   && python -m pip install --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Copy Python scripts and requirements
-COPY scripts/ ./scripts/
+# Install Python deps system-wide (wheels get built here if needed)
+# Copy only requirements files temporarily to install dependencies
+COPY scripts/requirements.txt scripts/requirements-dev.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt \
+  && rm /tmp/requirements.txt /tmp/requirements-dev.txt
 
-# Install Python deps (wheels get built here if needed)
-RUN pip install --no-cache-dir -r scripts/requirements.txt
-
-# At this point /usr/local has Python + your deps; /app has your code.
+# At this point /usr/local has Python + your deps system-wide installed.
 
 
 # ---------- Stage 2: runtime ----------
@@ -40,20 +40,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Copy Python runtime + installed deps
+# Copy Python runtime + installed deps (system-wide packages)
 COPY --from=builder /usr/local /usr/local
-# Copy app
-COPY --from=builder /app /app
 
 # Create non-root user
 RUN groupadd -r ci -g 1000 \
   && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci
 
 USER ci
-WORKDIR /app
+WORKDIR /home/ci
 
 ENV PATH="/home/ci/.local/bin:${PATH}"
 
-# Default command for running QR generation scripts
-# Example: python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir /tmp/qr
-CMD ["python", "-c", "print('SimpleWish CI image ready. Use with: python scripts/generate_qr_svg.py or python scripts/inject_qr_svg.py')"]
+# Default command - container is meant to be used with GitHub Actions checkout
+CMD ["python", "--version"]

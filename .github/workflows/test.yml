@@ -21,16 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Not logging into GHCR inside container; rely on job 'packages: read' permission instead.
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Create venv and install deps
-        run: |
-          python -m venv .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt
-          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
+      # Dependencies are pre-installed system-wide in the container image
       - name: Run tests
         run: |
-          ./.venv/bin/python -m pytest -q
+          python -m pytest -q
