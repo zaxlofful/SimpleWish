@@ -112,12 +112,13 @@ When creating a list for someone (e.g., `alice.html`):
    </ul>
    ```
 
-3. **Customize colors** (optional) - Edit the `:root` CSS variables or add meta tags
+3. **Customize colors** (optional) - See "Customizing Colors" section below
 
 ### Customizing Colors
 
-Each HTML file can specify custom QR code colors using meta tags in the `<head>` section:
+You can easily customize the entire page theme using meta tags in the `<head>` section - no CSS editing required!
 
+**QR Code Colors:**
 ```html
 <meta name="qr-foreground-color" content="#1565C0">
 <meta name="qr-background-color" content="#E3F2FD">
@@ -125,13 +126,31 @@ Each HTML file can specify custom QR code colors using meta tags in the `<head>`
 <meta name="qr-tree-style" content="fancy">
 ```
 
-You can also customize the page theme by editing CSS variables in the `:root` selector:
+**Page Theme Colors:**
+```html
+<meta name="theme-accent" content="#1565C0">      <!-- Headings, links -->
+<meta name="theme-muted" content="#546E7A">       <!-- Subtitles, hints -->
+<meta name="theme-background" content="#f0f4f8">  <!-- Page background -->
+<meta name="theme-card" content="#ffffff">        <!-- Card background -->
+```
 
+**Example:** The `alice.html` file uses blue theme via meta tags:
+```html
+<meta name="qr-foreground-color" content="#1565C0">
+<meta name="qr-background-color" content="#E3F2FD">
+<meta name="theme-accent" content="#1565C0">
+<meta name="theme-muted" content="#546E7A">
+```
+
+These meta tags are automatically applied via JavaScript when the page loads. No CSS editing needed!
+
+**Advanced:** You can also directly edit CSS variables in the `:root` selector if you prefer:
 ```css
 :root {
   --accent: #1565C0;     /* Primary color */
   --muted: #546E7A;      /* Muted text color */
-  /* ... other variables */
+  --bg: #f0f4f8;         /* Background */
+  --card: #ffffff;       /* Card background */
 }
 ```
 
