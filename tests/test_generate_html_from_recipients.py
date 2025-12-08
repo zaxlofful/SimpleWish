@@ -156,15 +156,53 @@ class TestGenerateHtmlFromTemplate(unittest.TestCase):
         with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
             f.write(self.template_content)
             f.name_for_test = f.name
-        
+
         try:
             items = [('Item with & ampersand < less > greater', 'https://example.com/item1')]
             html = generate_html_from_template(f.name_for_test, 'Test', items)
-            
+
             # Check that entities are escaped
             self.assertIn('&amp;', html)
             self.assertIn('&lt;', html)
             self.assertIn('&gt;', html)
+        finally:
+            os.unlink(f.name_for_test)
+
+    def test_url_escaping(self):
+        """Test that URLs with special characters are properly escaped."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+            f.write(self.template_content)
+            f.name_for_test = f.name
+
+        try:
+            # URL with query parameters that contain special chars
+            items = [('Test item', 'https://example.com/item?param="value"&other=<test>')]
+            html = generate_html_from_template(f.name_for_test, 'Test', items)
+
+            # Check that quotes and angle brackets in URL are escaped
+            self.assertIn('&quot;', html)
+            self.assertIn('&lt;', html)
+            self.assertIn('&gt;', html)
+            # Ensure the URL is in an href attribute
+            self.assertIn('href=', html)
+        finally:
+            os.unlink(f.name_for_test)
+
+    def test_recipient_name_escaping(self):
+        """Test that recipient names with special characters are escaped."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+            f.write(self.template_content)
+            f.name_for_test = f.name
+
+        try:
+            items = [('Item 1', 'https://example.com/item1')]
+            html = generate_html_from_template(f.name_for_test, 'Bob & Alice', items)
+
+            # Check that ampersand in name is escaped
+            self.assertIn('Bob &amp; Alice', html)
+            # Check both in title and heading
+            self.assertIn("<title>Bob &amp; Alice's Christmas List</title>", html)
+            self.assertIn('Christmas List for Bob &amp; Alice', html)
         finally:
             os.unlink(f.name_for_test)
 
