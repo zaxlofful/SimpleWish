@@ -1,0 +1,4 @@
+Raspberry Pi 5 — 8GB RAM starter kit https://example.com/raspberry-pi
+Python Crash Course (3rd Edition) https://example.com/python-book
+Mechanical keyboard — Cherry MX Blue switches https://example.com/mechanical-keyboard
+Fitness smartwatch — heart rate monitoring https://example.com/smart-watch
