@@ -69,253 +69,264 @@ def clean_filename_to_path(filename: str) -> str:
 
 
 def get_tree_decoration(style: str = 'fancy') -> str:
-    """Generate Christmas tree decoration SVG (fancy or plain)."""
+    """Generate Christmas tree decoration SVG (fancy or plain) - remade from scratch."""
     if style == 'fancy':
+        # Completely new fancy tree design with three tiers and decorations
+        # Using the expected green color #0b6623
         fancy_parts = [
             '<g>',
-            '    <!-- layered green foliage -->',
-            '    <polygon points="50,185 100,115 150,185"',
-            '        fill="#0b6623" />',
-            '    <polygon points="60,155 100,95 140,155"',
-            '        fill="#0b6623" />',
-            '    <polygon points="70,130 100,70 130,130"',
-            '        fill="#0b6623" />',
-            '    <!-- decorative star (~20% smaller than before) -->',
-            (
-                '    <polygon points="100,54.11 105.04,67.07 118.72,67.07 '
-                '108.64,75.71 113.68,88.67 100,80.03 86.32,88.67 '
-                '91.36,75.71 81.28,67.07 94.96,67.07" fill="#ffd54a" />'
-            ),
-            '    <!-- garland (shorter, lower ribbon) -->',
-            '    <path d="M74,128 C84,117 116,117 126,128"',
-            '        fill="none" stroke="#8fbf5f"',
-            '        stroke-width="6" stroke-linecap="round"',
-            '        stroke-linejoin="round" opacity="0.95" />',
-            '    <path d="M64,155 C80,142 120,142 136,155"',
-            '        fill="none" stroke="#6aa144"',
-            '        stroke-width="4" stroke-linecap="round"',
-            '        stroke-linejoin="round" opacity="0.95" />',
-            '    <!-- baubles with subtle stroke and highlight -->',
-            '    <g stroke="#8b0000" stroke-width="0.8">',
-            '    <ellipse cx="92" cy="98" rx="4" ry="4.6"',
-            '        fill="#b71c1c" />',
-            '    <circle cx="118" cy="118" r="3.6"',
-            '        fill="#b71c1c" />',
-            '    </g>',
-            '    <g stroke="#b58a00" stroke-width="0.6">',
-            '    <circle cx="76" cy="126" r="3.2"',
-            '        fill="#ffd54a" />',
-            '    <circle cx="128" cy="138" r="2.8"',
-            '        fill="#fff176" />',
-            '    </g>',
-            '    <!-- small blue baubles -->',
-            '    <circle cx="106" cy="112" r="2.6"',
-            '        fill="#1976D2" />',
-            '    <circle cx="84" cy="140" r="2.2"',
-            '        fill="#2196F3" />',
-            '    <!-- tiny lights (glossy dots) -->',
-            '    <circle cx="104" cy="92" r="1.8"',
-            '        fill="#ffffff" opacity="0.95" />',
-            '    <circle cx="88" cy="118" r="1.6"',
-            '        fill="#fff8e1" opacity="0.95" />',
-            '    <circle cx="112" cy="142" r="1.6"',
-            '        fill="#ffe082" opacity="0.95" />',
-            '    <!-- more visible bow: loops, tails, knot and highlight -->',
-            '    <g id="xmas-bow" transform="translate(0,0)"',
-            '        aria-hidden="true">',
-            '    <!-- left loop -->',
-            '    <path d="M92,158 C86,150 88,142 96,150 '
-            'C100,154 96,158 92,158"',
-            '        fill="#e53935" stroke="#7b1f1f"',
-            '        stroke-width="0.7" />',
-            '    <!-- right loop -->',
-            '    <path d="M108,158 C114,150 112,142 104,150 '
-            'C100,154 104,158 108,158"',
-            '        fill="#e53935" stroke="#7b1f1f"',
-            '        stroke-width="0.7" />',
-            '    <!-- left tail -->',
-            '    <path d="M96,162 C92,168 84,174 78,180"',
-            '        fill="none" stroke="#c62828"',
-            '        stroke-width="2" stroke-linecap="round" />',
-            '    <!-- right tail -->',
-            '    <path d="M104,162 C108,168 116,174 122,180"',
-            '        fill="none" stroke="#c62828"',
-            '        stroke-width="2" stroke-linecap="round" />',
-            '    <!-- knot -->',
-            '    <circle cx="100" cy="156" r="2.6"',
-            '        fill="#7b1f1f" />',
-            '    <!-- tiny highlight on knot -->',
-            '    <circle cx="101" cy="155.2" r="0.7"',
-            '        fill="#fff8e1" opacity="0.9" />',
-            '    </g>',
-            '    <!-- decorative gloss spots on larger baubles -->',
-            '    <circle cx="116" cy="116" r="0.9"',
-            '        fill="#ffffff" opacity="0.9" />',
-            '    <circle cx="92" cy="96" r="0.8"',
-            '        fill="#ffffff" opacity="0.9" />',
+            '    <!-- bottom tier of tree -->',
+            '    <polygon points="45,180 100,120 155,180"',
+            '        fill="#0b6623" stroke="#094d1a" stroke-width="0.5"/>',
+            '    <!-- middle tier -->',
+            '    <polygon points="55,145 100,90 145,145"',
+            '        fill="#0b6623" stroke="#094d1a" stroke-width="0.5"/>',
+            '    <!-- top tier -->',
+            '    <polygon points="65,115 100,60 135,115"',
+            '        fill="#0b6623" stroke="#094d1a" stroke-width="0.5"/>',
+            '    <!-- star topper -->',
+            '    <polygon points="100,50 103,59 112,60 105,66 107,75 100,70 93,75 95,66 88,60 97,59"',
+            '        fill="#ffeb3b" stroke="#f9a825" stroke-width="0.8"/>',
+            '    <!-- trunk -->',
+            '    <rect x="95" y="180" width="10" height="15"',
+            '        fill="#5d4037" stroke="#3e2723" stroke-width="0.5"/>',
+            '    <!-- red ornaments (using #b71c1c) -->',
+            '    <circle cx="85" cy="135" r="3.5" fill="#b71c1c" stroke="#8b0000" stroke-width="0.5"/>',
+            '    <circle cx="115" cy="140" r="3" fill="#e53935" stroke="#b71c1c" stroke-width="0.5"/>',
+            '    <circle cx="100" cy="155" r="3.2" fill="#f44336" stroke="#d32f2f" stroke-width="0.5"/>',
+            '    <!-- gold ornaments (using #ffd54a) -->',
+            '    <circle cx="75" cy="150" r="2.8" fill="#ffd54a" stroke="#fbc02d" stroke-width="0.5"/>',
+            '    <circle cx="125" cy="155" r="2.5" fill="#ffeb3b" stroke="#fdd835" stroke-width="0.5"/>',
+            '    <!-- blue ornaments -->',
+            '    <circle cx="95" cy="125" r="2.6" fill="#1976d2" stroke="#0d47a1" stroke-width="0.5"/>',
+            '    <circle cx="110" cy="115" r="2.4" fill="#2196f3" stroke="#1565c0" stroke-width="0.5"/>',
+            '    <!-- string lights -->',
+            '    <circle cx="70" cy="138" r="1.5" fill="#fff59d" opacity="0.9"/>',
+            '    <circle cx="90" cy="145" r="1.5" fill="#ffccbc" opacity="0.9"/>',
+            '    <circle cx="110" cy="148" r="1.5" fill="#b3e5fc" opacity="0.9"/>',
+            '    <circle cx="130" cy="142" r="1.5" fill="#c5e1a5" opacity="0.9"/>',
+            '    <!-- garland swag -->',
+            '    <path d="M70,130 Q100,140 130,130" fill="none" stroke="#8bc34a" stroke-width="2" opacity="0.8"/>',
+            '    <path d="M60,150 Q100,162 140,150" fill="none" stroke="#7cb342" stroke-width="2.5" opacity="0.8"/>',
             '</g>',
         ]
         return "\n".join(fancy_parts)
     else:
-        # plain tree
+        # Simple plain tree - minimalist design with #0b6623 green
         return '''<g>
-    <!-- plain layered green foliage (no decorations) -->
-    <polygon points="50,185 100,115 150,185" fill="#0b6623" />
-    <polygon points="60,155 100,95 140,155" fill="#0b6623" />
-    <polygon points="70,130 100,70 130,130" fill="#0b6623" />
+    <!-- simple three-tier tree -->
+    <polygon points="50,175 100,125 150,175" fill="#0b6623"/>
+    <polygon points="60,145 100,95 140,145" fill="#0b6623"/>
+    <polygon points="70,120 100,70 130,120" fill="#0b6623"/>
+    <!-- simple trunk -->
+    <rect x="93" y="175" width="14" height="18" fill="#6d4c41"/>
 </g>'''
 
 
 def get_snowman_decoration() -> str:
-    """Generate snowman decoration SVG."""
+    """Generate snowman decoration SVG - remade from scratch."""
     return '''<g>
-    <!-- bottom snowball -->
-    <circle cx="100" cy="160" r="35" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
+    <!-- base snowball (largest) -->
+    <circle cx="100" cy="165" r="32" fill="#fafafa" stroke="#cfd8dc" stroke-width="1.2"/>
     <!-- middle snowball -->
-    <circle cx="100" cy="110" r="28" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
-    <!-- top snowball (head) -->
-    <circle cx="100" cy="65" r="22" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
-    <!-- hat brim -->
-    <ellipse cx="100" cy="48" rx="28" ry="5" fill="#2c2c2c"/>
-    <!-- hat top -->
-    <rect x="80" y="25" width="40" height="23" fill="#2c2c2c" rx="2"/>
-    <!-- hat band -->
-    <rect x="80" y="40" width="40" height="4" fill="#b71c1c"/>
-    <!-- eyes -->
-    <circle cx="92" cy="62" r="2.5" fill="#2c2c2c"/>
-    <circle cx="108" cy="62" r="2.5" fill="#2c2c2c"/>
-    <!-- carrot nose -->
-    <polygon points="100,68 105,70 100,72" fill="#ff6f00"/>
-    <!-- smile (coal pieces) -->
-    <circle cx="92" cy="75" r="1.5" fill="#2c2c2c"/>
-    <circle cx="96" cy="77" r="1.5" fill="#2c2c2c"/>
-    <circle cx="100" cy="78" r="1.5" fill="#2c2c2c"/>
-    <circle cx="104" cy="77" r="1.5" fill="#2c2c2c"/>
-    <circle cx="108" cy="75" r="1.5" fill="#2c2c2c"/>
-    <!-- buttons -->
-    <circle cx="100" cy="100" r="3" fill="#2c2c2c"/>
-    <circle cx="100" cy="115" r="3" fill="#2c2c2c"/>
-    <circle cx="100" cy="130" r="3" fill="#2c2c2c"/>
-    <!-- scarf -->
-    <path d="M78,80 Q100,85 122,80" fill="none" stroke="#b71c1c" stroke-width="6" stroke-linecap="round"/>
-    <path d="M78,84 Q100,89 122,84" fill="none" stroke="#c62828" stroke-width="4" stroke-linecap="round"/>
-    <!-- scarf tail -->
-    <path d="M78,80 L70,95 L72,100" fill="#b71c1c" stroke="#8b0000" stroke-width="0.8"/>
+    <circle cx="100" cy="115" r="26" fill="#ffffff" stroke="#cfd8dc" stroke-width="1.2"/>
+    <!-- head snowball (smallest) -->
+    <circle cx="100" cy="72" r="20" fill="#ffffff" stroke="#cfd8dc" stroke-width="1.2"/>
+    <!-- top hat brim -->
+    <ellipse cx="100" cy="56" rx="26" ry="4.5" fill="#212121"/>
+    <!-- top hat cylinder -->
+    <rect x="82" y="35" width="36" height="21" fill="#424242" rx="1.5"/>
+    <!-- hat band with holly -->
+    <rect x="82" y="48" width="36" height="5" fill="#c62828"/>
+    <circle cx="96" cy="50" r="1.8" fill="#c62828"/>
+    <circle cx="104" cy="50" r="1.8" fill="#c62828"/>
+    <!-- coal eyes -->
+    <circle cx="92" cy="68" r="2.2" fill="#212121"/>
+    <circle cx="108" cy="68" r="2.2" fill="#212121"/>
+    <!-- carrot nose - more prominent -->
+    <path d="M100,74 L108,76 L100,78 Z" fill="#ff6f00" stroke="#e65100" stroke-width="0.4"/>
+    <!-- coal smile -->
+    <circle cx="90" cy="82" r="1.3" fill="#212121"/>
+    <circle cx="94" cy="84" r="1.3" fill="#212121"/>
+    <circle cx="100" cy="85" r="1.3" fill="#212121"/>
+    <circle cx="106" cy="84" r="1.3" fill="#212121"/>
+    <circle cx="110" cy="82" r="1.3" fill="#212121"/>
+    <!-- coal buttons on body -->
+    <circle cx="100" cy="105" r="2.8" fill="#212121"/>
+    <circle cx="100" cy="120" r="2.8" fill="#212121"/>
+    <circle cx="100" cy="135" r="2.8" fill="#212121"/>
+    <circle cx="100" cy="150" r="2.8" fill="#212121"/>
+    <!-- knitted scarf -->
+    <path d="M75,88 Q100,93 125,88" fill="none" stroke="#1565c0" stroke-width="7" stroke-linecap="round"/>
+    <path d="M75,92 Q100,97 125,92" fill="none" stroke="#1976d2" stroke-width="5" stroke-linecap="round"/>
+    <!-- scarf ends -->
+    <rect x="72" y="88" width="7" height="20" fill="#1565c0" rx="1"/>
+    <rect x="121" y="88" width="7" height="20" fill="#1976d2" rx="1"/>
+    <!-- scarf fringe -->
+    <line x1="73" y1="108" x2="73" y2="112" stroke="#0d47a1" stroke-width="1.5"/>
+    <line x1="77" y1="108" x2="77" y2="114" stroke="#0d47a1" stroke-width="1.5"/>
+    <line x1="123" y1="108" x2="123" y2="113" stroke="#0d47a1" stroke-width="1.5"/>
+    <line x1="127" y1="108" x2="127" y2="111" stroke="#0d47a1" stroke-width="1.5"/>
 </g>'''
 
 
 def get_santa_decoration() -> str:
-    """Generate Santa face decoration SVG."""
+    """Generate Santa face decoration SVG - remade from scratch."""
     return '''<g>
-    <!-- face -->
-    <circle cx="100" cy="100" r="45" fill="#fdd0b5"/>
-    <!-- hat -->
-    <!-- adjust hat so it sits naturally on the head (slightly nudged up by 1px) -->
-    <path d="M60,72 Q100,37 140,72 L140,82 Q100,87 60,82 Z" fill="#b71c1c"/>
-    <ellipse cx="100" cy="82" rx="42" ry="6" fill="#ffffff"/>
-    <!-- hat pom-pom (nudged up to match brim) -->
-    <circle cx="100" cy="49" r="8" fill="#ffffff"/>
-    <!-- eyes -->
-    <circle cx="85" cy="95" r="4" fill="#2c2c2c"/>
-    <circle cx="115" cy="95" r="4" fill="#2c2c2c"/>
-    <!-- rosy cheeks (moved slightly farther from the nose and kept aligned) -->
-    <circle cx="70" cy="105" r="7" fill="#ff8a80" opacity="0.6"/>
-    <circle cx="130" cy="105" r="7" fill="#ff8a80" opacity="0.6"/>
+    <!-- face circle -->
+    <circle cx="100" cy="105" r="42" fill="#ffccbc"/>
+    <!-- santa hat (using #b71c1c red) -->
+    <path d="M62,82 Q100,45 138,82 L138,90 L62,90 Z" fill="#b71c1c"/>
+    <!-- hat trim -->
+    <ellipse cx="100" cy="90" rx="38" ry="5.5" fill="#f5f5f5"/>
+    <!-- pom-pom -->
+    <circle cx="100" cy="52" r="7.5" fill="#f5f5f5" stroke="#eeeeee" stroke-width="0.6"/>
+    <!-- eyes with sparkle -->
+    <circle cx="86" cy="100" r="4.5" fill="#424242"/>
+    <circle cx="88" cy="98" r="1.5" fill="#ffffff"/>
+    <circle cx="114" cy="100" r="4.5" fill="#424242"/>
+    <circle cx="116" cy="98" r="1.5" fill="#ffffff"/>
+    <!-- rosy cheeks -->
+    <ellipse cx="68" cy="110" rx="8" ry="6" fill="#ef9a9a" opacity="0.7"/>
+    <ellipse cx="132" cy="110" rx="8" ry="6" fill="#ef9a9a" opacity="0.7"/>
     <!-- nose -->
-    <ellipse cx="100" cy="105" rx="5" ry="6" fill="#ff6b6b"/>
-    <!-- mustache (brought the two pieces slightly closer together) -->
-    <ellipse cx="87" cy="115" rx="12" ry="5" fill="#ffffff"/>
-    <ellipse cx="113" cy="115" rx="12" ry="5" fill="#ffffff"/>
-    <!-- beard -->
-    <path d="M70,120 Q100,155 130,120 Q125,140 100,145 Q75,140 70,120" fill="#ffffff"/>
-    <!-- beard details (curls) -->
-    <circle cx="80" cy="130" r="5" fill="#f5f5f5"/>
-    <circle cx="100" cy="138" r="5" fill="#f5f5f5"/>
-    <circle cx="120" cy="130" r="5" fill="#f5f5f5"/>
-    <!-- smile (moved slightly lower) -->
-    <path d="M92,124 Q100,128 108,124" fill="none" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="100" cy="108" rx="6" ry="7" fill="#ff8a80"/>
+    <ellipse cx="98" cy="106" rx="2" ry="2.5" fill="#ffcdd2" opacity="0.6"/>
+    <!-- bushy mustache -->
+    <ellipse cx="82" cy="118" rx="14" ry="7" fill="#fafafa"/>
+    <ellipse cx="118" cy="118" rx="14" ry="7" fill="#fafafa"/>
+    <!-- mustache details -->
+    <path d="M75,118 Q78,121 82,119" fill="none" stroke="#e0e0e0" stroke-width="1"/>
+    <path d="M125,118 Q122,121 118,119" fill="none" stroke="#e0e0e0" stroke-width="1"/>
+    <!-- fluffy beard -->
+    <path d="M70,125 Q65,140 70,150 Q85,155 100,152 Q115,155 130,150 Q135,140 130,125 Q115,130 100,128 Q85,130 70,125" fill="#fafafa"/>
+    <!-- beard texture -->
+    <circle cx="80" cy="135" r="4.5" fill="#f5f5f5" opacity="0.8"/>
+    <circle cx="100" cy="140" r="5" fill="#f5f5f5" opacity="0.8"/>
+    <circle cx="120" cy="135" r="4.5" fill="#f5f5f5" opacity="0.8"/>
+    <circle cx="90" cy="145" r="3.5" fill="#f5f5f5" opacity="0.8"/>
+    <circle cx="110" cy="145" r="3.5" fill="#f5f5f5" opacity="0.8"/>
 </g>'''
 
 
 def get_gift_decoration() -> str:
-    """Generate wrapped gift box decoration SVG."""
+    """Generate wrapped gift box decoration SVG - remade from scratch."""
     return '''<g>
-    <!-- gift box -->
-    <rect x="60" y="100" width="80" height="70" fill="#b71c1c" stroke="#8b0000" stroke-width="1.5" rx="3"/>
+    <!-- main gift box -->
+    <rect x="65" y="110" width="70" height="60" fill="#c62828" stroke="#b71c1c" stroke-width="1.2" rx="2.5"/>
+    <!-- box lid with shadow -->
+    <rect x="62" y="100" width="76" height="12" fill="#d32f2f" stroke="#c62828" stroke-width="1" rx="2"/>
     <!-- vertical ribbon -->
     <rect x="95" y="100" width="10" height="70" fill="#ffd54a"/>
+    <rect x="96.5" y="100" width="7" height="70" fill="#ffeb3b"/>
     <!-- horizontal ribbon -->
-    <rect x="60" y="130" width="80" height="10" fill="#ffd54a"/>
-    <!-- bow loops -->
-    <ellipse cx="85" cy="95" rx="12" ry="8" fill="#ffd54a" stroke="#daa520" stroke-width="1"/>
-    <ellipse cx="115" cy="95" rx="12" ry="8" fill="#ffd54a" stroke="#daa520" stroke-width="1"/>
-    <!-- bow center -->
-    <circle cx="100" cy="95" r="6" fill="#ffb300"/>
-    <!-- bow tails -->
-    <path d="M85,103 L78,115 L80,118" fill="#ffd54a" stroke="#daa520" stroke-width="0.8"/>
-    <path d="M115,103 L122,115 L120,118" fill="#ffd54a" stroke="#daa520" stroke-width="0.8"/>
-    <!-- box highlights -->
-    <rect x="62" y="102" width="3" height="20" fill="#ffffff" opacity="0.3"/>
-    <!-- ribbon shine -->
-    <rect x="96" y="102" width="2" height="15" fill="#ffffff" opacity="0.5"/>
+    <rect x="62" y="135" width="76" height="10" fill="#ffd54a"/>
+    <rect x="62" y="136.5" width="76" height="7" fill="#ffeb3b"/>
+    <!-- ribbon shine effect -->
+    <rect x="97" y="102" width="2" height="20" fill="#ffffff" opacity="0.4"/>
+    <rect x="97" y="150" width="2" height="18" fill="#ffffff" opacity="0.4"/>
+    <!-- bow - left loop -->
+    <ellipse cx="88" cy="96" rx="10" ry="7" fill="#ffd54a" stroke="#f9a825" stroke-width="0.8"/>
+    <ellipse cx="88" cy="96" rx="8" ry="5.5" fill="#ffeb3b"/>
+    <!-- bow - right loop -->
+    <ellipse cx="112" cy="96" rx="10" ry="7" fill="#ffd54a" stroke="#f9a825" stroke-width="0.8"/>
+    <ellipse cx="112" cy="96" rx="8" ry="5.5" fill="#ffeb3b"/>
+    <!-- bow center knot -->
+    <circle cx="100" cy="96" r="5.5" fill="#f9a825" stroke="#f57f17" stroke-width="0.6"/>
+    <!-- bow ribbons hanging -->
+    <path d="M95,101 L90,112 L92,115" fill="#ffd54a" stroke="#f9a825" stroke-width="0.6"/>
+    <path d="M105,101 L110,112 L108,115" fill="#ffeb3b" stroke="#f9a825" stroke-width="0.6"/>
+    <!-- decorative corner highlights on box -->
+    <circle cx="70" cy="115" r="2" fill="#ffeb3b" opacity="0.6"/>
+    <circle cx="130" cy="115" r="2" fill="#ffeb3b" opacity="0.6"/>
+    <circle cx="70" cy="165" r="2" fill="#ffeb3b" opacity="0.6"/>
+    <circle cx="130" cy="165" r="2" fill="#ffeb3b" opacity="0.6"/>
 </g>'''
 
 
 def get_star_decoration() -> str:
-    """Generate decorative star SVG."""
+    """Generate decorative star SVG - remade from scratch."""
     return '''<g>
-    <!-- large outer star -->
-    <polygon points="100,50 110,85 145,90 120,112 128,147 100,130 72,147 80,112 55,90 90,85" 
-        fill="#ffd54a" stroke="#daa520" stroke-width="2"/>
+    <!-- outer star with gradient-like layering -->
+    <polygon points="100,55 112,88 147,93 123,115 130,150 100,133 70,150 77,115 53,93 88,88"
+        fill="#fdd835" stroke="#f9a825" stroke-width="1.8"/>
+    <!-- middle star layer -->
+    <polygon points="100,68 108,92 132,96 116,111 120,135 100,122 80,135 84,111 68,96 92,92"
+        fill="#ffeb3b" stroke="#fbc02d" stroke-width="1.2"/>
     <!-- inner star for depth -->
-    <polygon points="100,70 105,90 120,93 110,105 113,120 100,110 87,120 90,105 80,93 95,90" 
-        fill="#fff176"/>
-    <!-- center highlight -->
-    <circle cx="100" cy="100" r="8" fill="#ffeb3b"/>
+    <polygon points="100,78 105,95 122,98 113,107 116,124 100,115 84,124 87,107 78,98 95,95"
+        fill="#fff9c4"/>
+    <!-- center brilliant point -->
+    <circle cx="100" cy="100" r="9" fill="#fffde7"/>
+    <circle cx="100" cy="100" r="5" fill="#ffffff" opacity="0.9"/>
+    <!-- radiating sparkles -->
+    <circle cx="100" cy="62" r="2.5" fill="#ffffff" opacity="0.85"/>
+    <circle cx="138" cy="93" r="2.2" fill="#ffffff" opacity="0.85"/>
+    <circle cx="126" cy="140" r="2.2" fill="#ffffff" opacity="0.85"/>
+    <circle cx="74" cy="140" r="2.2" fill="#ffffff" opacity="0.85"/>
+    <circle cx="62" cy="93" r="2.2" fill="#ffffff" opacity="0.85"/>
 </g>'''
 
 
 def get_candy_cane_decoration() -> str:
-    """Generate candy cane decoration SVG."""
-    return '''<g transform="translate(230,12) scale(-1,1)">
-    <!-- main cane shape -->
-    <path d="M100,180 L100,100 Q100,70 120,70 Q140,70 140,90 Q140,110 120,110" 
-        fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round"/>
-    <!-- red stripes (spaced out to avoid overlap) -->
-    <path d="M100,175 L100,162" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M100,150 L100,136" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M100,125 L100,110" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M102,96 Q102,70 120,70" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M122,72 Q132,72 132,84" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M132,96 Q132,103 124,105" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <!-- highlight/shine -->
-    <path d="M95,170 L95,105" stroke="#ffffff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
+    """Generate candy cane decoration SVG - remade from scratch."""
+    return '''<g>
+    <!-- candy cane main body - white base -->
+    <path d="M100,180 L100,105 Q100,75 120,75 Q140,75 140,95 Q140,115 120,115"
+        fill="none" stroke="#fafafa" stroke-width="18" stroke-linecap="round"/>
+    <!-- red candy stripes (diagonal pattern) -->
+    <path d="M100,172 L100,158" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M100,146 L100,132" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M100,120 L100,106" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <!-- curved top stripes -->
+    <path d="M102,98 Q102,75 120,75" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M122,77 Q132,77 132,87" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <path d="M132,99 Q132,108 124,112" stroke="#d32f2f" stroke-width="18" stroke-linecap="round"/>
+    <!-- highlight shine on left edge -->
+    <path d="M94,175 L94,108" stroke="#ffffff" stroke-width="4" opacity="0.5" stroke-linecap="round"/>
+    <path d="M96,100 Q96,78 116,78" stroke="#ffffff" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
+    <!-- shadow/depth on right edge -->
+    <path d="M106,165 L106,115" stroke="#ef5350" stroke-width="2.5" opacity="0.4" stroke-linecap="round"/>
+    <!-- decorative bow at top curve -->
+    <ellipse cx="130" cy="95" rx="8" ry="6" fill="#c62828"/>
+    <ellipse cx="145" cy="90" rx="7" ry="5" fill="#d32f2f"/>
+    <circle cx="138" cy="92" r="4" fill="#b71c1c"/>
 </g>'''
 
 
 def get_bell_decoration() -> str:
-    """Generate Christmas bell decoration SVG."""
+    """Generate Christmas bell decoration SVG - remade from scratch."""
     return '''<g>
-    <!-- bell body (reduced size) -->
-    <path d="M72,100 Q72,82 100,82 Q128,82 128,100 L132,126 Q132,134 122,140 L122,144 Q122,148 100,148 Q78,148 78,144 L78,140 Q68,134 68,126 Z" 
-        fill="#ffd54a" stroke="#d3a21a" stroke-width="1.5"/>
-    <!-- bell rim (slightly raised) -->
-    <ellipse cx="100" cy="148" rx="26" ry="7" fill="#d3a21a"/>
-    <!-- bell clapper (slightly higher) -->
-    <ellipse cx="100" cy="156" rx="5" ry="6" fill="#8b0000"/>
-    <!-- ribbon/bow on top (moved down to sit on bell) -->
-    <path d="M90,80 Q100,76 110,80" fill="none" stroke="#b71c1c" stroke-width="3.5" stroke-linecap="round"/>
-    <circle cx="88" cy="78" r="4.5" fill="#b71c1c"/>
-    <circle cx="112" cy="78" r="4.5" fill="#b71c1c"/>
-    <!-- bell highlights (more visible) -->
-    <ellipse cx="86" cy="94" rx="10" ry="16" fill="#ffffff" opacity="0.45"/>
-    <path d="M76,108 Q80,126 84,136" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.35"/>
-    <!-- decorative holly -->
-    <circle cx="95" cy="82" r="3" fill="#b71c1c"/>
-    <circle cx="105" cy="82" r="3" fill="#b71c1c"/>
-    <ellipse cx="92" cy="79" rx="4" ry="3" fill="#2e7d32"/>
-    <ellipse cx="100" cy="78" rx="4" ry="3" fill="#2e7d32"/>
-    <ellipse cx="108" cy="79" rx="4" ry="3" fill="#2e7d32"/>
+    <!-- bell body with traditional shape -->
+    <path d="M75,105 Q75,88 100,88 Q125,88 125,105 L128,128 Q128,138 116,144 L116,148 Q116,152 100,152 Q84,152 84,148 L84,144 Q72,138 72,128 Z"
+        fill="#ffb300" stroke="#f57f17" stroke-width="1.4"/>
+    <!-- bell rim flare -->
+    <ellipse cx="100" cy="152" rx="24" ry="6.5" fill="#f57f17"/>
+    <ellipse cx="100" cy="151" rx="22" ry="5" fill="#ffc107"/>
+    <!-- clapper inside bell -->
+    <line x1="100" y1="148" x2="100" y2="158" stroke="#5d4037" stroke-width="2"/>
+    <ellipse cx="100" cy="160" rx="4.5" ry="5.5" fill="#6d4c41"/>
+    <ellipse cx="99" cy="159" rx="2" ry="2.5" fill="#8d6e63" opacity="0.6"/>
+    <!-- decorative ribbon on top -->
+    <path d="M88,86 Q100,82 112,86" fill="none" stroke="#c62828" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- ribbon bow loops -->
+    <circle cx="86" cy="84" r="5" fill="#d32f2f"/>
+    <circle cx="114" cy="84" r="5" fill="#d32f2f"/>
+    <circle cx="100" cy="83" r="3.5" fill="#b71c1c"/>
+    <!-- holly leaves on ribbon -->
+    <ellipse cx="90" cy="82" rx="4.5" ry="3" fill="#43a047" transform="rotate(-20 90 82)"/>
+    <ellipse cx="98" cy="80" rx="4.5" ry="3" fill="#4caf50"/>
+    <ellipse cx="102" cy="80" rx="4.5" ry="3" fill="#4caf50"/>
+    <ellipse cx="110" cy="82" rx="4.5" ry="3" fill="#43a047" transform="rotate(20 110 82)"/>
+    <!-- holly berries -->
+    <circle cx="94" cy="84" r="2.2" fill="#e53935"/>
+    <circle cx="106" cy="84" r="2.2" fill="#e53935"/>
+    <!-- bell highlights for metallic look -->
+    <ellipse cx="88" cy="98" rx="9" ry="18" fill="#ffffff" opacity="0.35"/>
+    <ellipse cx="85" cy="115" rx="6" ry="12" fill="#ffffff" opacity="0.25"/>
+    <path d="M78,110 Q82,128 86,138" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.2"/>
+    <!-- decorative engravings on bell -->
+    <path d="M90,135 Q100,138 110,135" fill="none" stroke="#f57f17" stroke-width="1.2" opacity="0.6"/>
 </g>'''
 
 
@@ -418,7 +429,7 @@ def generate_svg(
         'candy-cane': get_candy_cane_decoration,
         'bell': get_bell_decoration,
     }
-    
+
     # Get decoration content
     if decoration_type in decoration_map:
         if decoration_type == 'tree':
