@@ -52,9 +52,13 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    ```
 
 6. **Deploy** (choose one):
-   - **Cloudflare Pages** (Recommended): Connect your repo through Cloudflare's web GUI
-     - Build command: (none)
-     - Output directory: `/`
+   - **Cloudflare Pages** (Recommended): 
+     - Connect your repo through Cloudflare's web GUI
+     - **Important for security**: Configure build settings to copy only HTML files:
+       - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+       - Output directory: `public`
+     - This ensures only HTML files are deployed (not scripts, configs, or other repository files)
+     - Your lists will be available at your custom domain
    - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
 
 **That's it!** The GitHub Actions workflows will automatically:
@@ -164,19 +168,24 @@ This repository includes automated workflows:
 This repository is designed to work with **Cloudflare Pages** and custom domains. The single-file HTML design makes deployment simple:
 
 1. **Cloudflare Pages** (Recommended):
-   - Connect your repository to Cloudflare Pages
-   - Set build command: (none needed - static files)
-   - Set output directory: `/`
+   - Connect your repository to Cloudflare Pages through their web GUI
+   - **Important for security**: Configure to deploy only HTML files:
+     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+     - Output directory: `public`
+   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents
+   - Note: This same command is used in the GitHub Pages workflow (`.github/workflows/deploy-pages.yml`)
    - Your lists will be available at your custom domain
 
 2. **GitHub Pages** (Optional):
    - A manual workflow is available if you prefer GitHub Pages
    - Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+   - The workflow uses the same security approach: copying only HTML files to a `public` directory before deployment
    - Enable GitHub Pages in repository settings if needed
 
 3. **Self-hosted**:
    - Simply copy the HTML files to any web server
    - No build process required
+   - Recommended: Copy only `*.html` files for security
 
 ### Per-file Metadata
 
