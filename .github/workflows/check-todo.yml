@@ -1,0 +1,60 @@
+name: Daily TODO Check
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  check-todo:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check if TODO.md is empty
+        id: check-todo
+        run: |
+          python3 scripts/check_todo.py
+          if [ $? -eq 1 ]; then
+            echo "has_content=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_content=false" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
+      - name: Trigger GitHub Copilot Workspace
+        if: steps.check-todo.outputs.has_content == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "TODO.md has content - creating issue to trigger GitHub Copilot Workspace"
+          
+          # Read TODO.md content
+          TODO_CONTENT=$(cat TODO.md)
+          
+          # Create issue to trigger Copilot Workspace
+          gh issue create \
+            --title "Process TODO.md items - $(date +%Y-%m-%d)" \
+            --body "@copilot /workspace
+
+          Please process the following TODO items from TODO.md and create a PR with the necessary changes:
+
+          \`\`\`
+          $TODO_CONTENT
+          \`\`\`
+
+          After completing the work, please clear the TODO.md file or mark items as done." \
+            --label "copilot-workspace,todo-automation"
+          
+          echo "Issue created with @copilot workspace mention to trigger agent session"
