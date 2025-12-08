@@ -1,0 +1,54 @@
+# ---------- Stage 1: builder ----------
+FROM python:3.11-slim AS builder
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+WORKDIR /app
+
+# Build-time system deps for Python packages
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+       build-essential \
+       libffi-dev \
+       libssl-dev \
+       pkg-config \
+       libc6-dev \
+  && python -m pip install --upgrade pip setuptools wheel \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Python deps system-wide (wheels get built here if needed)
+# Copy only requirements.txt for QR generation (minimal attack surface)
+COPY scripts/requirements.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+  && rm /tmp/requirements.txt
+
+# At this point /usr/local has Python + runtime deps system-wide installed.
+
+
+# ---------- Stage 2: runtime ----------
+FROM python:3.11-slim AS runtime
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Copy Python runtime + installed deps (system-wide packages)
+COPY --from=builder /usr/local /usr/local
+
+# Create non-root user
+RUN groupadd -r ci -g 1000 \
+  && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci
+
+USER ci
+WORKDIR /home/ci
+
+# Default command - container is meant to be used with GitHub Actions checkout
+CMD ["python", "--version"]
