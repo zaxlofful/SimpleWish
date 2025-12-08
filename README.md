@@ -400,22 +400,6 @@ Two-step quick example:
 - `--no-decorate` to disable the bottom-right decoration
 - `--logo-size`, `--overlay-mult`, `--overlay-shift-x`, `--overlay-shift-y` to nudge placement
 
-Enjoy! Happy holidays.
-
-## Contributing
-
-Small, focused changes are welcome. Typical workflow:
-
-1. Fork and branch from `main`.
-2. Run lint/tests locally (see `scripts/requirements-dev.txt`).
-3. Open a PR describing the change and linking CI checks.
-
-Keep changes small and preserve the single-file guarantee for per-recipient HTML files.
-
-## Changelog (brief)
-
-- 2025-12-07: First list made and workflows created
-
 ## CI image and secure runner notes
 
 - This repository builds and publishes a minimal Debian-based CI image to GitHub Container Registry (GHCR) and uses that curated image for all CI runs on Linux runners. The image is built from `.github/ci/Dockerfile` (using `python:3.11-slim`) and pushed to `ghcr.io/<owner>/simplewish-ci:<sha>` and `:main` by the automated build workflow.
@@ -446,3 +430,6 @@ Security notes:
 - The CI image is pinned by tag in workflows; for fully immutable runs the image is also published with the commit SHA as a tag (the build workflow does this).
 - The build workflow also runs a vulnerability scan (Trivy). Image signing via `cosign` was previously used but is not performed by the automated build workflow anymore.
 - CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
+
+
+Enjoy! Happy holidays.
