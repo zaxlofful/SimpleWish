@@ -24,10 +24,12 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 1. **Fork this repository** (or use as template)
 
 2. **Configure your domain** (Important!):
-   - Go to your repo → Settings → Secrets and variables → Actions → Variables tab
-   - Click "New repository variable"
+   - Go to your repo → Settings → Secrets and variables → Actions
+   - Option A (Recommended for private repos): Secrets tab → New repository secret
+   - Option B (Easier for public repos): Variables tab → New repository variable
    - Name: `ROOT_DOMAIN`
    - Value: Your deployment URL (e.g., `https://yourname.github.io/SimpleWish` or `https://yourdomain.com`)
+   - Note: Secrets take priority over variables if both are set
 
 3. **Clone your fork**:
    ```bash
