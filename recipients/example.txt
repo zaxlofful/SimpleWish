@@ -1,4 +1,12 @@
+# Example wish list for demonstration
+# Lines starting with # are comments and will be ignored
+# Format: Item description URL
+
 Raspberry Pi 5 — 8GB RAM starter kit https://example.com/raspberry-pi
 Python Crash Course (3rd Edition) https://example.com/python-book
 Mechanical keyboard — Cherry MX Blue switches https://example.com/mechanical-keyboard
 Fitness smartwatch — heart rate monitoring https://example.com/smart-watch
+
+# You can add blank lines for readability - they are ignored
+Noise-cancelling headphones https://example.com/headphones
+Wool scarf — handmade, grey https://example.com/wool-scarf
