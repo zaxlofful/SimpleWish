@@ -10,14 +10,18 @@ based on the template. Each line in the text file should be in the format:
     Item name URL
 
 The generated HTML files will have the same name as the text files (with .html extension).
+
+Requires Python 3.9+
 """
 import argparse
 import glob
+import html
 import os
 import re
+from typing import Tuple, List
 
 
-def parse_recipient_file(file_path: str) -> tuple[str, list[tuple[str, str]]]:
+def parse_recipient_file(file_path: str) -> Tuple[str, List[Tuple[str, str]]]:
     """
     Parse a recipient text file and return the recipient name and list of items.
     
@@ -60,7 +64,7 @@ def parse_recipient_file(file_path: str) -> tuple[str, list[tuple[str, str]]]:
     return recipient_name, items
 
 
-def generate_html_from_template(template_path: str, recipient_name: str, items: list[tuple[str, str]]) -> str:
+def generate_html_from_template(template_path: str, recipient_name: str, items: List[Tuple[str, str]]) -> str:
     """
     Generate HTML content from template and items.
     
@@ -74,30 +78,34 @@ def generate_html_from_template(template_path: str, recipient_name: str, items: 
     """
     with open(template_path, 'r', encoding='utf-8') as f:
         template = f.read()
-    
+
+    # Escape recipient name for safe HTML insertion
+    recipient_name_escaped = html.escape(recipient_name)
+
     # Replace the title
     template = re.sub(
         r'<title>[^<]*</title>',
-        f'<title>{recipient_name}\'s Christmas List</title>',
+        f'<title>{recipient_name_escaped}\'s Christmas List</title>',
         template,
         count=1
     )
-    
+
     # Replace the h1 recipient name
     template = re.sub(
         r'<h1[^>]*id="recipient"[^>]*>[^<]*</h1>',
-        f'<h1 id="recipient">Christmas List for {recipient_name}</h1>',
+        f'<h1 id="recipient">Christmas List for {recipient_name_escaped}</h1>',
         template,
         count=1
     )
-    
+
     # Generate the gift list HTML
     gift_list_html = []
     for description, url in items:
-        # Escape HTML entities in description
-        description_escaped = description.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        # Escape HTML entities in description and URL
+        description_escaped = html.escape(description, quote=True)
+        url_escaped = html.escape(url, quote=True)
         gift_list_html.append(
-            f'          <li><a href="{url}" target="_blank" rel="noopener">{description_escaped}</a></li>'
+            f'          <li><a href="{url_escaped}" target="_blank" rel="noopener">{description_escaped}</a></li>'
         )
     
     gift_list_str = '\n'.join(gift_list_html)
