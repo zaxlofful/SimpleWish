@@ -35,12 +35,15 @@ jobs:
           SECRET_ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
           VAR_ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
         run: |
+          # Start with a safe default
+          echo "ROOT_DOMAIN=https://example.com" >> $GITHUB_ENV
+          # If a repository variable exists, use it (public/overrideable)
+          if [ -n "$VAR_ROOT_DOMAIN" ]; then
+            echo "ROOT_DOMAIN=$VAR_ROOT_DOMAIN" >> $GITHUB_ENV
+          fi
+          # If a secret exists, overwrite the value so private data wins
           if [ -n "$SECRET_ROOT_DOMAIN" ]; then
             echo "ROOT_DOMAIN=$SECRET_ROOT_DOMAIN" >> $GITHUB_ENV
-          elif [ -n "$VAR_ROOT_DOMAIN" ]; then
-            echo "ROOT_DOMAIN=$VAR_ROOT_DOMAIN" >> $GITHUB_ENV
-          else
-            echo "ROOT_DOMAIN=https://example.com" >> $GITHUB_ENV
           fi
 
       - name: Generate URL SVG QR files

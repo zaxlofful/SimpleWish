@@ -30,6 +30,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    - Name: `ROOT_DOMAIN`
    - Value: Your deployment URL (e.g., `https://yourname.github.io/SimpleWish` or `https://yourdomain.com`)
    - Note: Secrets take priority over variables if both are set
+      - Note: Secrets take priority over variables if both are set. The workflow used to generate QR SVGs sets `ROOT_DOMAIN` with the following precedence: default (`https://example.com`) -> repository variable `ROOT_DOMAIN` -> secret `ROOT_DOMAIN` (secret overwrites variable).
 
 3. **Clone your fork**:
    ```bash
@@ -292,6 +293,34 @@ Per-file metadata (`qr-foreground-color`, `qr-background-color`) are used by the
 
 Generating/updating SVGs via CI (recommended)
 - Use CI (GitHub Actions or other) to generate per-page QR images and inject them into the corresponding HTML files before publishing.
+
+Note on CLI defaults: The Python generator (`scripts/generate_qr_svg.py`) will read `ROOT_DOMAIN` from the environment if provided; otherwise it falls back to `https://example.com`. When building per-file public URLs the script appends the filename, so the effective fallback is `https://example.com/index.html` when run against `index.html` without configuration.
+
+Local run examples
+If you want to run the generator locally and ensure it uses your domain, set `ROOT_DOMAIN` in your shell and run the generator. Two examples below (POSIX shell and PowerShell):
+
+POSIX / macOS / Linux (bash/zsh):
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r scripts/requirements.txt
+export ROOT_DOMAIN="https://yourdomain.example"
+python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
+python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+```
+
+Windows PowerShell:
+```powershell
+python -m venv .venv
+& .\.venv\Scripts\Activate.ps1
+pip install -r scripts/requirements.txt
+$env:ROOT_DOMAIN = 'https://yourdomain.example'
+python .\scripts\generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
+python .\scripts\inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+```
+
+Notes:
+- You can also pass `--root-domain` directly to `generate_qr_svg.py`; when `ROOT_DOMAIN` is set in the environment the CLI will use that by default so the explicit flag is optional.
 - High-level CI flow:
 	1. Discover per-recipient files (e.g. `alice.html`, `bob.html`) in the repo.
 	2. Map each filename to its public URL: `https://<root-domain>/<filename>` (ensure filenames are URL-safe).

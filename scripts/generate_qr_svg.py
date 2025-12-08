@@ -537,7 +537,12 @@ def sanitize_svg_for_html(svg: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--root-domain', required=True)
+    parser.add_argument(
+        '--root-domain',
+        dest='root_domain',
+        default=os.environ.get('ROOT_DOMAIN', 'https://example.com'),
+        help='Root domain to build public URLs (can also be set via ROOT_DOMAIN env var)',
+    )
     parser.add_argument('--pattern', default='*.html')
     parser.add_argument('--out-dir', default='scripts/generated_qr')
     parser.add_argument(
