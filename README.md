@@ -150,7 +150,15 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to th
 
 ## 📄 License
 
-This project is provided as-is for personal and educational use.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Attribution Required**: When using this project, you must include the copyright notice and license text. This ensures proper attribution to the original repository.
+
+Key points:
+- ✅ Free to use, modify, and distribute
+- ✅ Can be used commercially
+- ✅ Must include copyright notice and license in copies
+- ✅ Open source and permissive
 
 ---
 
