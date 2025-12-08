@@ -116,9 +116,21 @@ When creating a list for someone (e.g., `alice.html`):
 
 ### Customizing Colors
 
-You can easily customize the entire page theme using meta tags in the `<head>` section - no CSS editing required!
+You can easily customize the page theme by editing the CSS variables at the top of the `<style>` section. Look for the clearly marked customization section:
 
-**QR Code Colors:**
+**Page Theme Colors (edit in `<style>` section):**
+```css
+/* 🎨 CUSTOMIZE YOUR THEME HERE - Change these color values! */
+:root{
+  --bg:#f6f8fb;          /* Page background color */
+  --card:#fff;           /* Card/paper background */
+  --accent:#1565C0;      /* Accent color (headings, links) */
+  --muted:#546E7A;       /* Muted text (subtitles, hints) */
+  ...
+}
+```
+
+**QR Code Colors (via meta tags in `<head>` section):**
 ```html
 <meta name="qr-foreground-color" content="#1565C0">
 <meta name="qr-background-color" content="#E3F2FD">
@@ -126,33 +138,23 @@ You can easily customize the entire page theme using meta tags in the `<head>` s
 <meta name="qr-tree-style" content="fancy">
 ```
 
-**Page Theme Colors:**
-```html
-<meta name="theme-accent" content="#1565C0">      <!-- Headings, links -->
-<meta name="theme-muted" content="#546E7A">       <!-- Subtitles, hints -->
-<meta name="theme-background" content="#f0f4f8">  <!-- Page background -->
-<meta name="theme-card" content="#ffffff">        <!-- Card background -->
-```
+**Example:** The `alice.html` file uses a blue theme:
+- Page CSS: `--accent:#1565C0` (blue for headings/links)
+- QR Code: `<meta name="qr-foreground-color" content="#1565C0">`
 
-**Example:** The `alice.html` file uses blue theme via meta tags:
-```html
-<meta name="qr-foreground-color" content="#1565C0">
-<meta name="qr-background-color" content="#E3F2FD">
-<meta name="theme-accent" content="#1565C0">
-<meta name="theme-muted" content="#546E7A">
-```
+**Color Palette Ideas:**
+- 🔴 Classic Red: `#b71c1c` (default)
+- 🔵 Tech Blue: `#1565C0` (alice.html example)
+- 💚 Forest Green: `#2e7d32`
+- 💜 Royal Purple: `#6a1b9a`
+- 🧡 Warm Orange: `#e65100`
 
-These meta tags are automatically applied via JavaScript when the page loads. No CSS editing needed!
-
-**Advanced:** You can also directly edit CSS variables in the `:root` selector if you prefer:
-```css
-:root {
-  --accent: #1565C0;     /* Primary color */
-  --muted: #546E7A;      /* Muted text color */
-  --bg: #f0f4f8;         /* Background */
-  --card: #ffffff;       /* Card background */
-}
-```
+**Where to Edit:**
+1. Open your HTML file in any text editor
+2. Find the `<style>` section near the top (line ~16)
+3. Look for the comment: `/* 🎨 CUSTOMIZE YOUR THEME HERE */`
+4. Change the color hex codes to your preferred colors
+5. Optionally update QR code colors in the `<meta>` tags
 
 ## 🖨️ Printing
 

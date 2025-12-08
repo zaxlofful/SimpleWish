@@ -10,25 +10,18 @@
          <meta name="qr-decorate" content="true">            (true/false; decoration enabled by default)
          <meta name="qr-tree-style" content="fancy">         (fancy/plain)
   -->
-  
-  <!-- Theme metadata: customize page colors via meta tags (optional - defaults shown below)
-       These are automatically applied to CSS variables on page load.
-       Examples:
-         <meta name="theme-accent" content="#b71c1c">        (primary accent color - headings, links)
-         <meta name="theme-muted" content="#6b7280">         (muted text color - subtitles, hints)
-         <meta name="theme-background" content="#f6f8fb">    (page background color)
-         <meta name="theme-card" content="#ffffff">          (card background color)
-  -->
   <title>Christmas List Template</title>
   <!-- Inline SVG Favicon-->
   <link rel="icon" href="data:image/svg+xml,%0A%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ccircle%20cx='50'%20cy='50'%20r='46'%20fill='%239a9a9a'/%3E%3Cpolygon%20points='50,36%2086,78%2014,78'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,22%2075,60%2025,60'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,10%2062,36%2038,36'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,4%2055,18%2070,18%2058,26%2064,40%2050,32%2036,40%2042,26%2030,18%2045,18'%20fill='%23ffd54a'/%3E%3C/svg%3E">
   <style>
   /* Inlined styles from styles.css for a single-file template */
+  
+  /* 🎨 CUSTOMIZE YOUR THEME HERE - Change these color values to personalize your list! */
   :root{
-    --bg:#f6f8fb;
-    --card:#fff;
-    --accent:#b71c1c;
-    --muted:#6b7280;
+    --bg:#f6f8fb;          /* Page background color */
+    --card:#fff;           /* Card/paper background */
+    --accent:#b71c1c;      /* Accent color (headings, links) - default red */
+    --muted:#6b7280;       /* Muted text (subtitles, hints) */
     --shadow: 0 6px 20px rgba(11,15,30,0.08);
     --radius:14px;
     --max-width:880px;
@@ -224,28 +217,6 @@
     </footer>
   </main>
 
-  <!-- Static, no-JS QR image is used so this template is fully static and GitHub Pages friendly. -->
-  
-  <!-- Optional: Theme customization via meta tags -->
-  <script>
-    (function() {
-      // Read theme meta tags and apply to CSS variables
-      const themeMap = {
-        'theme-accent': '--accent',
-        'theme-muted': '--muted',
-        'theme-background': '--bg',
-        'theme-card': '--card'
-      };
-      
-      const root = document.documentElement;
-      
-      Object.keys(themeMap).forEach(metaName => {
-        const meta = document.querySelector(`meta[name="${metaName}"]`);
-        if (meta && meta.content) {
-          root.style.setProperty(themeMap[metaName], meta.content);
-        }
-      });
-    })();
-  </script>
+  <!-- Static, no-JS template is fully compatible with GitHub Pages and print-to-PDF workflows. -->
 </body>
 </html>
