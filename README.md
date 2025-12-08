@@ -17,20 +17,64 @@ A printable, single-file HTML template for creating personalized Christmas gift 
 
 ## 🚀 Quick Start
 
-### Option 1: Automated Setup (Linux/Mac)
+### Option 1: Use as Template (Recommended)
+
+This is the easiest way to get started. GitHub Actions will handle QR code generation automatically!
+
+1. **Fork this repository** (or use as template)
+
+2. **Configure your domain** (Important!):
+   - Go to your repo → Settings → Secrets and variables → Actions → Variables tab
+   - Click "New repository variable"
+   - Name: `ROOT_DOMAIN`
+   - Value: Your deployment URL (e.g., `https://yourname.github.io/SimpleWish` or `https://yourdomain.com`)
+
+3. **Clone your fork**:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/SimpleWish.git
+   cd SimpleWish
+   ```
+
+4. **Create personalized lists**:
+   ```bash
+   cp index.html alice.html
+   cp index.html bob.html
+   # Edit each file with gift ideas for that person
+   ```
+
+5. **Commit and push**:
+   ```bash
+   git add *.html
+   git commit -m "Add personalized gift lists"
+   git push
+   ```
+
+6. **Deploy** (choose one):
+   - **Cloudflare Pages** (Recommended): Connect your repo through Cloudflare's web GUI
+     - Build command: (none)
+     - Output directory: `/`
+   - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+
+**That's it!** The GitHub Actions workflows will automatically:
+- Generate QR codes for all HTML files using your configured domain
+- Commit them back to your repository
+- Your lists are ready to share!
+
+### Option 2: Local Development Setup
+
+For contributors or advanced users who want to run scripts locally:
 
 ```bash
+# Clone the repository
+git clone https://github.com/YOUR-USERNAME/SimpleWish.git
+cd SimpleWish
+
+# Run the setup script (Linux/Mac)
 ./setup.sh
-```
 
-### Option 2: Manual Setup
-
-```bash
-# Create and activate virtual environment
+# Or manually set up (all platforms)
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
 pip install -r scripts/requirements.txt
 pip install -r scripts/requirements-dev.txt
 
@@ -38,22 +82,31 @@ pip install -r scripts/requirements-dev.txt
 python3 -m pytest
 ```
 
-## 📝 Usage
-
-### Creating a New List
-
-1. **Copy the template**: `cp index.html yourname.html`
-2. **Personalize** the HTML file:
-   - Update the `<title>` and `<h1>` with the recipient's name
-   - Add your gift ideas in the `<ul id="gift-list">` section
-   - Optionally customize colors by changing the `--accent` and other CSS variables
-3. **Generate and inject QR code** (see below)
+## 📝 Customization
 
 ### Example Files
 
 - `index.html` — Base template with classic green theme
 - `alice.html` — Example with blue theme and tech-focused gifts
 
+### Personalizing Your Lists
+
+When creating a list for someone (e.g., `alice.html`):
+
+1. **Update the title and header**:
+   ```html
+   <title>Alice's Christmas List</title>
+   <h1 id="recipient">Christmas List for Alice</h1>
+   ```
+
+2. **Add gift ideas**:
+   ```html
+   <ul id="gift-list" class="gift-list">
+     <li><a href="https://example.com/item" target="_blank" rel="noopener">Item description</a></li>
+   </ul>
+   ```
+
+3. **Customize colors** (optional) - Edit the `:root` CSS variables or add meta tags
 
 ### Customizing Colors
 

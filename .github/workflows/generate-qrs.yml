@@ -32,9 +32,12 @@ jobs:
 
       - name: Set ROOT_DOMAIN (with default)
         env:
+          VAR_ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
           SECRET_ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
         run: |
-          if [ -n "$SECRET_ROOT_DOMAIN" ]; then
+          if [ -n "$VAR_ROOT_DOMAIN" ]; then
+            echo "ROOT_DOMAIN=$VAR_ROOT_DOMAIN" >> $GITHUB_ENV
+          elif [ -n "$SECRET_ROOT_DOMAIN" ]; then
             echo "ROOT_DOMAIN=$SECRET_ROOT_DOMAIN" >> $GITHUB_ENV
           else
             echo "ROOT_DOMAIN=https://example.com" >> $GITHUB_ENV
