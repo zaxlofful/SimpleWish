@@ -150,15 +150,18 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to th
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License** (CC BY-NC-SA 4.0) - see the [LICENSE](LICENSE) file for details.
 
-**Attribution Required**: When using this project, you must include the copyright notice and license text. This ensures proper attribution to the original repository.
+**Key Terms**:
+- ✅ Free to use for personal, educational, and non-commercial purposes
+- ✅ Can modify and adapt the code
+- ✅ Must include attribution to this repository
+- ✅ Share modifications under the same license
+- ❌ **NO commercial use or profit-making without permission**
 
-Key points:
-- ✅ Free to use, modify, and distribute
-- ✅ Can be used commercially
-- ✅ Must include copyright notice and license in copies
-- ✅ Open source and permissive
+**Commercial Use**: If you want to sell this software, use it commercially, or make profit from it, you **must contact the author** (@zaxlofful) for permission.
+
+**Free Use**: You're welcome to use, modify, and share this project freely for non-commercial purposes!
 
 ---
 
