@@ -50,7 +50,5 @@ RUN groupadd -r ci -g 1000 \
 USER ci
 WORKDIR /home/ci
 
-ENV PATH="/home/ci/.local/bin:${PATH}"
-
 # Default command - container is meant to be used with GitHub Actions checkout
 CMD ["python", "--version"]
