@@ -2,11 +2,268 @@
 ![Test](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)
 ![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)
 
-Christmas list template (HTML + CSS)
+# SimpleWish - Christmas List Template
 
-What this is
-- A printable, single-file HTML template intended to be used as a template for one-page gift lists per recipient.
-- All styles are inlined in `index.html` so each generated page is fully self-contained and can be opened locally or hosted on GitHub Pages without build steps.
+A printable, single-file HTML template for creating personalized Christmas gift lists.
+
+## ✨ Features
+
+- **Single-file design** — Each HTML file is completely self-contained (no external dependencies)
+- **Printable** — Optimized layout for printing or saving as PDF
+- **QR codes** — Automatically generated QR codes for easy sharing
+- **Customizable** — Change colors, add your own items, personalize for each recipient
+- **Cloudflare Pages ready** — Designed to work seamlessly with Cloudflare Pages and custom domains
+- **CI/CD ready** — Automated QR generation workflows
+
+## 🚀 Quick Start
+
+### Option 1: Use as Template (Recommended)
+
+This is the easiest way to get started. GitHub Actions will handle QR code generation automatically!
+
+1. **Fork this repository** (or use as template)
+
+2. **Configure your domain** (Important!):
+   - Go to your repo → Settings → Secrets and variables → Actions
+   - Option A (Recommended for private repos): Secrets tab → New repository secret
+   - Option B (Easier for public repos): Variables tab → New repository variable
+   - Name: `ROOT_DOMAIN`
+   - Value: Your deployment URL (e.g., `https://yourname.github.io/SimpleWish` or `https://yourdomain.com`)
+   - Note: Secrets take priority over variables if both are set
+
+3. **Clone your fork**:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/SimpleWish.git
+   cd SimpleWish
+   ```
+
+4. **Create personalized lists**:
+   ```bash
+   cp index.html alice.html
+   cp index.html bob.html
+   # Edit each file with gift ideas for that person
+   ```
+
+5. **Commit and push**:
+   ```bash
+   git add *.html
+   git commit -m "Add personalized gift lists"
+   git push
+   ```
+
+6. **Deploy** (choose one):
+   - **Cloudflare Pages** (Recommended): 
+     - Connect your repo through Cloudflare's web GUI
+     - **Important for security**: Configure build settings to copy only HTML files:
+       - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+       - Output directory: `public`
+     - This ensures only HTML files are deployed (not scripts, configs, or other repository files)
+     - Your lists will be available at your custom domain
+   - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+
+**That's it!** The GitHub Actions workflows will automatically:
+- Generate QR codes for all HTML files using your configured domain
+- Commit them back to your repository
+- Your lists are ready to share!
+
+### Option 2: Local Development Setup
+
+For contributors or advanced users who want to run scripts locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR-USERNAME/SimpleWish.git
+cd SimpleWish
+
+# Run the setup script (Linux/Mac)
+./setup.sh
+
+# Or manually set up (all platforms)
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r scripts/requirements.txt
+pip install -r scripts/requirements-dev.txt
+
+# Run tests to verify
+python3 -m pytest
+```
+
+## 📝 Customization
+
+### Example Files
+
+- `index.html` — Base template with classic green theme
+- `alice.html` — Example with blue theme and tech-focused gifts
+
+### Personalizing Your Lists
+
+When creating a list for someone (e.g., `alice.html`):
+
+1. **Update the title and header**:
+   ```html
+   <title>Alice's Christmas List</title>
+   <h1 id="recipient">Christmas List for Alice</h1>
+   ```
+
+2. **Add gift ideas**:
+   ```html
+   <ul id="gift-list" class="gift-list">
+     <li><a href="https://example.com/item" target="_blank" rel="noopener">Item description</a></li>
+   </ul>
+   ```
+
+3. **Customize colors** (optional) - See "Customizing Colors" section below
+
+### Customizing Colors
+
+You can easily customize the page theme by editing the CSS variables at the top of the `<style>` section. Look for the clearly marked customization section:
+
+**Page Theme Colors (edit in `<style>` section):**
+```css
+/* 🎨 CUSTOMIZE YOUR THEME HERE - Change these color values! */
+:root{
+  --bg:#f6f8fb;          /* Page background color */
+  --card:#fff;           /* Card/paper background */
+  --accent:#1565C0;      /* Accent color (headings, links) */
+  --muted:#546E7A;       /* Muted text (subtitles, hints) */
+  ...
+}
+```
+
+**QR Code Customization (via meta tags in `<head>` section):**
+```html
+<!-- QR Code Colors -->
+<meta name="qr-foreground-color" content="#1565C0">
+<meta name="qr-background-color" content="#E3F2FD">
+
+<!-- QR Decoration (true/false) -->
+<meta name="qr-decorate" content="true">
+
+<!-- Decoration Type (choose one) -->
+<meta name="qr-decoration-type" content="tree">  
+<!-- Options: tree, snowman, santa, gift, star, candy-cane, bell -->
+
+<!-- Tree Style (only applies to tree decoration) -->
+<meta name="qr-tree-style" content="fancy">
+<!-- Options: fancy (with ornaments), plain (simple) -->
+```
+
+**Available Decoration Types:**
+- 🎄 **tree** - Christmas tree (default) - supports `fancy` and `plain` styles
+- ⛄ **snowman** - Classic snowman with hat and scarf
+- 🎅 **santa** - Santa Claus face
+- 🎁 **gift** - Wrapped present with bow
+- ⭐ **star** - Decorative Christmas star
+- 🍬 **candy-cane** - Striped candy cane
+- 🔔 **bell** - Christmas bell with ribbon
+
+**Example:** The `alice.html` file uses a blue theme:
+- Page CSS: `--accent:#1565C0` (blue for headings/links)
+- QR Code: `<meta name="qr-foreground-color" content="#1565C0">`
+- Decoration: Default tree with fancy style
+
+**Color Palette Ideas:**
+- 🔴 Classic Red: `#b71c1c` (default)
+- 🔵 Tech Blue: `#1565C0` (alice.html example)
+- 💚 Forest Green: `#2e7d32`
+- 💜 Royal Purple: `#6a1b9a`
+- 🧡 Warm Orange: `#e65100`
+
+**Where to Edit:**
+1. Open your HTML file in any text editor
+2. Find the `<style>` section near the top (line ~16)
+3. Look for the comment: `/* 🎨 CUSTOMIZE YOUR THEME HERE */`
+4. Change the color hex codes to your preferred colors
+5. Optionally update QR code colors in the `<meta>` tags
+
+## 🖨️ Printing
+
+1. Open the HTML file in your browser
+2. Use Print (Ctrl+P / Cmd+P) or "Save as PDF"
+3. The layout is optimized for printing with:
+   - QR code pinned to top-right
+   - Footer fixed at bottom
+   - Clean, minimal design
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+## 📄 License
+
+This project is licensed under the **Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License** (CC BY-NC-SA 4.0) - see the [LICENSE](LICENSE) file for details.
+
+**Key Terms**:
+- ✅ Free to use for personal, educational, and non-commercial purposes
+- ✅ Can modify and adapt the code
+- ✅ Must include attribution to this repository
+- ✅ Share modifications under the same license
+- ❌ **NO commercial use or profit-making without permission**
+
+**Commercial Use**: If you want to sell this software, use it commercially, or make profit from it, you **must contact the author** (@zaxlofful) for permission.
+
+**Free Use**: You're welcome to use, modify, and share this project freely for non-commercial purposes!
+
+---
+
+## Advanced Topics
+
+### CI/CD with GitHub Actions
+
+This repository includes automated workflows:
+- **Lint** — Runs flake8 on Python code
+- **Test** — Runs pytest test suite
+- **Generate QR** — Automatically generates and commits QR codes
+
+### Deployment Options
+
+This repository is designed to work with **Cloudflare Pages** and custom domains. The single-file HTML design makes deployment simple:
+
+1. **Cloudflare Pages** (Recommended):
+   - Connect your repository to Cloudflare Pages through their web GUI
+   - **Important for security**: Configure to deploy only HTML files:
+     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+     - Output directory: `public`
+   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents
+   - Note: This same command is used in the GitHub Pages workflow (`.github/workflows/deploy-pages.yml`)
+   - Your lists will be available at your custom domain
+
+2. **GitHub Pages** (Optional):
+   - A manual workflow is available if you prefer GitHub Pages
+   - Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+   - The workflow uses the same security approach: copying only HTML files to a `public` directory before deployment
+   - Enable GitHub Pages in repository settings if needed
+
+3. **Self-hosted**:
+   - Simply copy the HTML files to any web server
+   - No build process required
+   - Recommended: Copy only `*.html` files for security
+
+### Per-file Metadata
+
+The QR generation script reads metadata from HTML files:
+
+- `qr-foreground-color` — QR module color
+- `qr-background-color` — QR background color
+- `qr-decorate` — Enable/disable Christmas tree decoration
+- `qr-tree-style` — `fancy` (with baubles) or `plain`
+
+### Privacy
+
+- No external tracking
+- No CDN dependencies
+- QR codes generated locally (no calls to remote services)
+- All assets embedded in the HTML file
+
+### Clean URLs
+
+When adding gift links, remove tracking parameters:
+- ❌ `https://example.com/product?utm_source=email&ref=tracker`
+- ✅ `https://example.com/product`
+
+---
+
+## CI Image and Secure Runners
 
 This is a template (consider renaming the repo when you clone it)
 - Intended workflow:
@@ -57,8 +314,52 @@ How to preview / use locally
 Privacy
 - No external tracking is included by default. The CI-based QR injection pattern avoids runtime calls to remote QR generators. If you add remote scripts or CDNs, document the privacy tradeoffs in this README.
 
-Want a runnable example?
-- The repo includes two small scripts to generate SVGs and then inject them: `scripts/generate_qr_svg.py` and `scripts/inject_qr_svg.py`.
+
+### Generating QR Codes
+
+The repository includes Python scripts to generate and inject QR codes into your HTML files.
+
+**Two-step process:**
+
+```bash
+# 1. Generate QR SVG files
+python3 scripts/generate_qr_svg.py --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
+
+# 2. Inject QR codes into HTML files
+python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+```
+
+**Customization options:**
+
+```bash
+# Use custom colors
+python3 scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --foreground-color "#1565C0" \
+  --background-color "#E3F2FD"
+
+# Disable decoration
+python3 scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --no-decorate
+
+# Use plain tree style
+python3 scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --tree-style plain
+```
+
+See `python3 scripts/generate_qr_svg.py --help` for all options.
+
+## 🎨 Customizing Colors
+
+Want this list to visit (recommended)
 
 Two-step quick example:
 1. python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr

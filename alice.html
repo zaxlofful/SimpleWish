@@ -10,7 +10,9 @@
          <meta name="qr-decorate" content="true">            (true/false; decoration enabled by default)
          <meta name="qr-tree-style" content="fancy">         (fancy/plain)
   -->
-  <title>Christmas List Template</title>
+  <meta name="qr-foreground-color" content="#1565C0">
+  <meta name="qr-background-color" content="#E3F2FD">
+  <title>Alice's Christmas List</title>
   <!-- Inline SVG Favicon-->
   <link rel="icon" href="data:image/svg+xml,%0A%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ccircle%20cx='50'%20cy='50'%20r='46'%20fill='%239a9a9a'/%3E%3Cpolygon%20points='50,36%2086,78%2014,78'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,22%2075,60%2025,60'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,10%2062,36%2038,36'%20fill='%230b6623'/%3E%3Cpolygon%20points='50,4%2055,18%2070,18%2058,26%2064,40%2050,32%2036,40%2042,26%2030,18%2045,18'%20fill='%23ffd54a'/%3E%3C/svg%3E">
   <style>
@@ -20,8 +22,8 @@
   :root{
     --bg:#f6f8fb;          /* Page background color */
     --card:#fff;           /* Card/paper background */
-    --accent:#b71c1c;      /* Accent color (headings, links) - default red */
-    --muted:#6b7280;       /* Muted text (subtitles, hints) */
+    --accent:#1565C0;      /* Accent color (headings, links) - Alice's blue theme */
+    --muted:#546E7A;       /* Muted text (subtitles, hints) */
     --shadow: 0 6px 20px rgba(11,15,30,0.08);
     --radius:14px;
     --max-width:880px;
@@ -104,12 +106,12 @@
   <main class="card">
     <header class="card-header">
       <div class="title">
-        <h1 id="recipient">Christmas List for [Recipient Name]</h1>
-        <p class="sub">A curated list of gift suggestions</p>
+        <h1 id="recipient">Christmas List for Alice</h1>
+        <p class="sub">Tech and books — 2024</p>
       </div>
       <div class="qrcode-box">
         <!-- QR-PLACEHOLDER-START -->
-            <svg class="segno" data-qr-default-foreground-color="#0b6623" width="250" height="250" viewBox="0 0 41 41"><path fill="#fff" d="M0 0h41v41h-41z"/><path class="qrline" stroke="#0b6623" d="M0 0.5h7m3 0h2m2 0h1m2 0h1m1 0h1m3 0h1m1 0h1m4 0h1m1 0h1m1 0h7m-41 1h1m5 0h1m2 0h2m2 0h2m1 0h2m1 0h3m3 0h2m1 0h2m1 0h2m1 0h1m5 0h1m-41 1h1m1 0h3m1 0h1m1 0h2m2 0h1m8 0h1m1 0h1m1 0h3m1 0h3m2 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m1 0h1m2 0h3m4 0h1m1 0h4m2 0h1m4 0h2m1 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m3 0h1m1 0h4m1 0h1m2 0h1m1 0h1m1 0h2m1 0h2m1 0h2m2 0h1m1 0h3m1 0h1m-41 1h1m5 0h1m2 0h3m1 0h4m1 0h1m1 0h3m7 0h1m1 0h1m1 0h1m5 0h1m-41 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-30 1h1m1 0h1m2 0h1m1 0h2m1 0h2m4 0h2m1 0h2m-29 1h2m1 0h2m1 0h1m2 0h1m6 0h8m1 0h2m1 0h2m4 0h2m-39 1h1m3 0h1m5 0h1m2 0h1m2 0h1m3 0h3m1 0h4m2 0h2m1 0h4m-32 1h4m1 0h1m2 0h1m2 0h2m1 0h1m1 0h4m1 0h3m1 0h1m3 0h1m1 0h1m1 0h1m-39 1h4m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m2 0h3m1 0h1m2 0h2m1 0h4m1 0h1m1 0h2m-37 1h1m1 0h2m1 0h3m1 0h2m1 0h2m3 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h1m2 0h3m-35 1h2m2 0h1m2 0h1m2 0h1m2 0h2m2 0h1m3 0h4m2 0h5m2 0h2m1 0h1m1 0h1m-41 1h1m4 0h2m2 0h1m4 0h3m1 0h2m1 0h1m2 0h3m1 0h2m1 0h5m4 0h1m-41 1h4m3 0h3m3 0h1m3 0h1m1 0h1m1 0h2m1 0h4m4 0h2m1 0h6m-41 1h1m1 0h1m1 0h1m1 0h1m2 0h3m4 0h1m1 0h5m2 0h2m5 0h2m5 0h2m-34 1h1m3 0h1m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h5m2 0h4m-40 1h1m4 0h2m1 0h2m1 0h1m2 0h2m3 0h2m1 0h3m2 0h5m1 0h1m1 0h2m1 0h1m1 0h1m-41 1h1m1 0h3m5 0h2m1 0h7m1 0h1m4 0h1m1 0h1m3 0h2m2 0h1m1 0h1m1 0h1m-39 1h1m1 0h4m2 0h1m1 0h1m1 0h1m1 0h8m1 0h1m1 0h2m1 0h3m1 0h1m3 0h1m1 0h1m-40 1h5m2 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h3m2 0h1m1 0h1m1 0h2m-36 1h1m1 0h4m1 0h3m3 0h1m2 0h4m2 0h2m2 0h4m1 0h1m3 0h1m1 0h1m-38 1h1m2 0h2m1 0h3m2 0h1m1 0h3m1 0h4m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m3 0h1m1 0h2m-40 1h4m1 0h3m2 0h1m4 0h1m1 0h2m2 0h2m2 0h1m1 0h1m3 0h1m1 0h2m3 0h2m-41 1h1m1 0h1m6 0h1m5 0h2m3 0h6m1 0h3m2 0h1m1 0h3m1 0h1m1 0h1m-41 1h2m2 0h4m4 0h2m6 0h1m1 0h1m2 0h5m1 0h4m1 0h2m1 0h2m-39 1h1m2 0h1m1 0h3m1 0h4m7 0h1m1 0h1m5 0h2m2 0h2m1 0h2m1 0h1m-41 1h1m1 0h1m1 0h1m1 0h4m1 0h1m1 0h1m1 0h2m3 0h2m1 0h1m1 0h1m2 0h1m2 0h3m1 0h1m1 0h1m1 0h2m-41 1h2m2 0h1m2 0h2m1 0h1m1 0h1m1 0h2m2 0h3m2 0h1m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h3m-39 1h2m4 0h1m2 0h2m1 0h3m2 0h4m1 0h1m1 0h2m1 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1m-41 1h4m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1m4 0h1m7 0h2m1 0h4m-41 1h2m1 0h1m1 0h5m1 0h4m3 0h4m2 0h6m2 0h9m-33 1h1m1 0h2m1 0h1m4 0h5m4 0h1m1 0h4m3 0h1m1 0h1m-39 1h7m1 0h5m4 0h1m7 0h1m1 0h1m3 0h2m1 0h1m1 0h1m1 0h1m-39 1h1m5 0h1m9 0h1m1 0h1m2 0h1m1 0h5m2 0h3m3 0h2m-38 1h1m1 0h3m1 0h1m1 0h4m2 0h2m1 0h3m3 0h2m1 0h1m1 0h2m1 0h7m2 0h1m-41 1h1m1 0h3m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m1 0h1m5 0h3m1 0h4m1 0h1m2 0h1m2 0h3m-41 1h1m1 0h3m1 0h1m3 0h2m2 0h1m1 0h3m2 0h3m3 0h1m2 0h4m1 0h3m1 0h2m-41 1h1m5 0h1m2 0h1m1 0h1m1 0h3m5 0h1m3 0h2m1 0h1m1 0h1m2 0h2m1 0h3m1 0h1m-41 1h7m2 0h1m1 0h1m2 0h5m2 0h1m2 0h2m5 0h3m2 0h1"/>
+            <svg class="segno" data-qr-default-foreground-color="#1565C0" width="250" height="250" viewBox="0 0 41 41"><path fill="#e3f2fd" d="M0 0h41v41h-41z"/><path class="qrline" stroke="#1565c0" d="M0 0.5h7m5 0h3m2 0h2m1 0h1m1 0h2m4 0h4m2 0h7m-41 1h1m5 0h1m3 0h1m7 0h4m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m5 0h1m-41 1h1m1 0h3m1 0h1m2 0h5m2 0h1m2 0h1m1 0h1m1 0h7m1 0h1m2 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h1m1 0h2m3 0h1m3 0h2m2 0h1m2 0h1m1 0h3m1 0h1m-41 1h1m1 0h3m1 0h1m1 0h3m2 0h2m2 0h1m2 0h2m3 0h1m2 0h1m2 0h1m2 0h1m1 0h3m1 0h1m-41 1h1m5 0h1m2 0h2m1 0h1m1 0h4m1 0h7m3 0h1m1 0h2m1 0h1m5 0h1m-41 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-33 1h1m3 0h1m3 0h2m3 0h5m1 0h3m-28 1h2m2 0h3m6 0h1m2 0h3m1 0h2m1 0h10m1 0h1m-36 1h3m4 0h2m3 0h3m8 0h2m2 0h1m1 0h3m2 0h2m1 0h3m-41 1h2m1 0h4m2 0h2m1 0h2m1 0h5m2 0h2m2 0h1m1 0h1m4 0h2m3 0h2m-36 1h1m3 0h2m3 0h1m2 0h3m1 0h2m2 0h4m4 0h1m1 0h2m-36 1h8m8 0h4m1 0h2m1 0h1m1 0h1m2 0h5m3 0h2m1 0h1m-41 1h1m1 0h1m4 0h2m4 0h3m1 0h1m1 0h1m2 0h2m1 0h1m2 0h1m3 0h1m4 0h2m1 0h1m-38 1h1m1 0h2m3 0h1m4 0h2m2 0h3m1 0h2m2 0h6m1 0h3m2 0h2m-41 1h2m2 0h1m2 0h1m2 0h2m2 0h1m2 0h1m2 0h1m2 0h1m4 0h1m5 0h4m-36 1h3m1 0h1m3 0h1m7 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h1m1 0h1m3 0h1m3 0h1m-41 1h2m3 0h1m5 0h1m5 0h3m4 0h2m1 0h1m4 0h2m1 0h1m2 0h2m-40 1h3m1 0h1m1 0h2m2 0h2m2 0h1m1 0h2m1 0h4m1 0h5m1 0h1m1 0h3m1 0h2m-37 1h5m1 0h1m1 0h1m1 0h1m4 0h6m1 0h1m5 0h5m1 0h1m1 0h2m1 0h1m-41 1h1m1 0h1m1 0h4m1 0h1m3 0h2m1 0h1m1 0h4m2 0h1m1 0h3m2 0h4m1 0h1m1 0h3m-40 1h1m1 0h1m1 0h1m1 0h1m4 0h1m1 0h2m2 0h1m2 0h1m2 0h1m1 0h1m4 0h2m1 0h3m1 0h3m-41 1h3m1 0h3m1 0h1m1 0h1m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1m4 0h2m2 0h2m4 0h2m-39 1h1m3 0h1m1 0h1m1 0h1m1 0h1m1 0h5m2 0h2m2 0h1m2 0h1m2 0h2m1 0h1m1 0h2m2 0h2m-40 1h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h2m2 0h2m1 0h1m4 0h1m3 0h1m1 0h1m5 0h3m-39 1h1m2 0h1m2 0h1m1 0h1m1 0h3m1 0h8m4 0h2m1 0h3m1 0h1m2 0h2m1 0h1m-41 1h3m1 0h1m1 0h4m3 0h1m1 0h1m2 0h1m1 0h3m1 0h3m1 0h5m1 0h1m2 0h1m2 0h1m-40 1h2m4 0h1m2 0h4m1 0h2m3 0h2m2 0h1m1 0h3m1 0h4m1 0h1m1 0h1m-38 1h2m1 0h1m1 0h2m1 0h1m2 0h3m2 0h1m1 0h1m4 0h3m1 0h2m1 0h3m2 0h3m1 0h1m-36 1h1m3 0h4m2 0h1m2 0h1m1 0h2m3 0h1m3 0h1m2 0h2m1 0h2m2 0h1m-39 1h1m1 0h1m1 0h6m4 0h1m6 0h1m2 0h5m1 0h2m1 0h2m-33 1h2m5 0h1m1 0h3m2 0h3m1 0h3m1 0h2m3 0h3m2 0h1m1 0h1m1 0h3m-40 1h1m3 0h4m2 0h1m5 0h3m1 0h2m1 0h3m1 0h3m1 0h7m1 0h1m-33 1h1m1 0h2m4 0h1m2 0h2m1 0h1m2 0h1m2 0h5m3 0h1m2 0h2m-41 1h7m1 0h3m1 0h2m1 0h2m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h3m1 0h1m1 0h1m1 0h2m-40 1h1m5 0h1m3 0h3m4 0h3m1 0h1m4 0h1m2 0h1m2 0h1m3 0h1m-37 1h1m1 0h3m1 0h1m3 0h2m1 0h4m1 0h7m1 0h1m5 0h5m1 0h1m-39 1h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h2m2 0h2m2 0h1m3 0h3m2 0h2m3 0h5m-41 1h1m1 0h3m1 0h1m1 0h5m1 0h4m4 0h3m6 0h2m2 0h1m1 0h1m2 0h1m-41 1h1m5 0h1m3 0h2m1 0h1m2 0h1m3 0h1m1 0h1m2 0h1m1 0h1m2 0h1m1 0h1m3 0h2m1 0h1m-40 1h7m4 0h2m1 0h1m1 0h2m7 0h1m1 0h1m2 0h3m6 0h1"/>
             <g id="xmas-tree" transform="translate(23.37, 20.09) scale(0.123000)" aria-hidden="true">
             <g>
                 <!-- layered green foliage -->
@@ -195,11 +197,13 @@
       </div>
       <section class="list-section">
         <h2>Gift Ideas</h2>
-        <p class="hint">Demo list</p>
+        <p class="hint">Books, tech, and gadgets</p>
         <ul id="gift-list" class="gift-list">
-          <li><a href="https://example.com/cozy-socks" target="_blank" rel="noopener">Cozy wool socks — medium</a></li>
-          <li><a href="https://example.com/board-game" target="_blank" rel="noopener">Strategy board game — 2-4 players</a></li>
-          <li><a href="https://example.com/novel" target="_blank" rel="noopener">Paperback novel — literary fiction</a></li>
+          <li><a href="https://example.com/raspberry-pi" target="_blank" rel="noopener">Raspberry Pi 5 — 8GB RAM starter kit</a></li>
+          <li><a href="https://example.com/python-book" target="_blank" rel="noopener">Python Crash Course (3rd Edition)</a></li>
+          <li><a href="https://example.com/mechanical-keyboard" target="_blank" rel="noopener">Mechanical keyboard — Cherry MX Blue switches</a></li>
+          <li><a href="https://example.com/smart-watch" target="_blank" rel="noopener">Fitness smartwatch — heart rate monitoring</a></li>
+          <li><a href="https://example.com/design-patterns" target="_blank" rel="noopener">Head First Design Patterns (2nd Edition)</a></li>
           <li><a href="https://example.com/wool-scarf" target="_blank" rel="noopener">Handmade wool scarf — grey</a></li>
           <li><a href="https://example.com/headphones" target="_blank" rel="noopener">Noise-cancelling headphones</a></li>
           <li><a href="https://example.com/gift-card" target="_blank" rel="noopener">Gift card — favorite store</a></li>
