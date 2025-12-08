@@ -26,7 +26,7 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       
-      # Not logging into GHCR inside container; rely on job 'packages: read' permission instead.
+      # Authenticated to GHCR for secure image pulls
       # Create venv with --system-site-packages to use container's pre-installed packages
       - name: Create venv with system-site-packages
         run: |
