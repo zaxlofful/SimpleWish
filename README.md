@@ -130,17 +130,37 @@ You can easily customize the page theme by editing the CSS variables at the top 
 }
 ```
 
-**QR Code Colors (via meta tags in `<head>` section):**
+**QR Code Customization (via meta tags in `<head>` section):**
 ```html
+<!-- QR Code Colors -->
 <meta name="qr-foreground-color" content="#1565C0">
 <meta name="qr-background-color" content="#E3F2FD">
+
+<!-- QR Decoration (true/false) -->
 <meta name="qr-decorate" content="true">
+
+<!-- Decoration Type (choose one) -->
+<meta name="qr-decoration-type" content="tree">  
+<!-- Options: tree, snowman, santa, gift, star, candy-cane, bell -->
+
+<!-- Tree Style (only applies to tree decoration) -->
 <meta name="qr-tree-style" content="fancy">
+<!-- Options: fancy (with ornaments), plain (simple) -->
 ```
+
+**Available Decoration Types:**
+- 🎄 **tree** - Christmas tree (default) - supports `fancy` and `plain` styles
+- ⛄ **snowman** - Classic snowman with hat and scarf
+- 🎅 **santa** - Santa Claus face
+- 🎁 **gift** - Wrapped present with bow
+- ⭐ **star** - Decorative Christmas star
+- 🍬 **candy-cane** - Striped candy cane
+- 🔔 **bell** - Christmas bell with ribbon
 
 **Example:** The `alice.html` file uses a blue theme:
 - Page CSS: `--accent:#1565C0` (blue for headings/links)
 - QR Code: `<meta name="qr-foreground-color" content="#1565C0">`
+- Decoration: Default tree with fancy style
 
 **Color Palette Ideas:**
 - 🔴 Classic Red: `#b71c1c` (default)
