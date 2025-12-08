@@ -210,29 +210,30 @@ def get_santa_decoration() -> str:
     <!-- face -->
     <circle cx="100" cy="100" r="45" fill="#fdd0b5"/>
     <!-- hat -->
-    <path d="M60,85 Q100,50 140,85 L140,95 Q100,100 60,95 Z" fill="#b71c1c"/>
-    <ellipse cx="100" cy="95" rx="42" ry="6" fill="#ffffff"/>
-    <!-- hat pom-pom -->
-    <circle cx="100" cy="48" r="8" fill="#ffffff"/>
+    <!-- adjust hat so it sits naturally on the head (slightly nudged up by 1px) -->
+    <path d="M60,72 Q100,37 140,72 L140,82 Q100,87 60,82 Z" fill="#b71c1c"/>
+    <ellipse cx="100" cy="82" rx="42" ry="6" fill="#ffffff"/>
+    <!-- hat pom-pom (nudged up to match brim) -->
+    <circle cx="100" cy="49" r="8" fill="#ffffff"/>
     <!-- eyes -->
     <circle cx="85" cy="95" r="4" fill="#2c2c2c"/>
     <circle cx="115" cy="95" r="4" fill="#2c2c2c"/>
-    <!-- rosy cheeks -->
-    <circle cx="75" cy="105" r="6" fill="#ff8a80" opacity="0.6"/>
-    <circle cx="125" cy="105" r="6" fill="#ff8a80" opacity="0.6"/>
+    <!-- rosy cheeks (moved slightly farther from the nose and kept aligned) -->
+    <circle cx="70" cy="105" r="7" fill="#ff8a80" opacity="0.6"/>
+    <circle cx="130" cy="105" r="7" fill="#ff8a80" opacity="0.6"/>
     <!-- nose -->
     <ellipse cx="100" cy="105" rx="5" ry="6" fill="#ff6b6b"/>
-    <!-- mustache -->
-    <ellipse cx="85" cy="115" rx="12" ry="6" fill="#ffffff"/>
-    <ellipse cx="115" cy="115" rx="12" ry="6" fill="#ffffff"/>
+    <!-- mustache (brought the two pieces slightly closer together) -->
+    <ellipse cx="87" cy="115" rx="12" ry="5" fill="#ffffff"/>
+    <ellipse cx="113" cy="115" rx="12" ry="5" fill="#ffffff"/>
     <!-- beard -->
     <path d="M70,120 Q100,155 130,120 Q125,140 100,145 Q75,140 70,120" fill="#ffffff"/>
     <!-- beard details (curls) -->
     <circle cx="80" cy="130" r="5" fill="#f5f5f5"/>
     <circle cx="100" cy="138" r="5" fill="#f5f5f5"/>
     <circle cx="120" cy="130" r="5" fill="#f5f5f5"/>
-    <!-- smile -->
-    <path d="M92,118 Q100,122 108,118" fill="none" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- smile (moved slightly lower) -->
+    <path d="M92,124 Q100,128 108,124" fill="none" stroke="#8b4513" stroke-width="1.5" stroke-linecap="round"/>
 </g>'''
 
 
@@ -271,28 +272,22 @@ def get_star_decoration() -> str:
         fill="#fff176"/>
     <!-- center highlight -->
     <circle cx="100" cy="100" r="8" fill="#ffeb3b"/>
-    <!-- sparkle points -->
-    <circle cx="100" cy="52" r="3" fill="#ffffff" opacity="0.9"/>
-    <circle cx="126" cy="148" r="2.5" fill="#ffffff" opacity="0.9"/>
-    <circle cx="74" cy="148" r="2.5" fill="#ffffff" opacity="0.9"/>
-    <circle cx="143" cy="91" r="2.5" fill="#ffffff" opacity="0.9"/>
-    <circle cx="57" cy="91" r="2.5" fill="#ffffff" opacity="0.9"/>
 </g>'''
 
 
 def get_candy_cane_decoration() -> str:
     """Generate candy cane decoration SVG."""
-    return '''<g>
+    return '''<g transform="translate(230,12) scale(-1,1)">
     <!-- main cane shape -->
     <path d="M100,180 L100,100 Q100,70 120,70 Q140,70 140,90 Q140,110 120,110" 
         fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round"/>
-    <!-- red stripes -->
-    <path d="M100,175 L100,160" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M100,150 L100,135" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
+    <!-- red stripes (spaced out to avoid overlap) -->
+    <path d="M100,175 L100,162" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
+    <path d="M100,150 L100,136" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
     <path d="M100,125 L100,110" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M102,100 Q102,75 118,75" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M125,78 Q135,78 135,88" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
-    <path d="M135,98 Q135,105 128,107" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
+    <path d="M102,96 Q102,70 120,70" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
+    <path d="M122,72 Q132,72 132,84" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
+    <path d="M132,96 Q132,103 124,105" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
     <!-- highlight/shine -->
     <path d="M95,170 L95,105" stroke="#ffffff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
 </g>'''
@@ -301,26 +296,26 @@ def get_candy_cane_decoration() -> str:
 def get_bell_decoration() -> str:
     """Generate Christmas bell decoration SVG."""
     return '''<g>
-    <!-- bell body -->
-    <path d="M70,100 Q70,80 100,80 Q130,80 130,100 L135,130 Q135,140 125,145 L125,150 Q125,155 100,155 Q75,155 75,150 L75,145 Q65,140 65,130 Z" 
-        fill="#ffd54a" stroke="#daa520" stroke-width="1.5"/>
-    <!-- bell rim -->
-    <ellipse cx="100" cy="150" rx="27" ry="8" fill="#daa520"/>
-    <!-- bell clapper -->
-    <ellipse cx="100" cy="158" rx="5" ry="7" fill="#8b0000"/>
-    <!-- ribbon/bow on top -->
-    <path d="M90,75 Q100,70 110,75" fill="none" stroke="#b71c1c" stroke-width="4" stroke-linecap="round"/>
-    <circle cx="88" cy="73" r="5" fill="#b71c1c"/>
-    <circle cx="112" cy="73" r="5" fill="#b71c1c"/>
-    <!-- bell highlights -->
-    <ellipse cx="85" cy="95" rx="8" ry="15" fill="#ffffff" opacity="0.4"/>
-    <path d="M78,110 Q80,125 82,135" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.3"/>
+    <!-- bell body (reduced size) -->
+    <path d="M72,100 Q72,82 100,82 Q128,82 128,100 L132,126 Q132,134 122,140 L122,144 Q122,148 100,148 Q78,148 78,144 L78,140 Q68,134 68,126 Z" 
+        fill="#ffd54a" stroke="#d3a21a" stroke-width="1.5"/>
+    <!-- bell rim (slightly raised) -->
+    <ellipse cx="100" cy="148" rx="26" ry="7" fill="#d3a21a"/>
+    <!-- bell clapper (slightly higher) -->
+    <ellipse cx="100" cy="156" rx="5" ry="6" fill="#8b0000"/>
+    <!-- ribbon/bow on top (moved down to sit on bell) -->
+    <path d="M90,80 Q100,76 110,80" fill="none" stroke="#b71c1c" stroke-width="3.5" stroke-linecap="round"/>
+    <circle cx="88" cy="78" r="4.5" fill="#b71c1c"/>
+    <circle cx="112" cy="78" r="4.5" fill="#b71c1c"/>
+    <!-- bell highlights (more visible) -->
+    <ellipse cx="86" cy="94" rx="10" ry="16" fill="#ffffff" opacity="0.45"/>
+    <path d="M76,108 Q80,126 84,136" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.35"/>
     <!-- decorative holly -->
-    <circle cx="95" cy="78" r="3" fill="#b71c1c"/>
-    <circle cx="105" cy="78" r="3" fill="#b71c1c"/>
-    <ellipse cx="92" cy="75" rx="4" ry="3" fill="#2e7d32"/>
-    <ellipse cx="100" cy="74" rx="4" ry="3" fill="#2e7d32"/>
-    <ellipse cx="108" cy="75" rx="4" ry="3" fill="#2e7d32"/>
+    <circle cx="95" cy="82" r="3" fill="#b71c1c"/>
+    <circle cx="105" cy="82" r="3" fill="#b71c1c"/>
+    <ellipse cx="92" cy="79" rx="4" ry="3" fill="#2e7d32"/>
+    <ellipse cx="100" cy="78" rx="4" ry="3" fill="#2e7d32"/>
+    <ellipse cx="108" cy="79" rx="4" ry="3" fill="#2e7d32"/>
 </g>'''
 
 
@@ -482,6 +477,28 @@ def generate_svg(
         # apply vertical shift (positive moves down)
         overlay_shift_y = float(globals().get('__overlay_shift_y__', 0.0))
         ty = ty + (rect_h * overlay_shift_y)
+
+        # Decoration-specific nudges to tweak visual placement per decoration
+        # These are small, conservative offsets expressed relative to the
+        # reserved rect size so they scale with SVG size.
+        if decoration_type == 'bell':
+            # bell should be slightly lower and right
+            tx += rect_w * 0.10
+            ty += rect_h * 0.12
+        elif decoration_type == 'star':
+            # star tends to sit too high; nudge downward (much bigger nudge)
+            tx += rect_w * 0.10
+            ty += rect_h * 0.50
+        elif decoration_type == 'santa':
+            # santa was sitting too high (match star nudge)
+            ty += rect_h * 0.50
+        elif decoration_type == 'snowman':
+            # snowman should be shifted slightly to the right
+            tx += rect_w * 0.06
+            ty += rect_h * 0.45
+        elif decoration_type == 'gift':
+            # gift should move slightly right
+            tx += rect_w * 0.05
 
         # Build overlay variant using the chosen inner content
         deco_group = (
