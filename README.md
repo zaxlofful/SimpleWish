@@ -55,10 +55,10 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 6. **Deploy** (choose one):
    - **Cloudflare Pages** (Recommended): 
      - Connect your repo through Cloudflare's web GUI
-     - **Important for security**: Configure build settings to copy only HTML files:
-       - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+     - **Important for security**: Configure build settings to copy only HTML files (excluding alice.html):
+       - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' ! -name 'alice.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
        - Output directory: `public`
-     - This ensures only HTML files are deployed (not scripts, configs, or other repository files)
+     - This ensures only HTML files are deployed (not scripts, configs, or other repository files), and excludes the alice.html example file
      - Your lists will be available at your custom domain
    - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
 
@@ -222,10 +222,10 @@ This repository is designed to work with **Cloudflare Pages** and custom domains
 
 1. **Cloudflare Pages** (Recommended):
    - Connect your repository to Cloudflare Pages through their web GUI
-   - **Important for security**: Configure to deploy only HTML files:
-     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+   - **Important for security**: Configure to deploy only HTML files (excluding alice.html):
+     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' ! -name 'alice.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
      - Output directory: `public`
-   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents
+   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents. The alice.html file is excluded as it's an example file.
    - Note: This same command is used in the GitHub Pages workflow (`.github/workflows/deploy-pages.yml`)
    - Your lists will be available at your custom domain
 
