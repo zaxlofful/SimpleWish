@@ -76,22 +76,37 @@ def test_read_meta_tags_from_html(tmp_path):
 def test_qr_generation_matches_reference():
     """Test that QR generation with default settings produces consistent output.
     
-    This test generates a QR code with default settings and compares its hash
-    to a reference file to ensure the QR generation is deterministic and correct.
+    This test generates a QR code with default settings (matching the command:
+    python scripts/generate_qr_svg.py --root-domain "https://example.com" 
+    --pattern "index.html" --out-dir scripts/generated_qr) and compares its 
+    hash to a reference file to ensure the QR generation is deterministic.
     """
-    # Generate QR with default settings (same as reference)
+    from scripts.generate_qr_svg import sanitize_svg_for_html
+    import scripts.generate_qr_svg as gen_module
+    
+    # Set the global variables that control overlay positioning
+    # These match the defaults from argparse (lines 392-415)
+    gen_module.__overlay_multiplier__ = 3.0   # --overlay-mult default
+    gen_module.__overlay_shift_x__ = 0.90     # --overlay-shift-x default
+    gen_module.__overlay_shift_y__ = 0.50     # --overlay-shift-y default
+    
+    # Generate QR with default CLI settings for index.html
+    # These match the defaults from argparse in generate_qr_svg.py
     svg = generate_svg(
-        url='https://example.com/reference',
-        foreground_color='#0b6623',
-        background_color='#ffffff',
-        decorate=True,
-        border=0,
-        logo_size_pct=20.0,
-        logo_pos='bottom-right',
-        reserve_mode='overlay',
-        ecc='H',
-        tree_style='fancy'
+        url='https://example.com/index.html',
+        foreground_color='#0b6623',      # --foreground-color default
+        background_color='#ffffff',      # --background-color default
+        decorate=True,                   # decoration is enabled by default
+        border=0,                        # border=0 when reserve_mode='overlay'
+        logo_size_pct=20.0,             # --logo-size default
+        logo_pos='bottom-right',         # default position when decorating
+        reserve_mode='overlay',          # default mode when decorating
+        ecc='H',                         # --ecc default
+        tree_style='fancy'               # --tree-style default
     )
+    
+    # Apply the same sanitization that the CLI script applies
+    svg = sanitize_svg_for_html(svg)
     
     # Calculate hash of generated SVG
     generated_hash = hashlib.sha256(svg.encode('utf-8')).hexdigest()
