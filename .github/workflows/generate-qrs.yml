@@ -26,7 +26,14 @@ jobs:
       # Note: do NOT run docker login inside the job container (docker binary is unavailable
       # inside many job containers). Job-level permissions 'packages: read' are set so the
       # container runtime can pull images when appropriate.
-      # Dependencies are pre-installed system-wide in the container image
+      # Create venv with --system-site-packages to use container's pre-installed packages
+
+      - name: Create venv with system-site-packages
+        run: |
+          python -m venv --system-site-packages .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
 
       - name: Set ROOT_DOMAIN (with default)
         env:
@@ -40,15 +47,15 @@ jobs:
 
       - name: Generate URL SVG QR files
         run: |
-          python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+          ./.venv/bin/python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
 
       - name: Run tests
         run: |
-          python -m pytest -q
+          ./.venv/bin/python -m pytest -q
 
       - name: Inject SVGs into HTML files
         run: |
-          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          ./.venv/bin/python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Check for changes
         id: git-changes

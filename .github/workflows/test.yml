@@ -21,7 +21,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # Not logging into GHCR inside container; rely on job 'packages: read' permission instead.
-      # Dependencies are pre-installed system-wide in the container image
+      # Create venv with --system-site-packages to use container's pre-installed packages
+      - name: Create venv with system-site-packages
+        run: |
+          python -m venv --system-site-packages .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
       - name: Run tests
         run: |
-          python -m pytest -q
+          ./.venv/bin/python -m pytest -q
