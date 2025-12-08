@@ -1,0 +1,51 @@
+name: Render README from template
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    name: Render README
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies (if present)
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f scripts/requirements.txt ]; then pip install -r scripts/requirements.txt; fi
+
+      - name: Render README
+        run: python scripts/render_readme.py
+
+      - name: Check for changes
+        id: git-changes
+        run: |
+          echo "CHANGED=$(git status --porcelain)" >> $GITHUB_OUTPUT
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit changes
+        if: steps.git-changes.outputs.changes == 'true'
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: "chore: Fix README links"
+          file_pattern: "README.md"
+          branch: ${{ github.ref_name }}
