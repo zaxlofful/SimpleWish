@@ -18,12 +18,21 @@ jobs:
       contents: read
       packages: read
     container:
-      image: ghcr.io/${{ github.repository_owner }}/simplewish-ci:main
+      image: ghcr.io/${{ github.repository_owner }}/simplewish-infra:main
       options: --user 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      # Not logging into GHCR inside container; rely on job 'packages: read' permission instead.
+      
+      # Log in to GHCR to prevent anonymous image pulls and potential interception
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Authenticated to GHCR for secure image pulls
       - name: Set up Python
         uses: actions/setup-python@v4
         with:

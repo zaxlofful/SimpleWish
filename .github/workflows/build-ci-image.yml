@@ -18,7 +18,8 @@ jobs:
         run: |
           echo "Running Trivy filesystem scan on repository (debug mode; fails on HIGH/CRITICAL)..."
           # Mount the runner workspace into the container read-only.
-          docker run --rm -v "${{ github.workspace }}:/workspace:ro" aquasec/trivy:latest fs --debug /workspace --exit-code 1 --severity HIGH,CRITICAL || {
+          # Using Trivy from GHCR instead of Docker Hub for security
+          docker run --rm -v "${{ github.workspace }}:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs --debug /workspace --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
@@ -40,30 +41,62 @@ jobs:
             echo "PUSH_MAIN=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push image (SHA tag)
+      - name: Build and push QR image (SHA tag)
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
-          docker build -f .github/ci/Dockerfile -t "$IMAGE" .
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          docker build -f .github/ci/Dockerfile.qr -t "$IMAGE" .
           docker push "$IMAGE"
 
-      - name: Push main tag (when on main)
+      - name: Build and push Infra image (SHA tag)
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          docker build -f .github/ci/Dockerfile.infra -t "$IMAGE" .
+          docker push "$IMAGE"
+
+      - name: Push QR image main tag (when on main)
         if: steps.vars.outputs.PUSH_MAIN == 'true'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:main
-          docker build -f .github/ci/Dockerfile -t "$IMAGE" .
-          docker push "$IMAGE"
+          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:main
+          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
+          docker push "$MAIN_IMAGE"
 
-      - name: Trivy scan pushed image
+      - name: Push Infra image main tag (when on main)
+        if: steps.vars.outputs.PUSH_MAIN == 'true'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER_LC}/simplewish-ci:${{ steps.vars.outputs.IMAGE_TAG }}
+          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:main
+          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
+          docker push "$MAIN_IMAGE"
+
+      - name: Trivy scan QR image
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
           echo "Pulling image $IMAGE locally for scanning..."
           docker pull "$IMAGE"
           echo "Scanning pulled image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
           # Mount the Docker socket so Trivy can inspect the local docker image
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+          # Using Trivy from GHCR instead of Docker Hub for security
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+            echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
+            exit 1;
+          }
+
+      - name: Trivy scan Infra image
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Pulling image $IMAGE locally for scanning..."
+          docker pull "$IMAGE"
+          echo "Scanning pulled image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
+          # Mount the Docker socket so Trivy can inspect the local docker image
+          # Using Trivy from GHCR instead of Docker Hub for security
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }

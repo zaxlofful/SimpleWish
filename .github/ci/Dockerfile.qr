@@ -21,14 +21,13 @@ RUN apt-get update \
   && python -m pip install --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Python deps (wheels get built here if needed)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python deps system-wide (wheels get built here if needed)
+# Copy only requirements.txt for QR generation (minimal attack surface)
+COPY scripts/requirements.txt /tmp/
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+  && rm /tmp/requirements.txt
 
-# Copy your app code
-COPY . .
-
-# At this point /usr/local has Python + your deps; /app has your code.
+# At this point /usr/local has Python + runtime deps system-wide installed.
 
 
 # ---------- Stage 2: runtime ----------
@@ -41,19 +40,15 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Copy Python runtime + installed deps
+# Copy Python runtime + installed deps (system-wide packages)
 COPY --from=builder /usr/local /usr/local
-# Copy app
-COPY --from=builder /app /app
 
 # Create non-root user
 RUN groupadd -r ci -g 1000 \
   && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci
 
 USER ci
-WORKDIR /app
+WORKDIR /home/ci
 
-ENV PATH="/home/ci/.local/bin:${PATH}"
-
-# Default command — change to your real entrypoint if you want
-CMD ["python", "your_entrypoint.py"]
+# Default command - container is meant to be used with GitHub Actions checkout
+CMD ["python", "--version"]
