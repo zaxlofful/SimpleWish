@@ -22,8 +22,12 @@ def is_todo_empty(todo_path: Path) -> bool:
         print(f"TODO.md not found at {todo_path}")
         return True
 
-    content = todo_path.read_text(encoding='utf-8').strip()
-    return len(content) == 0
+    try:
+        content = todo_path.read_text(encoding='utf-8').strip()
+        return len(content) == 0
+    except (PermissionError, UnicodeDecodeError) as e:
+        print(f"Error reading TODO.md: {e}")
+        return True
 
 
 def main():
