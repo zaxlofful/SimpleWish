@@ -158,10 +158,10 @@ You can easily customize the page theme by editing the CSS variables at the top 
 - 🍬 **candy-cane** - Striped candy cane
 - 🔔 **bell** - Christmas bell with ribbon
 
-**Example:** The `alice.html` file uses a blue theme:
+**Example:** The `alice.html` file uses a blue theme and a snowman:
 - Page CSS: `--accent:#1565C0` (blue for headings/links)
 - QR Code: `<meta name="qr-foreground-color" content="#1565C0">`
-- Decoration: Default tree with fancy style
+- Snowman Code: `<meta name="qr-decoration-type" content="snowman">`
 
 **Color Palette Ideas:**
 - 🔴 Classic Red: `#b71c1c` (default)
@@ -281,14 +281,6 @@ QR code approach and single-file guarantee
 	- Data-URI images: `data:image/svg+xml;utf8,...`
 - Embedding QR images in the page preserves the single-file guarantee (no runtime network calls or JS required).
 
-
-Coloring by CSS
-- The generator now emits SVGs whose modules use currentColor; each injected SVG receives class `qr-svg` and a `data-qr-default-foreground-color` attribute containing the default color. To change QR color via CSS, add a rule such as:
-
-```css
-.qr-svg { color: #b71c1c; } /* makes the QR modules red */
-```
-
 Per-file metadata (`qr-foreground-color`, `qr-background-color`) are used by the generator when present and otherwise the CLI defaults are used.
 
 Generating/updating SVGs via CI (recommended)
@@ -385,20 +377,6 @@ python3 scripts/generate_qr_svg.py \
 ```
 
 See `python3 scripts/generate_qr_svg.py --help` for all options.
-
-## 🎨 Customizing Colors
-
-Want this list to visit (recommended)
-
-Two-step quick example:
-1. python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
-2. python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
-
-- CLI highlights
-- `--foreground-color` (default: #0b6623)
-- `--background-color` (default: #ffffff)
-- `--no-decorate` to disable the bottom-right decoration
-- `--logo-size`, `--overlay-mult`, `--overlay-shift-x`, `--overlay-shift-y` to nudge placement
 
 ## CI image and secure runner notes
 
