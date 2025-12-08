@@ -20,7 +20,7 @@ Thank you for your interest in contributing! This is a small, focused project fo
 
 ```bash
 # Create and activate virtual environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
@@ -32,20 +32,20 @@ pip install -r scripts/requirements-dev.txt
 
 ```bash
 # Run all tests
-python -m pytest -v
+python3 -m pytest -v
 
 # Run linter
-flake8
+python3 -m flake8
 ```
 
 ### Testing QR Generation
 
 ```bash
 # Generate QR SVGs
-python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
+python3 scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
 
 # Inject QR SVGs into HTML files
-python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 ```
 
 ## Guidelines

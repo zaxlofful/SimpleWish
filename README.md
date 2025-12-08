@@ -27,7 +27,7 @@ A printable, single-file HTML template for creating personalized Christmas gift 
 
 ```bash
 # Create and activate virtual environment
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
@@ -35,7 +35,7 @@ pip install -r scripts/requirements.txt
 pip install -r scripts/requirements-dev.txt
 
 # Run tests to verify
-python -m pytest
+python3 -m pytest
 ```
 
 ## 📝 Usage
@@ -189,17 +189,17 @@ The repository includes Python scripts to generate and inject QR codes into your
 
 ```bash
 # 1. Generate QR SVG files
-python scripts/generate_qr_svg.py --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
+python3 scripts/generate_qr_svg.py --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
 
 # 2. Inject QR codes into HTML files
-python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 ```
 
 **Customization options:**
 
 ```bash
 # Use custom colors
-python scripts/generate_qr_svg.py \
+python3 scripts/generate_qr_svg.py \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
@@ -207,21 +207,21 @@ python scripts/generate_qr_svg.py \
   --background-color "#E3F2FD"
 
 # Disable decoration
-python scripts/generate_qr_svg.py \
+python3 scripts/generate_qr_svg.py \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
   --no-decorate
 
 # Use plain tree style
-python scripts/generate_qr_svg.py \
+python3 scripts/generate_qr_svg.py \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
   --tree-style plain
 ```
 
-See `python scripts/generate_qr_svg.py --help` for all options.
+See `python3 scripts/generate_qr_svg.py --help` for all options.
 
 ## 🎨 Customizing Colors
 
