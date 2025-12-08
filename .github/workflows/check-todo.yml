@@ -40,21 +40,42 @@ jobs:
         run: |
           echo "TODO.md has content - creating issue to trigger GitHub Copilot Workspace"
           
-          # Read TODO.md content
-          TODO_CONTENT=$(cat TODO.md)
+          # Read TODO.md content safely
+          if [ -f TODO.md ]; then
+            TODO_CONTENT=$(cat TODO.md)
+          else
+            TODO_CONTENT=""
+          fi
+          
+          # Write TODO content to temp file to avoid shell injection issues
+          TODO_FILE=$(mktemp)
+          cat > "$TODO_FILE" << 'EOF_TODO'
+          $TODO_CONTENT
+          EOF_TODO
+          
+          # Create issue body with proper escaping
+          ISSUE_BODY_FILE=$(mktemp)
+          cat > "$ISSUE_BODY_FILE" << 'EOF_BODY'
+          @copilot /workspace
+
+          Please process the following TODO items from TODO.md and create a PR with the necessary changes:
+
+          ```
+          EOF_BODY
+          cat "$TODO_FILE" >> "$ISSUE_BODY_FILE"
+          cat >> "$ISSUE_BODY_FILE" << 'EOF_FOOTER'
+          ```
+
+          After completing the work, please clear the TODO.md file or mark items as done.
+          EOF_FOOTER
           
           # Create issue to trigger Copilot Workspace
           gh issue create \
             --title "Process TODO.md items - $(date +%Y-%m-%d)" \
-            --body "@copilot /workspace
-
-          Please process the following TODO items from TODO.md and create a PR with the necessary changes:
-
-          \`\`\`
-          $TODO_CONTENT
-          \`\`\`
-
-          After completing the work, please clear the TODO.md file or mark items as done." \
+            --body-file "$ISSUE_BODY_FILE" \
             --label "copilot-workspace,todo-automation"
+          
+          # Clean up temp files
+          rm -f "$TODO_FILE" "$ISSUE_BODY_FILE"
           
           echo "Issue created with @copilot workspace mention to trigger agent session"
