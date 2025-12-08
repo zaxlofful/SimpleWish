@@ -47,9 +47,9 @@ def ensure_badge_links():
     changes = 0
 
     def extract_owner_repo_from_url(url):
-        m = re.search(r'github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git|/.*)?$', url)
+        m = re.search(r'github\.com[:/](?P<owner>[^/]+)/(?P<repo>[^/]+?)(?:\.git|/.*)?$', url, flags=re.IGNORECASE)
         if m:
-            return m.group('owner'), m.group('repo')
+            return m.group('owner').lower(), m.group('repo').lower()
         return None
 
     # 1) Fix links that wrap images but point somewhere else
@@ -59,17 +59,30 @@ def ensure_badge_links():
         nonlocal changes
         img = m.group(1)
         link = m.group(2).strip()
+        # If the image URL contains a GitHub workflow badge for this repo, prefer linking to the workflow page
+        im = re.search(r'!\[[^\]]*\]\(([^\)]+)\)', img)
+        img_url = im.group(1).strip() if im else ''
+        img_parsed = extract_owner_repo_from_url(img_url) if img_url else None
+
+        # If image URL is a GitHub actions badge for this repo, link to the workflow page (drop /badge.svg)
+        if img_url and 'github.com' in img_url and '/actions/workflows/' in img_url and img_parsed == (owner.lower(), repo.lower()):
+            workflow_link = re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
+            if link != workflow_link:
+                changes += 1
+                return f'[{img}]({workflow_link})'
+            return m.group(0)
+
         parsed = extract_owner_repo_from_url(link) if link else None
         if parsed is None:
-            # Not a github URL (or empty) -> replace with repo_url
-            changes += 1
-            return f'[{img}]({repo_url})'
+            # Not a github URL (or empty) -> leave as-is (non-destructive)
+            return m.group(0)
         else:
             cur_owner, cur_repo = parsed
-            if cur_owner == owner and cur_repo == repo:
+            # compare case-insensitively
+            if cur_owner == owner.lower() and cur_repo == repo.lower():
                 return m.group(0)  # correct link; leave unchanged
             else:
-                # Link points to a different repo -> replace
+                # Link points to a different repo -> replace with canonical repo root
                 changes += 1
                 return f'[{img}]({repo_url})'
 
@@ -80,8 +93,17 @@ def ensure_badge_links():
 
     def standalone_repl(m):
         nonlocal changes
-        changes += 1
         img = m.group(1)
+        im = re.search(r'!\[[^\]]*\]\(([^\)]+)\)', img)
+        img_url = im.group(1).strip() if im else ''
+        img_parsed = extract_owner_repo_from_url(img_url) if img_url else None
+        # If it's a GitHub actions badge for this repo, link to the workflow page
+        if img_url and 'github.com' in img_url and '/actions/workflows/' in img_url and img_parsed == (owner.lower(), repo.lower()):
+            workflow_link = re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
+            changes += 1
+            return f'[{img}]({workflow_link})'
+        # Otherwise link to repo root
+        changes += 1
         return f'[{img}]({repo_url})'
 
     content = standalone_pattern.sub(standalone_repl, content)
