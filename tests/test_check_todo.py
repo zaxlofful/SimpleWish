@@ -43,7 +43,6 @@ def test_is_todo_empty_with_content():
 
 def test_is_todo_empty_with_nonexistent_file():
     """Test that nonexistent file is treated as empty."""
-    import tempfile
     # Create a nonexistent path in a temp directory
     temp_dir = tempfile.gettempdir()
     todo_path = Path(temp_dir) / 'nonexistent_todo_file_xyz.md'

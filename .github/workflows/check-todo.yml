@@ -49,7 +49,7 @@ jobs:
           
           # Write TODO content to temp file to avoid shell injection issues
           TODO_FILE=$(mktemp)
-          cat > "$TODO_FILE" << 'EOF_TODO'
+          cat > "$TODO_FILE" << EOF_TODO
           $TODO_CONTENT
           EOF_TODO
           
