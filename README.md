@@ -160,7 +160,7 @@ You can easily customize the page theme by editing the CSS variables at the top 
 
 **Example:** The `alice.html` file uses a blue theme and a snowman:
 - Page CSS: `--accent:#1565C0` (blue for headings/links)
-- QR Code: `<meta name="qr-foreground-color" content="#1565C0">`
+- QR Code Color: `<meta name="qr-foreground-color" content="#1565C0">`
 - Snowman Code: `<meta name="qr-decoration-type" content="snowman">`
 
 **Color Palette Ideas:**
