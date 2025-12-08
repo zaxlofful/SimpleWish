@@ -20,6 +20,12 @@ jobs:
       options: --user 0
     steps:
       - uses: actions/checkout@v4
+      
+      # Log in to GHCR to prevent anonymous image pulls and potential interception
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      
       # Not logging into GHCR inside container; rely on job 'packages: read' permission instead.
       # Create venv with --system-site-packages to use container's pre-installed packages
       - name: Create venv with system-site-packages

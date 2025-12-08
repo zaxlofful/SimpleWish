@@ -23,6 +23,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Log in to GHCR to prevent anonymous image pulls and potential interception
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
       # Note: do NOT run docker login inside the job container (docker binary is unavailable
       # inside many job containers). Job-level permissions 'packages: read' are set so the
       # container runtime can pull images when appropriate.
