@@ -9,6 +9,8 @@ A printable, single-file HTML template for creating personalized Christmas gift 
 ## ✨ Features
 
 - **Single-file design** — Each HTML file is completely self-contained (no external dependencies)
+- **Text file input** — Create wish lists using simple text files (one item per line with URL)
+- **Automated HTML generation** — GitHub Actions automatically converts text files to HTML pages
 - **Printable** — Optimized layout for printing or saving as PDF
 - **QR codes** — Automatically generated QR codes for easy sharing
 - **Customizable** — Change colors, add your own items, personalize for each recipient
@@ -63,9 +65,50 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
 
 **That's it!** The GitHub Actions workflows will automatically:
+- Generate HTML files from text files in the `recipients/` folder
 - Generate QR codes for all HTML files using your configured domain
 - Commit them back to your repository
 - Your lists are ready to share!
+
+### Option 1b: Using Text Files (Simplified)
+
+**NEW!** You can now create wish lists using simple text files instead of editing HTML:
+
+1. **Fork this repository** and configure your domain (same as Option 1, steps 1-2)
+
+2. **Clone your fork**:
+   ```bash
+   git clone https://github.com/YOUR-USERNAME/SimpleWish.git
+   cd SimpleWish
+   ```
+
+3. **Create wish lists as text files**:
+   ```bash
+   # Create a text file in the recipients folder
+   cat > recipients/alice.txt << 'EOF'
+   Raspberry Pi 5 — 8GB RAM starter kit https://example.com/raspberry-pi
+   Python Crash Course (3rd Edition) https://example.com/python-book
+   Mechanical keyboard — Cherry MX Blue switches https://example.com/mechanical-keyboard
+   EOF
+   ```
+   
+   Each line should follow the format: `Item description URL`
+
+4. **Commit and push**:
+   ```bash
+   git add recipients/
+   git commit -m "Add Alice's wish list"
+   git push
+   ```
+
+5. **Deploy** (same as Option 1, step 6)
+
+**The GitHub Actions workflow will automatically:**
+- Generate `alice.html` from `recipients/alice.txt`
+- Create QR codes for the HTML file
+- Deploy to your hosting platform
+
+See `recipients/README.md` for more details on the text file format.
 
 ### Option 2: Local Development Setup
 
@@ -214,7 +257,29 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
 - **Test** — Runs pytest test suite
-- **Generate QR** — Automatically generates and commits QR codes
+- **Generate QR** — Automatically generates HTML from text files and creates QR codes
+
+#### Automated HTML Generation
+
+The `Generate QR` workflow automatically:
+1. Reads all `.txt` files from the `recipients/` folder
+2. Generates corresponding `.html` files (e.g., `recipients/alice.txt` → `alice.html`)
+3. Creates QR codes for each HTML file
+4. Commits the generated files back to the repository
+
+**Text File Format:**
+Each line in a recipient text file should be: `Item description URL`
+
+Example (`recipients/bob.txt`):
+```
+Wireless headphones https://example.com/headphones
+Coffee maker — programmable https://example.com/coffee-maker
+Running shoes — size 10 https://example.com/shoes
+```
+
+This will generate `bob.html` with a personalized gift list for Bob.
+
+For more details, see `recipients/README.md`.
 
 ### Deployment Options
 
