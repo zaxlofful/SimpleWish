@@ -1,12 +1,135 @@
 ![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)
 ![Test](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)
 ![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)
+![Deploy Pages](https://github.com/ZaxLofful/SimpleWish/actions/workflows/deploy-pages.yml/badge.svg)
 
-Christmas list template (HTML + CSS)
+# SimpleWish - Christmas List Template
 
-What this is
-- A printable, single-file HTML template intended to be used as a template for one-page gift lists per recipient.
-- All styles are inlined in `index.html` so each generated page is fully self-contained and can be opened locally or hosted on GitHub Pages without build steps.
+A printable, single-file HTML template for creating personalized Christmas gift lists.
+
+## ✨ Features
+
+- **Single-file design** — Each HTML file is completely self-contained (no external dependencies)
+- **Printable** — Optimized layout for printing or saving as PDF
+- **QR codes** — Automatically generated QR codes for easy sharing
+- **Customizable** — Change colors, add your own items, personalize for each recipient
+- **CI/CD ready** — Automated QR generation and GitHub Pages deployment
+
+## 🚀 Quick Start
+
+### Option 1: Automated Setup (Linux/Mac)
+
+```bash
+./setup.sh
+```
+
+### Option 2: Manual Setup
+
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r scripts/requirements.txt
+pip install -r scripts/requirements-dev.txt
+
+# Run tests to verify
+python -m pytest
+```
+
+## 📝 Usage
+
+### Creating a New List
+
+1. **Copy the template**: `cp index.html yourname.html`
+2. **Personalize** the HTML file:
+   - Update the `<title>` and `<h1>` with the recipient's name
+   - Add your gift ideas in the `<ul id="gift-list">` section
+   - Optionally customize colors by changing the `--accent` and other CSS variables
+3. **Generate and inject QR code** (see below)
+
+### Example Files
+
+- `index.html` — Base template with classic green theme
+- `alice.html` — Example with blue theme and tech-focused gifts
+
+
+### Customizing Colors
+
+Each HTML file can specify custom QR code colors using meta tags in the `<head>` section:
+
+```html
+<meta name="qr-foreground-color" content="#1565C0">
+<meta name="qr-background-color" content="#E3F2FD">
+<meta name="qr-decorate" content="true">
+<meta name="qr-tree-style" content="fancy">
+```
+
+You can also customize the page theme by editing CSS variables in the `:root` selector:
+
+```css
+:root {
+  --accent: #1565C0;     /* Primary color */
+  --muted: #546E7A;      /* Muted text color */
+  /* ... other variables */
+}
+```
+
+## 🖨️ Printing
+
+1. Open the HTML file in your browser
+2. Use Print (Ctrl+P / Cmd+P) or "Save as PDF"
+3. The layout is optimized for printing with:
+   - QR code pinned to top-right
+   - Footer fixed at bottom
+   - Clean, minimal design
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to contribute to this project.
+
+## 📄 License
+
+This project is provided as-is for personal and educational use.
+
+---
+
+## Advanced Topics
+
+### CI/CD with GitHub Actions
+
+This repository includes automated workflows:
+- **Lint** — Runs flake8 on Python code
+- **Test** — Runs pytest test suite
+- **Generate QR** — Automatically generates and commits QR codes
+- **Deploy Pages** — Deploys to GitHub Pages for easy sharing
+
+### Per-file Metadata
+
+The QR generation script reads metadata from HTML files:
+
+- `qr-foreground-color` — QR module color
+- `qr-background-color` — QR background color
+- `qr-decorate` — Enable/disable Christmas tree decoration
+- `qr-tree-style` — `fancy` (with baubles) or `plain`
+
+### Privacy
+
+- No external tracking
+- No CDN dependencies
+- QR codes generated locally (no calls to remote services)
+- All assets embedded in the HTML file
+
+### Clean URLs
+
+When adding gift links, remove tracking parameters:
+- ❌ `https://example.com/product?utm_source=email&ref=tracker`
+- ✅ `https://example.com/product`
+
+---
+
+## CI Image and Secure Runners
 
 This is a template (consider renaming the repo when you clone it)
 - Intended workflow:
@@ -57,8 +180,52 @@ How to preview / use locally
 Privacy
 - No external tracking is included by default. The CI-based QR injection pattern avoids runtime calls to remote QR generators. If you add remote scripts or CDNs, document the privacy tradeoffs in this README.
 
-Want a runnable example?
-- The repo includes two small scripts to generate SVGs and then inject them: `scripts/generate_qr_svg.py` and `scripts/inject_qr_svg.py`.
+
+### Generating QR Codes
+
+The repository includes Python scripts to generate and inject QR codes into your HTML files.
+
+**Two-step process:**
+
+```bash
+# 1. Generate QR SVG files
+python scripts/generate_qr_svg.py --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
+
+# 2. Inject QR codes into HTML files
+python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+```
+
+**Customization options:**
+
+```bash
+# Use custom colors
+python scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --foreground-color "#1565C0" \
+  --background-color "#E3F2FD"
+
+# Disable decoration
+python scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --no-decorate
+
+# Use plain tree style
+python scripts/generate_qr_svg.py \
+  --root-domain "https://example.com" \
+  --pattern "*.html" \
+  --out-dir scripts/generated_qr \
+  --tree-style plain
+```
+
+See `python scripts/generate_qr_svg.py --help` for all options.
+
+## 🎨 Customizing Colors
+
+Want this list to visit (recommended)
 
 Two-step quick example:
 1. python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir scripts/generated_qr
