@@ -21,12 +21,11 @@ RUN apt-get update \
   && python -m pip install --upgrade pip setuptools wheel \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Install Python deps (wheels get built here if needed)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy Python scripts and requirements
+COPY scripts/ ./scripts/
 
-# Copy your app code
-COPY . .
+# Install Python deps (wheels get built here if needed)
+RUN pip install --no-cache-dir -r scripts/requirements.txt
 
 # At this point /usr/local has Python + your deps; /app has your code.
 
@@ -55,5 +54,6 @@ WORKDIR /app
 
 ENV PATH="/home/ci/.local/bin:${PATH}"
 
-# Default command — change to your real entrypoint if you want
-CMD ["python", "your_entrypoint.py"]
+# Default command for running QR generation scripts
+# Example: python scripts/generate_qr_svg.py --root-domain "https://example.com" --pattern "*.html" --out-dir /tmp/qr
+CMD ["python", "-c", "print('SimpleWish CI image ready. Use with: python scripts/generate_qr_svg.py or python scripts/inject_qr_svg.py')"]
