@@ -26,8 +26,7 @@ jobs:
         run: |
           python -m venv --system-site-packages .venv
           ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt
-          ./.venv/bin/python -m pip install -r scripts/requirements-dev.txt
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt
       - name: Run tests
         run: |
           ./.venv/bin/python -m pytest -q
