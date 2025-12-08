@@ -23,17 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Log in to GHCR to prevent anonymous image pulls and potential interception
-      - name: Log in to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      # Authenticated to GHCR for secure image pulls
       # Create venv with --system-site-packages to use container's pre-installed packages
-
       - name: Create venv with system-site-packages
         run: |
           python -m venv --system-site-packages .venv
