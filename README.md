@@ -38,34 +38,77 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    cd SimpleWish
    ```
 
-4. **Create personalized lists**:
-   ```bash
-   cp index.html steve.html
-   cp index.html bob.html
-   # Edit each file with gift ideas for that person
-   ```
+4. **Create personalized lists (recommended)**
 
-5. **Commit and push**:
-   ```bash
-   git add *.html
-   git commit -m "Add personalized gift lists"
-   git push
-   ```
+    The project now supports generating per-recipient HTML from simple JSON files. Add one JSON file per person to the `recipients` directory. The CI build will generate HTML pages and inject QR SVGs at deploy time (generated files are not committed to the repo).
 
-6. **Deploy** (choose one):
-   - **Cloudflare Pages** (Recommended): 
-     - Connect your repo through Cloudflare's web GUI
-     - **Important for security**: Configure build settings to copy only HTML files:
-       - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
-       - Output directory: `public`
-     - This ensures only HTML files are deployed (not scripts, configs, or other repository files)
-     - Your lists will be available at your custom domain
-   - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
+    See the included `alice.html` file for a ready-made example.
+
+5. **Commit and push the source (NOT generated HTML)**
+
+    ```bash
+    git add recipients/*.json
+    git commit -m "Add recipient JSON files"
+    git push
+    ```
+
+6. **Deploy** (choose one)
+
+   1. **Cloudflare Pages** (Recommended):
+      - Connect your repo to Cloudflare Pages through the web GUI.
+      - Simple Cloudflare build command (paste into the Pages web GUI build command).
+
+      ```bash
+      set -e
+
+      # create venv and install deps
+      python3 -m venv .venv
+      . .venv/bin/activate
+      pip install --upgrade pip
+      pip install -r scripts/requirements.txt
+
+      # generate HTML for all JSON recipients (writes files to repo root)
+      python scripts/generate_recipient.py --bulk --recipients-dir recipients
+
+      # generate QR SVGs (uses ROOT_DOMAIN env var if set)
+      python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr --root-domain "<INSERT-DOMAIN-NAME>"
+
+      # inject generated SVGs into the generated HTML files
+      python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+
+      # prepare public/ for Pages and move generated HTML there
+      mkdir -p public
+      mv -- *.html public/ || true
+      ```
+
+      - Output directory: `public`
+
+      - Why this matters: Cloudflare Pages will deploy only what you put in `public/`, so generating and injecting pages in the build step keeps the repository free of generated artifacts and preserves privacy/security of scripts and configs.
+       - Use the repository Actions workflow: go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow. The workflow will generate per-recipient HTML from `recipients/*.json`, run QR generation and injection, and upload the produced `public/` folder to Pages.
 
 **That's it!** The GitHub Actions workflows will automatically:
-- Generate QR codes for all HTML files using your configured domain
-- Commit them back to your repository
-- Your lists are ready to share!
+- Generate per-recipient HTML from `recipients/*.json` using `index.html` as the template
+- Generate decorated QR SVGs for each generated page and inject them between the QR markers
+- Upload the generated `public/` folder to your Pages provider (Cloudflare Pages or GitHub Pages)
+
+If you want to run everything locally for testing, you can reproduce the build steps:
+
+```powershell
+# Create a venv, install deps
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r scripts/requirements.txt
+
+# Generate HTML for a single recipient (or use --bulk to generate all JSON files)
+python scripts/generate_recipient.py --data recipients/alice.json
+
+# Generate QR SVGs for all HTML files (example ROOT_DOMAIN shown)
+$env:ROOT_DOMAIN = 'https://example.com'
+python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
+
+# Inject generated SVGs into the HTML files
+python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+```
 
 ### Option 2: Local Development Setup
 
