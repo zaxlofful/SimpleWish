@@ -21,11 +21,11 @@ def render_from_template(template_text: str, data: dict) -> str:
     # Insert per-page meta tags for QR immediately after the QR metadata comment
     meta_block = []
     if data.get('qr_foreground'):
-        meta_block.append(f'<meta name="qr-foreground-color" content="{data["qr_foreground"]}">')
+        meta_block.append(f'<meta name="qr-foreground-color" content="{html.escape(str(data["qr_foreground"]), quote=True)}">')
     if data.get('qr_background'):
-        meta_block.append(f'<meta name="qr-background-color" content="{data["qr_background"]}">')
+        meta_block.append(f'<meta name="qr-background-color" content="{html.escape(str(data["qr_background"]), quote=True)}">')
     if data.get('qr_decor_type'):
-        meta_block.append(f'<meta name="qr-decoration-type" content="{data["qr_decor_type"]}">')
+        meta_block.append(f'<meta name="qr-decoration-type" content="{html.escape(str(data["qr_decor_type"]), quote=True)}">')
     meta_block_text = '\n  '.join(meta_block)
 
     # Try to insert after the QR metadata comment (the long comment block near head)
