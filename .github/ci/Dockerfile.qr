@@ -43,6 +43,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Copy Python runtime + installed deps (system-wide packages)
 COPY --from=builder /usr/local /usr/local
 
+# Ensure the non-root `ci` user owns the installed python files so runtime
+# operations (venv with --system-site-packages, etc.) work without permission errors.
+RUN chown -R 1000:1000 /usr/local || true
+
 # Create non-root user
 RUN groupadd -r ci -g 1000 \
   && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci
