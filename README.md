@@ -1,6 +1,6 @@
-[![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml)
-[![pytest](https://github.com/ZaxLofful/SimpleWish/actions/workflows/pytest.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/pytest.yml)
-[![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml)
+[![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/lint.yml)
+[![pytest](https://github.com/ZaxLofful/SimpleWish/actions/workflows/pytest.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/pytest.yml)
+[![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/generate-qrs.yml)
 
 # SimpleWish - Christmas List Template
 
@@ -213,7 +213,7 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 
 This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
-- **Test** — Runs pytest test suite
+- **pytest** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
 
 ### Deployment Options
