@@ -4,6 +4,10 @@ on:
   workflow_dispatch: {}
   push:
     branches: [ main ]
+    # Only run when Python files or dependency lists change
+    paths:
+      - '**/*.py'
+      - 'requirements*.txt'
   pull_request: {}
 
 jobs:
