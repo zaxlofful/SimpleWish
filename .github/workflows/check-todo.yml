@@ -97,15 +97,40 @@ jobs:
           fi
 
           # Create issue to trigger Copilot Workspace (apply `todo-automation` label)
-          gh issue create \
+          # Capture created issue number as JSON (requires gh >= 2.x)
+          ISSUE_NUMBER=$(gh issue create \
             --title "Process TODO.md items - $(date +%Y-%m-%d)" \
             --body-file "$ISSUE_BODY_FILE" \
-            --label "todo-automation"
-          
+            --label "todo-automation" \
+            --json number -q '.number') || true
+
+          # Fallback: try to parse the created issue number from output if --json isn't supported
+          if [ -z "$ISSUE_NUMBER" ]; then
+            CREATED_URL=$(gh issue create \
+              --title "Process TODO.md items - $(date +%Y-%m-%d)" \
+              --body-file "$ISSUE_BODY_FILE" \
+              --label "todo-automation" 2>/dev/null || true)
+            # Extract number from URL ending with /issues/NNN
+            ISSUE_NUMBER=$(echo "$CREATED_URL" | sed -n 's#.*/issues/\([0-9][0-9]*\).*#\1#p' || true)
+          fi
+
+          # If we have an issue number, assign it to the repository owner and post a comment mentioning Copilot
+          if [ -n "$ISSUE_NUMBER" ]; then
+            echo "Created issue #$ISSUE_NUMBER"
+            # Parse owner from GITHUB_REPOSITORY (format: owner/repo)
+            OWNER=${GITHUB_REPOSITORY%%/*}
+            # Try to assign to the repo owner (ignore failure)
+            gh issue edit "$ISSUE_NUMBER" --add-assignee "$OWNER" || echo "Warning: failed to assign $OWNER to issue #$ISSUE_NUMBER"
+            # Post a comment that mentions Copilot to trigger it (only triggers if the assignee has Copilot enabled)
+            gh issue comment "$ISSUE_NUMBER" --body "@copilot" || echo "Warning: failed to post Copilot mention on issue #$ISSUE_NUMBER"
+          else
+            echo "Warning: could not determine created issue number; skipping assignment/comment"
+          fi
+
           # Clean up temp files
           rm -f "$TODO_FILE" "$ISSUE_BODY_FILE"
-          
-          echo "Issue created with @copilot workspace mention to trigger agent session"
+
+          echo "Issue created (and assigned/commented when possible) to trigger Copilot if available"
       
       - name: Skip - existing issue found
         if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'true'
