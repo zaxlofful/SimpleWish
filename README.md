@@ -213,7 +213,7 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 
 This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
-- **Test** — Runs pytest test suite
+- **pytest** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
 
 ### Deployment Options

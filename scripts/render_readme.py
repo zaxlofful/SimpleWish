@@ -52,6 +52,56 @@ def ensure_badge_links():
             return m.group('owner').lower(), m.group('repo').lower()
         return None
 
+    def find_alternate_workflow_link(owner, repo, workflow_basename, alt_name=None):
+        """Return a workflow link for an existing workflow file.
+
+        Attempts these strategies in order:
+        - If `.github/workflows/{workflow_basename}` exists, return its link.
+        - Try common mappings (e.g. `test.yml` -> `pytest.yml`).
+        - Search `.github/workflows/` for a file whose `name:` matches `alt_name` (case-insensitive).
+        - Return None if nothing found.
+        """
+        workflows_dir = os.path.join('.github', 'workflows')
+        if not workflow_basename:
+            return None
+        candidate_path = os.path.join(workflows_dir, workflow_basename)
+        if os.path.exists(candidate_path):
+            return f'https://github.com/{owner}/{repo}/actions/workflows/{workflow_basename}'
+
+        # Common mappings
+        mappings = {
+            'test.yml': 'pytest.yml',
+            'test.yaml': 'pytest.yml',
+        }
+        mapped = mappings.get(workflow_basename)
+        if mapped:
+            mapped_path = os.path.join(workflows_dir, mapped)
+            if os.path.exists(mapped_path):
+                return f'https://github.com/{owner}/{repo}/actions/workflows/{mapped}'
+
+        # Try to find a workflow file whose `name:` matches alt_name (case-insensitive)
+        if alt_name:
+            try:
+                for fn in os.listdir(workflows_dir):
+                    full = os.path.join(workflows_dir, fn)
+                    if not os.path.isfile(full):
+                        continue
+                    try:
+                        with open(full, 'r', encoding='utf-8') as wf:
+                            txt = wf.read()
+                        # look for a name: line
+                        m = re.search(r'^\s*name:\s*(?:["\']([^"\']*)["\']|(\S+))', txt, flags=re.IGNORECASE | re.MULTILINE)
+                        if m:
+                            wname = (m.group(1) or m.group(2)).strip().lower()
+                            if wname == alt_name.strip().lower():
+                                return f'https://github.com/{owner}/{repo}/actions/workflows/{fn}'
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+
+        return None
+
     # 1) Fix links that wrap images but point somewhere else
     linked_pattern = re.compile(r'\[(!\[[^\]]*\]\([^\)]*\))\]\(([^)]*)\)')
 
@@ -64,9 +114,17 @@ def ensure_badge_links():
         img_url = im.group(1).strip() if im else ''
         img_parsed = extract_owner_repo_from_url(img_url) if img_url else None
 
-        # If image URL is a GitHub actions badge for this repo, link to the workflow page (drop /badge.svg)
+        # If image URL is a GitHub actions badge for this repo, prefer linking to the workflow page
         if img_url and 'github.com' in img_url and '/actions/workflows/' in img_url and img_parsed == (owner.lower(), repo.lower()):
-            workflow_link = re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
+            # Extract the workflow basename from the badge URL
+            mb = re.search(r'/actions/workflows/(?P<wf>[^/]+)(?:/badge\.svg(?:\?.*)?)?$', img_url)
+            wf_basename = mb.group('wf') if mb else None
+            # alt_name: try to infer from the badge alt text (not available here), so use basename without extension
+            alt_name = None
+            if wf_basename:
+                alt_name = os.path.splitext(wf_basename)[0]
+
+            workflow_link = find_alternate_workflow_link(owner, repo, wf_basename, alt_name) or re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
             if link != workflow_link:
                 changes += 1
                 return f'[{img}]({workflow_link})'
@@ -99,7 +157,10 @@ def ensure_badge_links():
         img_parsed = extract_owner_repo_from_url(img_url) if img_url else None
         # If it's a GitHub actions badge for this repo, link to the workflow page
         if img_url and 'github.com' in img_url and '/actions/workflows/' in img_url and img_parsed == (owner.lower(), repo.lower()):
-            workflow_link = re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
+            mb = re.search(r'/actions/workflows/(?P<wf>[^/]+)(?:/badge\.svg(?:\?.*)?)?$', img_url)
+            wf_basename = mb.group('wf') if mb else None
+            alt_name = os.path.splitext(wf_basename)[0] if wf_basename else None
+            workflow_link = find_alternate_workflow_link(owner, repo, wf_basename, alt_name) or re.sub(r'/badge\.svg(?:\?.*)?$', '', img_url)
             changes += 1
             return f'[{img}]({workflow_link})'
         # Otherwise link to repo root

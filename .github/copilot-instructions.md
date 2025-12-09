@@ -106,9 +106,9 @@ If you need to change the default QR color in-browser without regenerating the S
 This repository includes several GitHub Actions workflows that power CI, testing, image builds, QR generation, and optional deployments. Read the workflow YAML files in `.github/workflows/` before editing CI logic.
 
 - `build-ci-image.yml` — Build and publish CI images to GHCR (produces `simplewish-qr` and `simplewish-infra`). Trigger: `push` to `main` and manual (`workflow_dispatch`). Other workflows use these images as containers.
-- `lint.yml` — Run flake8 inside the infra container. Trigger: manual or after the Build workflow completes successfully (uses `workflow_run`).
-- `test.yml` — Run pytest inside the infra container. Trigger: manual or after the Build workflow completes successfully.
-- `pr-ci.yml` — PR checks that run lint + tests on a secure runner/container. Trigger: manual or after the Build workflow completes successfully.
+-- `lint.yml` — Run flake8 inside the infra container. Trigger: manual or after the Build workflow completes successfully (uses `workflow_run`).
+-- `pytest.yml` — Run pytest inside the infra container. Trigger: manual or after the Build workflow completes successfully.
+-- `pr-ci.yml` — (removed) Previously provided a combined PR check; lint and test workflows now run individually on PRs.
 - `generate-qrs.yml` — Generate QR SVGs and inject them into HTML files, then commit changes. Trigger: manual or after the CI image build completes successfully. Important: this workflow reads the `ROOT_DOMAIN` repo variable/secret to build public URLs and runs inside the `simplewish-qr` container.
 - `deploy-pages.yml` — Optional, manual deployment to GitHub Pages. It intentionally copies only `*.html` to a `public/` folder before uploading to Pages. Trigger: manual (`workflow_dispatch`).
 
