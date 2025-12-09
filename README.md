@@ -298,16 +298,17 @@ This repository is designed to work with **Cloudflare Pages** and custom domains
        ```bash
        pip install -r scripts/requirements.txt && \
        python scripts/generate_html_from_recipients.py --recipients-dir recipients --template index.html --output-dir . && \
-       python scripts/generate_qr_svg.py --root-domain "$CF_PAGES_URL" --pattern "*.html" --out-dir scripts/generated_qr && \
+       python scripts/generate_qr_svg.py --root-domain "https://YOUR_DOMAIN.pages.dev" --pattern "*.html" --out-dir scripts/generated_qr && \
        python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html" && \
        mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/
        ```
-       Note: Replace `$CF_PAGES_URL` with your actual Cloudflare Pages URL or set it as an environment variable
+       **Important**: Replace `YOUR_DOMAIN` with your actual Cloudflare Pages project name, or use your custom domain if configured
      - **Output directory**: `public`
+     - **Environment variables** (optional): Set `ROOT_DOMAIN` variable to your domain URL for cleaner configuration
    - This build command:
      1. Installs Python dependencies
      2. Generates HTML from recipients/*.txt files
-     3. Generates QR codes for all HTML files
+     3. Generates QR codes for all HTML files using your domain
      4. Injects QR codes into HTML files
      5. Copies only HTML files to the `public` directory
    - Your lists will be available at your custom domain
