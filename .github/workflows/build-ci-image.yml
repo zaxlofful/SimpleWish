@@ -52,7 +52,7 @@ jobs:
 
       - name: Report rebuild decision
         run: |
-          echo "${{ steps.determine.outputs.rebuild }}"
+          echo "Rebuild: ${{ steps.determine.outputs.rebuild }}"
 
   build-publish:
     name: Build and publish images
