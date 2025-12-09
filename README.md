@@ -57,7 +57,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    1. **Cloudflare Pages** (Recommended):
       - Connect your repo to Cloudflare Pages through the web GUI.
       - Simple Cloudflare build command (paste into the Pages web GUI build command).
-      - Note: You must replace "INSERT-DOMAIN-NAME" with your domain name when adding to Cloudflare pages
+      - Note: Replace "INSERT-DOMAIN-NAME" with custom domain name
 
       ```bash
       set -e
