@@ -115,7 +115,7 @@ This repository includes several GitHub Actions workflows that power CI, testing
 Notes:
 - Many workflows are written to be safe (they use container images from GHCR and `workflow_run` sequencing). If you change the image names or tags, update dependent workflows accordingly.
 - `generate-qrs.yml` expects a repository-level `ROOT_DOMAIN` secret or variable (recommended). If not present it falls back to `https://example.com` in the workflow.
- - `generate-qrs.yml` expects a repository-level `ROOT_DOMAIN` secret or variable (recommended). If not present it falls back to `https://example.com` in the workflow. The workflow sets `ROOT_DOMAIN` with precedence: default (`https://example.com`) -> repo variable `ROOT_DOMAIN` -> secret `ROOT_DOMAIN` (secret overwrites variable).
+- `generate-qrs.yml` expects a repository-level `ROOT_DOMAIN` secret or variable (recommended). If not present it falls back to `https://example.com` in the workflow. The workflow sets `ROOT_DOMAIN` with precedence: default (`https://example.com`) -> repo variable `ROOT_DOMAIN` -> secret `ROOT_DOMAIN` (secret overwrites variable).
 
 Note: the Python CLI `scripts/generate_qr_svg.py` also checks the `ROOT_DOMAIN` environment variable and will default to `https://example.com` if nothing is provided; when used against `index.html` the effective fallback URL is `https://example.com/index.html`.
 
