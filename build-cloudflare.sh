@@ -31,7 +31,7 @@ echo ""
 
 # Step 2: Generate HTML for all JSON recipients
 echo "Step 2/5: Generating HTML files from recipient data..."
-if [ -d "$RECIPIENTS_DIR" ] && [ "$(ls -A $RECIPIENTS_DIR/*.json 2>/dev/null)" ]; then
+if [ -d "$RECIPIENTS_DIR" ] && compgen -G "$RECIPIENTS_DIR/*.json" > /dev/null; then
     python scripts/generate_recipient.py --bulk --recipients-dir "$RECIPIENTS_DIR"
     echo "✓ HTML files generated"
 else
@@ -54,8 +54,13 @@ echo ""
 # Step 5: Prepare public directory
 echo "Step 5/5: Preparing output directory..."
 mkdir -p "$PUBLIC_DIR"
-mv -- *.html "$PUBLIC_DIR/" || true
-echo "✓ Files moved to $PUBLIC_DIR/"
+# Move HTML files if they exist
+if compgen -G "*.html" > /dev/null; then
+    mv -- *.html "$PUBLIC_DIR/"
+    echo "✓ Files moved to $PUBLIC_DIR/"
+else
+    echo "⚠ No HTML files found to move"
+fi
 echo ""
 
 echo "🎉 Build complete!"
