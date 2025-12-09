@@ -57,7 +57,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
    1. **Cloudflare Pages** (Recommended):
       - Connect your repo to Cloudflare Pages through the web GUI.
       - Simple Cloudflare build command (paste into the Pages web GUI build command).
-      - Note: You must replace "<INSERT-DOMAIN-NAME>" with your domain name when adding to Cloudflare pages
+      - Note: You must replace "INSERT-DOMAIN-NAME" with your domain name when adding to Cloudflare pages
 
       ```bash
       set -e
@@ -72,7 +72,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       python scripts/generate_recipient.py --bulk --recipients-dir recipients
 
       # generate QR SVGs (uses ROOT_DOMAIN env var if set)
-      python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr --root-domain "<INSERT-DOMAIN-NAME>"
+      python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr --root-domain "INSERT-DOMAIN-NAME"
 
       # inject generated SVGs into the generated HTML files
       python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
