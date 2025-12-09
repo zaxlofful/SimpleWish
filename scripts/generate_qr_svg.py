@@ -542,14 +542,43 @@ def generate_svg(
     return svg
 
 
-def sanitize_svg_for_html(svg: str) -> str:
+def sanitize_svg_for_html(svg: str, pretty: bool = True, indent_spaces: int = 2) -> str:
     """Strip XML prolog and DOCTYPE so the SVG is safe to embed directly
     in HTML."""
     # remove XML prolog like <?xml version="1.0" encoding="utf-8"?>
     svg = re.sub(r'^\s*<\?xml[^>]*>\s*', '', svg)
     # remove DOCTYPE declarations
     svg = re.sub(r'<!DOCTYPE[^>]*>\s*', '', svg, flags=re.I)
-    return svg
+
+    # If pretty is disabled, return the cleaned SVG unchanged.
+    if not pretty:
+        # Minify by collapsing inter-tag whitespace so the SVG is compact
+        compact = re.sub(r'>\s+<', '><', svg)
+        return compact.strip() + '\n'
+
+    # Try to pretty-format the SVG so it's easier for humans to read/edit.
+    # Use xml.dom.minidom which indents elements; if parsing fails, fall
+    # back to returning the cleaned SVG unchanged.
+    try:
+        from xml.dom import minidom
+
+        # minidom expects a bytes/string containing XML; parse and
+        # then produce an indented representation. toprettyxml may add
+        # an XML prolog, so strip it afterwards.
+        doc = minidom.parseString(svg)
+        indent_str = ' ' * int(indent_spaces)
+        pretty = doc.toprettyxml(indent=indent_str)
+        # strip any leading XML prolog that toprettyxml may have added
+        pretty = re.sub(r'^\s*<\?xml[^>]*>\s*', '', pretty)
+        # remove any DOCTYPE that might have been introduced
+        pretty = re.sub(r'<!DOCTYPE[^>]*>\s*', '', pretty, flags=re.I)
+
+        # minidom inserts extra blank lines between text nodes; normalize
+        # sequences of more than one blank line to a single newline.
+        pretty = re.sub(r'\n{2,}', '\n', pretty)
+        return pretty.strip() + '\n'
+    except Exception:
+        return svg
 
 
 def main():
@@ -562,6 +591,21 @@ def main():
     )
     parser.add_argument('--pattern', default='*.html')
     parser.add_argument('--out-dir', default='scripts/generated_qr')
+    parser.add_argument(
+        '--minify',
+        dest='minify',
+        action='store_true',
+        default=False,
+        help='Write compact SVG without pretty-printing (faster, less readable)',
+    )
+    parser.add_argument(
+        '--indent',
+        dest='indent',
+        type=int,
+        choices=[2, 4],
+        default=2,
+        help='Number of spaces to use when pretty-printing SVG (2 or 4).',
+    )
     parser.add_argument(
         '--foreground-color',
         dest='foreground_color',
@@ -716,7 +760,8 @@ def main():
         )
 
         out_path = os.path.join(args.out_dir, f'{basename}.svg')
-        svg = sanitize_svg_for_html(svg)
+        # Pretty-print with requested indent unless minify requested
+        svg = sanitize_svg_for_html(svg, pretty=not args.minify, indent_spaces=args.indent)
         with open(out_path, 'w', encoding='utf-8') as f:
             f.write(svg)
         print(f'Generated {out_path} for {public_url}')

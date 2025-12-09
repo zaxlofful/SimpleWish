@@ -54,6 +54,5 @@ def test_inject_indentation_tab(tmp_path):
     assert changed is True
     new_content = html.read_text(encoding='utf-8')
     # injected lines should start with indentation matching the marker
-    # the implementation appends one extra indent unit, so when the marker
-    # line starts with a tab we expect two leading tabs before the SVG
-    assert '\n\t\t<svg' in new_content
+    # we expect the injected SVG to start on the same indentation as the marker
+    assert '\n\t<svg' in new_content

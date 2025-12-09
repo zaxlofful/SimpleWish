@@ -44,13 +44,19 @@ def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> b
     marker_line = content[start_line_start:start_idx]
     m_ws = re.match(r'^([ \t]*)', marker_line)
     leading_ws = m_ws.group(1) if m_ws else ''
-    addition = '\t' if '\t' in leading_ws else ' ' * 4
-    indent = leading_ws + addition
+    # Use the same leading whitespace as the marker line so the injected
+    # SVG aligns with the marker. Do not add an extra level of indentation
+    # — keep the injected lines starting at the same column as the marker.
+    indent = leading_ws
     # Prefix each line of the SVG with the chosen indent. Preserve blank
     # lines as empty lines.
+    # Prefix each non-empty line of the SVG with the chosen indent and
+    # skip blank lines entirely to avoid excessive vertical whitespace
+    # introduced by XML pretty-printers.
     indented_svg = '\n'.join(
-        (indent + line) if line.strip() != '' else ''
+        (indent + line)
         for line in svg_content.splitlines()
+        if line.strip() != ''
     )
     # Use the same leading whitespace as the start marker so the start/end markers align.
     end_line_leading = leading_ws

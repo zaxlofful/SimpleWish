@@ -193,8 +193,21 @@ def test_qr_generation_matches_reference():
     # Apply the same sanitization that the CLI script applies
     svg = sanitize_svg_for_html(svg)
 
+    # Normalize SVG for hashing by collapsing inter-tag whitespace so tests
+    # are not sensitive to pretty-print formatting changes (only semantic
+    # differences in markup will change the hash).
+    def _normalize_for_hash(s: str) -> str:
+        try:
+            from xml.dom import minidom
+
+            doc = minidom.parseString(s)
+            # Use a compact, deterministic serialization for hashing
+            return doc.toxml()
+        except Exception:
+            return re.sub(r'>\s+<', '><', s).strip()
+
     # Calculate hash of generated SVG
-    generated_hash = hashlib.sha256(svg.encode('utf-8')).hexdigest()
+    generated_hash = hashlib.sha256(_normalize_for_hash(svg).encode('utf-8')).hexdigest()
 
     # Read reference file and calculate its hash
     reference_path = os.path.join(
@@ -202,17 +215,19 @@ def test_qr_generation_matches_reference():
     )
     with open(reference_path, 'r', encoding='utf-8') as f:
         reference_svg = f.read()
-    reference_hash = hashlib.sha256(reference_svg.encode('utf-8')).hexdigest()
+    reference_hash = hashlib.sha256(_normalize_for_hash(reference_svg).encode('utf-8')).hexdigest()
 
-    # Hashes should match exactly
+    # Hashes of the normalized content should match (insensitive to pretty
+    # printing). If they don't match, the QR algorithm or decoration logic
+    # has changed.
     assert generated_hash == reference_hash, (
         f'Generated QR hash {generated_hash} does not match '
         f'reference hash {reference_hash}. '
         'This indicates the QR generation algorithm has changed.'
     )
 
-    # Also verify the SVG content is identical
-    assert svg == reference_svg, (
-        'Generated SVG content does not match reference. '
+    # Also verify normalized SVG content is identical (ignores formatting).
+    assert _normalize_for_hash(svg) == _normalize_for_hash(reference_svg), (
+        'Generated SVG content (normalized) does not match reference. '
         'This indicates the QR generation is not deterministic.'
     )
