@@ -1,24 +1,22 @@
 name: Generate QR SVGs
 
 on:
-  workflow_dispatch:
-  workflow_run:
-    workflows:
-      - 'Build and publish CI image'
-    types:
-      - completed
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    # Only run when HTML files change (in any directory)
+    paths:
+      - '**/*.html'
 
 jobs:
   generate:
-    # Only run when manually dispatched, or when the Build workflow completed successfully
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
     container:
       image: ghcr.io/${{ github.repository_owner }}/simplewish-qr:main
-      options: --user 0
+      options: --user 1000
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +25,6 @@ jobs:
       - name: Create venv with system-site-packages
         run: |
           python -m venv --system-site-packages .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt
 
       - name: Set ROOT_DOMAIN (with default)
         env:
