@@ -216,6 +216,12 @@ This repository includes automated workflows:
 - **pytest** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
 
+**Copilot Trigger & Automation Label**
+
+- **Trigger:** The repository's issue-based automation uses an issue body mention `@copilot` to trigger the Copilot workspace integration from workflows or scripts.
+- **Local filtering:** The workflows apply a `todo-automation` label to automation issues so you can filter them locally (e.g., `is:issue label:todo-automation`). Workflows create this label idempotently if it is missing; to change this behavior, edit `.github/workflows/check-todo.yml`.
+
+
 ### Deployment Options
 
 This repository is designed to work with **Cloudflare Pages** and custom domains. The single-file HTML design makes deployment simple:

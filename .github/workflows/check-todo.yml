@@ -68,7 +68,7 @@ jobs:
           # Create issue body with proper escaping
           ISSUE_BODY_FILE=$(mktemp)
           cat > "$ISSUE_BODY_FILE" << 'EOF_BODY'
-          @copilot /workspace
+          @copilot
 
           Please process the following TODO items from TODO.md and create a PR with the necessary changes.
 
@@ -90,11 +90,17 @@ jobs:
           After completing the work, please update TODO.md accordingly (remove completed items or mark as done).
           EOF_FOOTER
           
-          # Create issue to trigger Copilot Workspace
+          # Ensure the 'todo-automation' label exists (create if missing)
+          if ! gh label view "todo-automation" >/dev/null 2>&1; then
+            echo "Creating missing label 'todo-automation'"
+            gh label create "todo-automation" --description "Issues created by TODO automation" --color ffb000 || true
+          fi
+
+          # Create issue to trigger Copilot Workspace (apply `todo-automation` label)
           gh issue create \
             --title "Process TODO.md items - $(date +%Y-%m-%d)" \
             --body-file "$ISSUE_BODY_FILE" \
-            --label "copilot-workspace,todo-automation"
+            --label "todo-automation"
           
           # Clean up temp files
           rm -f "$TODO_FILE" "$ISSUE_BODY_FILE"
