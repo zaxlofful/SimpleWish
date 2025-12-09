@@ -10,9 +10,9 @@ jobs:
   check-todo:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       issues: write
-      pull-requests: write
+      pull-requests: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,41 +31,27 @@ jobs:
             echo "has_content=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Check for completed PRs and update TODO.md
+      - name: Check for completed PRs
         if: steps.check-todo.outputs.has_content == 'true'
+        id: check-completed-prs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "Checking for completed TODO automation PRs..."
           
-          # Check for merged PRs with todo-automation label
+          # Check for merged PRs with todo-automation label (read-only)
           MERGED_PRS=$(gh pr list --state merged --label "todo-automation" --json number,title,mergedAt --limit 10)
           
           if [ "$MERGED_PRS" != "[]" ]; then
-            echo "Found merged TODO automation PRs, updating TODO.md..."
+            echo "Found merged TODO automation PRs"
+            echo "has_completed=true" >> $GITHUB_OUTPUT
             
-            # For each merged PR, check if its linked issue is in TODO.md
-            # and remove completed items
-            python3 scripts/update_todo_from_prs.py
-            
-            # Check if TODO.md was modified
-            # Use git-auto-commit-action to commit TODO.md changes
-            echo "Committing TODO.md changes using git-auto-commit-action"
-          - name: Commit TODO.md changes
-            if: steps.check-todo.outputs.has_content == 'true'
-            id: auto-commit
-            uses: stefanzweifel/git-auto-commit-action@v4
-            with:
-              commit_message: "chore: update TODO.md after completed PRs"
-              file_pattern: "TODO.md"
-              branch: ${{ github.ref_name }}
-              
-              # Re-check if TODO.md is now empty
-              if python3 scripts/check_todo.py; then
-                echo "TODO.md is now empty, skipping issue creation"
-                exit 0
-              fi
-            fi
+            # Extract PR numbers for the issue body (format as #123, #456)
+            PR_NUMBERS=$(echo "$MERGED_PRS" | jq -r '.[].number' | sed 's/^/#/' | paste -sd ',' - | sed 's/,/, /g')
+            echo "pr_numbers=$PR_NUMBERS" >> $GITHUB_OUTPUT
+          else
+            echo "No merged TODO automation PRs found"
+            echo "has_completed=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Check for existing TODO issue
@@ -115,8 +101,16 @@ jobs:
           cat >> "$ISSUE_BODY_FILE" << 'EOF_FOOTER'
           ```
 
-          After completing the work, please clear the TODO.md file or mark items as done.
+          After completing the work, please update TODO.md accordingly (remove completed items or mark as done).
           EOF_FOOTER
+          
+          # Add note about completed PRs if any exist
+          if [ "${{ steps.check-completed-prs.outputs.has_completed }}" = "true" ]; then
+            cat >> "$ISSUE_BODY_FILE" << 'EOF_COMPLETED'
+
+          **Note:** There are merged PRs with the `todo-automation` label (${{ steps.check-completed-prs.outputs.pr_numbers }}). Please review them and remove any completed items from TODO.md.
+          EOF_COMPLETED
+          fi
           
           # Create issue to trigger Copilot Workspace
           gh issue create \

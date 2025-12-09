@@ -98,14 +98,25 @@ def update_todo_file(todo_path, completed_items):
                 line_normalized = line_stripped.lower()
 
                 # Remove markdown list markers and checkboxes for comparison
+                # Pattern matches: bullets (-, *, +), numbered lists (1., 2.),
+                # optional checkboxes ([x] or [ ]), with optional leading whitespace
                 line_normalized = re.sub(
                     r'^\s*(?:[-*+]|\d+\.)\s*(?:\[[x ]\]\s*)?',
                     '',
                     line_normalized
                 ).strip()
 
-                # Check for substantial match
-                if (completed_normalized in line_normalized or line_normalized in completed_normalized):
+                # Check for substantial match using word-based comparison
+                # to avoid false positives from simple substring matching
+                completed_words = set(completed_normalized.split())
+                line_words = set(line_normalized.split())
+
+                # Match if completed item words are subset of line words,
+                # or if there's exact equality
+                exact_match = (completed_normalized == line_normalized)
+                has_words = (completed_words and line_words)
+                word_subset = has_words and completed_words.issubset(line_words)
+                if exact_match or word_subset:
                     should_keep = False
                     removed_count += 1
                     print(f"Removing completed item: {line_stripped}")
