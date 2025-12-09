@@ -127,8 +127,14 @@ def update_todo_file(todo_path, completed_items):
             print("No matching TODO items found to remove")
             return False
 
-    except Exception as e:
-        print(f"Error updating TODO.md: {e}")
+    except UnicodeDecodeError as e:
+        print(f"Error reading TODO.md (encoding issue): {e}")
+        return False
+    except PermissionError as e:
+        print(f"Error updating TODO.md (permission denied): {e}")
+        return False
+    except OSError as e:
+        print(f"Error updating TODO.md (I/O error): {e}")
         return False
 
 
