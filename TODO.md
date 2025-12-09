@@ -1,4 +1,5 @@
 - Coloring by CSS
+
 The generator now emits SVGs whose modules use qr-foreground-color; each injected SVG gets the class `qrcode-box` applied to it.
 
 This would also include the ability for transparent QR codes.
