@@ -43,7 +43,7 @@ def test_extract_completed_items_multiple_patterns():
     Completed: Finish task 3
     """
     items = extract_completed_items(pr_body)
-    assert len(items) >= 3
+    assert len(items) == 3
 
 
 def test_extract_completed_items_empty_body():
