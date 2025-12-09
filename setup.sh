@@ -5,7 +5,21 @@ set -e
 
 # Parse command line arguments
 BUILD_MODE=false
-ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
+
+# Auto-detect Cloudflare Pages environment and set ROOT_DOMAIN accordingly
+# Cloudflare Pages provides CF_PAGES_URL which contains the deployment URL
+if [ -n "$CF_PAGES_URL" ]; then
+    # Running in Cloudflare Pages build environment
+    ROOT_DOMAIN="${ROOT_DOMAIN:-$CF_PAGES_URL}"
+elif [ -n "$CF_PAGES_BRANCH" ]; then
+    # Alternative: If CF_PAGES_BRANCH is set but CF_PAGES_URL isn't,
+    # we're likely in Cloudflare but URL might be in a different variable
+    ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
+else
+    # Not in Cloudflare Pages environment
+    ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
+fi
+
 RECIPIENTS_DIR="${RECIPIENTS_DIR:-recipients}"
 QR_OUT_DIR="${QR_OUT_DIR:-scripts/generated_qr}"
 PUBLIC_DIR="${PUBLIC_DIR:-public}"
@@ -24,14 +38,21 @@ while [[ $# -gt 0 ]]; do
             echo "  --help, -h    Show this help message"
             echo ""
             echo "Environment variables for --build mode:"
-            echo "  ROOT_DOMAIN      Domain for QR codes (default: INSERT-DOMAIN-NAME)"
+            echo "  ROOT_DOMAIN      Domain for QR codes"
+            echo "                   Auto-detected from CF_PAGES_URL when running in Cloudflare Pages"
+            echo "                   Falls back to INSERT-DOMAIN-NAME if not set"
             echo "  RECIPIENTS_DIR   Directory with recipient JSON files (default: recipients)"
             echo "  QR_OUT_DIR       Output directory for QR SVGs (default: scripts/generated_qr)"
             echo "  PUBLIC_DIR       Output directory for deployment (default: public)"
             echo ""
+            echo "Cloudflare Pages:"
+            echo "  When running in Cloudflare Pages, CF_PAGES_URL is automatically used as ROOT_DOMAIN"
+            echo "  You can override this by explicitly setting ROOT_DOMAIN environment variable"
+            echo ""
             echo "Examples:"
             echo "  ./setup.sh                                    # Normal setup"
-            echo "  ROOT_DOMAIN=\"https://example.com\" ./setup.sh --build  # Build for Cloudflare"
+            echo "  ./setup.sh --build                            # Build (uses CF_PAGES_URL if available)"
+            echo "  ROOT_DOMAIN=\"https://example.com\" ./setup.sh --build  # Build with custom domain"
             exit 0
             ;;
         *)
@@ -46,6 +67,11 @@ if [ "$BUILD_MODE" = true ]; then
     echo "🎄 SimpleWish - Cloudflare Pages Build"
     echo "========================================"
     echo ""
+    if [ -n "$CF_PAGES_URL" ]; then
+        echo "✓ Detected Cloudflare Pages environment"
+        echo "  Using CF_PAGES_URL: $CF_PAGES_URL"
+        echo ""
+    fi
     echo "Configuration:"
     echo "  ROOT_DOMAIN: $ROOT_DOMAIN"
     echo "  RECIPIENTS_DIR: $RECIPIENTS_DIR"

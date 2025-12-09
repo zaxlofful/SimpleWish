@@ -59,17 +59,25 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       - **Build command** (paste into the Pages web GUI build command):
       
       ```bash
-      ROOT_DOMAIN="INSERT-DOMAIN-NAME" ./setup.sh --build
+      ./setup.sh --build
       ```
       
       - **Output directory**: `public`
-      - **Note**: Replace `INSERT-DOMAIN-NAME` with your actual domain (e.g., `https://yourdomain.com`)
+      
+      The build script automatically detects Cloudflare Pages environment variables:
+      - **Auto-detection**: When running in Cloudflare Pages, the script automatically uses `CF_PAGES_URL` for QR code generation
+      - **Custom domain override**: You can override by setting `ROOT_DOMAIN` environment variable in Cloudflare Pages settings
+      
+      Example with custom domain override:
+      ```bash
+      ROOT_DOMAIN="https://yourcustomdomain.com" ./setup.sh --build
+      ```
       
       The build command (`setup.sh --build`) automatically handles:
       - Setting up Python virtual environment
       - Installing dependencies
       - Generating HTML from recipient JSON files
-      - Creating QR codes with your domain
+      - Creating QR codes with your domain (auto-detected or custom)
       - Injecting QR codes into HTML files
       - Preparing the `public/` directory for deployment
 
