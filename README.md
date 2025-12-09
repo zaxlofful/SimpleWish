@@ -1,5 +1,5 @@
 [![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml)
-[![Test](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml)
+[![pytest](https://github.com/ZaxLofful/SimpleWish/actions/workflows/pytest.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml)
 [![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml)
 
 # SimpleWish - Christmas List Template
