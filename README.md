@@ -94,25 +94,6 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 - Generate decorated QR SVGs for each generated page and inject them between the QR markers
 - Upload the generated `public/` folder to your Pages provider (Cloudflare Pages or GitHub Pages)
 
-If you want to run everything locally for testing, you can reproduce the build steps:
-
-```powershell
-# Create a venv, install deps
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r scripts/requirements.txt
-
-# Generate HTML for a single recipient (or use --bulk to generate all JSON files)
-python scripts/generate_recipient.py --data recipients/alice.json
-
-# Generate QR SVGs for all HTML files (example ROOT_DOMAIN shown)
-$env:ROOT_DOMAIN = 'https://example.com'
-python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
-
-# Inject generated SVGs into the HTML files
-python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
-```
-
 ### Option 2: Local Development Setup
 
 For contributors or advanced users who want to run scripts locally:
