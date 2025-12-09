@@ -13,7 +13,7 @@ def make_html_with_marker(path: Path, leading_ws=''):
 
 def test_inject_basic(tmp_path):
     html = tmp_path / 'sample.html'
-    original = make_html_with_marker(html)
+    make_html_with_marker(html)
 
     svg = '<svg>\n<rect/></svg>'
 
