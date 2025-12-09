@@ -11,12 +11,8 @@ BUILD_MODE=false
 if [ -n "$CF_PAGES_URL" ]; then
     # Running in Cloudflare Pages build environment
     ROOT_DOMAIN="${ROOT_DOMAIN:-$CF_PAGES_URL}"
-elif [ -n "$CF_PAGES_BRANCH" ]; then
-    # Alternative: If CF_PAGES_BRANCH is set but CF_PAGES_URL isn't,
-    # we're likely in Cloudflare but URL might be in a different variable
-    ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
 else
-    # Not in Cloudflare Pages environment
+    # Not in Cloudflare Pages environment or CF_PAGES_URL not available
     ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
 fi
 
