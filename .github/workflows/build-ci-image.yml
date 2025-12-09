@@ -6,8 +6,55 @@ on:
   workflow_dispatch: {}
 
 jobs:
+  check-rebuild:
+    name: Check whether rebuild is required
+    runs-on: ubuntu-latest
+    outputs:
+      rebuild: ${{ steps.determine.outputs.rebuild }}
+    steps:
+      - name: Checkout repo (full)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine changed files (push-range or origin/main)
+        id: determine
+        run: |
+          set -euo pipefail
+
+          echo "Event name: ${GITHUB_EVENT_NAME:-unknown}" >&2
+
+          # If this run was triggered by a push, compare only the pushed range
+          if [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
+            BEFORE_SHA=${{ github.event.before }}
+            AFTER_SHA=${{ github.sha }}
+            echo "Push event: comparing $BEFORE_SHA..$AFTER_SHA" >&2
+            # Try to fetch both SHAs (best-effort); continue even if fetch fails
+            git fetch --no-tags --prune --depth=1 origin $BEFORE_SHA $AFTER_SHA || true
+            CHANGED=$(git diff --name-only "$BEFORE_SHA".."$AFTER_SHA" || true)
+          else
+            echo "Non-push event: comparing with origin/main" >&2
+            git remote set-head origin -a || true
+            git fetch origin main --depth=1 || true
+            CHANGED=$(git diff --name-only origin/main...HEAD || true)
+          fi
+
+          echo "Changed files:\n$CHANGED" >&2
+
+          # Define patterns that should trigger a rebuild
+          PATTERNS='(^|/)(requirements(-dev)?\.txt|pyproject\.toml|setup\.py|\.github/ci/|Dockerfile|\.github/ci/Dockerfile|scripts/|requirements)'
+
+          if echo "$CHANGED" | grep -E "$PATTERNS" >/dev/null 2>&1; then
+            echo "rebuild=true" >> $GITHUB_OUTPUT
+          else
+            echo "rebuild=false" >> $GITHUB_OUTPUT
+          fi
+
   build-publish:
+    name: Build and publish images
+    needs: check-rebuild
     runs-on: ubuntu-22.04
+    if: github.event_name == 'workflow_dispatch' || needs.check-rebuild.outputs.rebuild == 'true'
     permissions:
       packages: write
       contents: read
