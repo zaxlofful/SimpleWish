@@ -2,8 +2,8 @@ name: Daily TODO Check
 
 on:
   schedule:
-    # Run daily at 2 AM UTC
-    - cron: '0 2 * * *'
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
   workflow_dispatch: {}
 
 jobs:
