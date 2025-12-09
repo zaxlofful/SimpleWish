@@ -1,69 +1,20 @@
 name: Build and publish CI image
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ main ]
-  workflow_dispatch: {}
+    # Only run this workflow when files that affect the CI image change
+    paths:
+      - 'requirements*.txt'
+      - '.github/workflows/build-ci-image.yml'
+      - 'Dockerfile'
+      - '.github/ci/**'
 
 jobs:
-  check-rebuild:
-    name: Check whether rebuild is required
-    runs-on: ubuntu-latest
-    outputs:
-      rebuild: ${{ steps.determine.outputs.rebuild }}
-    steps:
-      - name: Checkout repo (full)
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Determine changed files (push-range or origin/main)
-        id: determine
-        run: |
-          set -euo pipefail
-
-          echo "Event name: ${GITHUB_EVENT_NAME:-unknown}" >&2
-
-          # If this run was triggered by a push, compare only the pushed range
-          if [ "${GITHUB_EVENT_NAME:-}" = "push" ]; then
-            BEFORE_SHA=${{ github.event.before }}
-            AFTER_SHA=${{ github.sha }}
-            echo "Push event: comparing $BEFORE_SHA..$AFTER_SHA" >&2
-            # Try to fetch both SHAs (best-effort); continue even if fetch fails
-            git fetch --no-tags --prune --depth=1 origin $BEFORE_SHA $AFTER_SHA || true
-            CHANGED=$(git diff --name-only "$BEFORE_SHA".."$AFTER_SHA" || true)
-          else
-            echo "Non-push event: comparing with origin/main" >&2
-            git remote set-head origin -a || true
-            git fetch origin main --depth=1 || true
-            CHANGED=$(git diff --name-only origin/main...HEAD || true)
-          fi
-
-          echo "Changed files:\n$CHANGED" >&2
-
-          # Define patterns that should trigger a rebuild.
-          # Only rebuild when package requirements change or when the CI
-          # image build workflow itself changes (so we don't rebuild on
-          # unrelated script edits).
-          # Also trigger rebuild when Dockerfiles used by CI change (in
-          # `.github/ci/`) or when a top-level `Dockerfile` changes.
-          PATTERNS='(^|/)(requirements(-dev)?\.txt|\.github/workflows/build-ci-image\.yml|Dockerfile|\.github/ci/)'
-
-          if echo "$CHANGED" | grep -E "$PATTERNS" >/dev/null 2>&1; then
-            echo "rebuild=true" >> $GITHUB_OUTPUT
-          else
-            echo "rebuild=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Report rebuild decision
-        run: |
-          echo "Rebuild: ${{ steps.determine.outputs.rebuild }}"
-
   build-publish:
     name: Build and publish images
-    needs: check-rebuild
     runs-on: ubuntu-22.04
-    if: github.event_name == 'workflow_dispatch' || needs.check-rebuild.outputs.rebuild == 'true'
     permissions:
       packages: write
       contents: read
