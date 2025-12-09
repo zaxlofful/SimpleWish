@@ -85,7 +85,9 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       - Output directory: `public`
 
       - Why this matters: Cloudflare Pages will deploy only what you put in `public/`, so generating and injecting pages in the build step keeps the repository free of generated artifacts and preserves privacy/security of scripts and configs.
-       - Use the repository Actions workflow: go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow. The workflow will generate per-recipient HTML from `recipients/*.json`, run QR generation and injection, and upload the produced `public/` folder to Pages.
+   2. **GitHub Pages** (Optional):
+      - Use the repository Actions workflow: go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow.
+      - The workflow will generate per-recipient HTML from `recipients/*.json`, run QR generation and injection, and upload the produced `public/` folder to Pages.
 
 **That's it!** The GitHub Actions workflows will automatically:
 - Generate per-recipient HTML from `recipients/*.json` using `index.html` as the template
