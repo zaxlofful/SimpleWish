@@ -42,38 +42,11 @@ jobs:
             echo "ROOT_DOMAIN=$SECRET_ROOT_DOMAIN" >> $GITHUB_ENV
           fi
 
-      - name: Check whether HTML files changed
-        id: html-changed
-        run: |
-          echo "Checking for HTML changes..."
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Push event: checking changed files between ${{ github.event.before }} and ${{ github.sha }}"
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- '*.html' || true)
-          else
-            echo "Non-push event: comparing to origin/main"
-            git fetch origin main || true
-            CHANGED_FILES=$(git diff --name-only origin/main HEAD -- '*.html' || true)
-          fi
-          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
-          if [ -n "$CHANGED_FILES" ]; then
-            echo "html_changed=true" >> $GITHUB_OUTPUT
-          else
-            echo "html_changed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Skip QR generation when no HTML changes
-        if: steps.html-changed.outputs.html_changed == 'false'
-        run: |
-          echo "No HTML changes detected; skipping QR generation and injection."
-          echo "Changed files: '${{ steps.html-changed.outputs.changed_files }}'"
-
       - name: Generate URL SVG QR files
-        if: steps.html-changed.outputs.html_changed == 'true'
         run: |
           ./.venv/bin/python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
 
       - name: Inject SVGs into HTML files
-        if: steps.html-changed.outputs.html_changed == 'true'
         run: |
           ./.venv/bin/python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
