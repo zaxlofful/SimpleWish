@@ -70,7 +70,16 @@ jobs:
           cat > "$ISSUE_BODY_FILE" << 'EOF_BODY'
           @copilot /workspace
 
-          Please process the following TODO items from TODO.md and create a PR with the necessary changes:
+          Please process the following TODO items from TODO.md and create a PR with the necessary changes.
+
+          Before creating the final commit or PR, run the repository linter and tests and fix any failures:
+
+          - Run the linter: `flake8`
+          - Run the test suite: `pytest`
+
+          Only create the final PR/commit when both the linter and tests pass. Include the linter and test results in the PR description or a CI run log.
+
+          Now apply the requested changes for the TODOs below and open a branch+PR when complete:
 
           ```
           EOF_BODY
