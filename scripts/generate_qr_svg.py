@@ -265,10 +265,10 @@ def get_star_decoration() -> str:
     """Generate decorative star SVG."""
     return '''<g>
     <!-- large outer star -->
-    <polygon points="100,50 110,85 145,90 120,112 128,147 100,130 72,147 80,112 55,90 90,85" 
+    <polygon points="100,50 110,85 145,90 120,112 128,147 100,130 72,147 80,112 55,90 90,85"
         fill="#ffd54a" stroke="#daa520" stroke-width="2"/>
     <!-- inner star for depth -->
-    <polygon points="100,70 105,90 120,93 110,105 113,120 100,110 87,120 90,105 80,93 95,90" 
+    <polygon points="100,70 105,90 120,93 110,105 113,120 100,110 87,120 90,105 80,93 95,90"
         fill="#fff176"/>
     <!-- center highlight -->
     <circle cx="100" cy="100" r="8" fill="#ffeb3b"/>
@@ -279,7 +279,7 @@ def get_candy_cane_decoration() -> str:
     """Generate candy cane decoration SVG."""
     return '''<g transform="translate(230,12) scale(-1,1)">
     <!-- main cane shape -->
-    <path d="M100,180 L100,100 Q100,70 120,70 Q140,70 140,90 Q140,110 120,110" 
+    <path d="M100,180 L100,100 Q100,70 120,70 Q140,70 140,90 Q140,110 120,110"
         fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round"/>
     <!-- red stripes (spaced out to avoid overlap) -->
     <path d="M100,175 L100,162" stroke="#b71c1c" stroke-width="16" stroke-linecap="round"/>
@@ -297,7 +297,7 @@ def get_bell_decoration() -> str:
     """Generate Christmas bell decoration SVG."""
     return '''<g>
     <!-- bell body (reduced size) -->
-    <path d="M72,100 Q72,82 100,82 Q128,82 128,100 L132,126 Q132,134 122,140 L122,144 Q122,148 100,148 Q78,148 78,144 L78,140 Q68,134 68,126 Z" 
+    <path d="M72,100 Q72,82 100,82 Q128,82 128,100 L132,126 Q132,134 122,140 L122,144 Q122,148 100,148 Q78,148 78,144 L78,140 Q68,134 68,126 Z"
         fill="#ffd54a" stroke="#d3a21a" stroke-width="1.5"/>
     <!-- bell rim (slightly raised) -->
     <ellipse cx="100" cy="148" rx="26" ry="7" fill="#d3a21a"/>
@@ -418,7 +418,7 @@ def generate_svg(
         'candy-cane': get_candy_cane_decoration,
         'bell': get_bell_decoration,
     }
-    
+
     # Get decoration content
     if decoration_type in decoration_map:
         if decoration_type == 'tree':

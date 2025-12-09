@@ -42,7 +42,7 @@ def test_generate_svg_with_decoration():
 def test_decoration_types():
     """Test that all decoration types can be generated without errors."""
     decoration_types = ['tree', 'snowman', 'santa', 'gift', 'star', 'candy-cane', 'bell']
-    
+
     for deco_type in decoration_types:
         svg = generate_svg(
             f'https://example.com/test-{deco_type}',
@@ -74,7 +74,7 @@ def test_tree_styles():
         assert re.search(
             r'<g[^>]+id=["\']xmas-decoration["\']', svg
         ), f'Missing decoration group for tree-{style}'
-        
+
         if style == 'fancy':
             # Fancy tree should have baubles/ornaments
             assert 'bauble' in svg.lower() or 'fill="#b71c1c"' in svg, \
@@ -159,21 +159,21 @@ def test_read_meta_tags_from_html(tmp_path):
 
 def test_qr_generation_matches_reference():
     """Test that QR generation with default settings produces consistent output.
-    
+
     This test generates a QR code with default settings (matching the command:
-    python scripts/generate_qr_svg.py --root-domain "https://example.com" 
-    --pattern "index.html" --out-dir scripts/generated_qr) and compares its 
+    python scripts/generate_qr_svg.py --root-domain "https://example.com"
+    --pattern "index.html" --out-dir scripts/generated_qr) and compares its
     hash to a reference file to ensure the QR generation is deterministic.
     """
     from scripts.generate_qr_svg import sanitize_svg_for_html
     import scripts.generate_qr_svg as gen_module
-    
+
     # Set the global variables that control overlay positioning
     # These match the defaults from argparse (lines 392-415)
     gen_module.__overlay_multiplier__ = 3.0   # --overlay-mult default
     gen_module.__overlay_shift_x__ = 0.90     # --overlay-shift-x default
     gen_module.__overlay_shift_y__ = 0.50     # --overlay-shift-y default
-    
+
     # Generate QR with default CLI settings for index.html
     # These match the defaults from argparse in generate_qr_svg.py
     svg = generate_svg(
@@ -189,13 +189,13 @@ def test_qr_generation_matches_reference():
         tree_style='fancy',              # --tree-style default
         decoration_type='tree'           # --decoration-type default
     )
-    
+
     # Apply the same sanitization that the CLI script applies
     svg = sanitize_svg_for_html(svg)
-    
+
     # Calculate hash of generated SVG
     generated_hash = hashlib.sha256(svg.encode('utf-8')).hexdigest()
-    
+
     # Read reference file and calculate its hash
     reference_path = os.path.join(
         os.path.dirname(__file__), 'reference_qr.svg'
@@ -203,17 +203,16 @@ def test_qr_generation_matches_reference():
     with open(reference_path, 'r', encoding='utf-8') as f:
         reference_svg = f.read()
     reference_hash = hashlib.sha256(reference_svg.encode('utf-8')).hexdigest()
-    
+
     # Hashes should match exactly
     assert generated_hash == reference_hash, (
         f'Generated QR hash {generated_hash} does not match '
         f'reference hash {reference_hash}. '
         'This indicates the QR generation algorithm has changed.'
     )
-    
+
     # Also verify the SVG content is identical
     assert svg == reference_svg, (
         'Generated SVG content does not match reference. '
         'This indicates the QR generation is not deterministic.'
     )
-
