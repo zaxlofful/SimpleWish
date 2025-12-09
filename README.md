@@ -295,6 +295,8 @@ When adding gift links, remove tracking parameters:
 - ❌ `https://example.com/product?utm_source=email&ref=tracker`
 - ✅ `https://example.com/product`
 
+Or...Add your own to track if they opened your links!
+
 ---
 
 ## CI Image and Secure Runners
