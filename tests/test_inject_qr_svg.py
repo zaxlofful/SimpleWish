@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from scripts.inject_qr_svg import inject, MARKER_START, MARKER_END
