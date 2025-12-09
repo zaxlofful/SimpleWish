@@ -52,12 +52,7 @@ jobs:
 
       - name: Report rebuild decision
         run: |
-          REBUILD="${{ steps.determine.outputs.rebuild }}"
-          if [ "$REBUILD" = "true" ]; then
-            echo "Rebuild required: proceeding with build-publish."
-          else
-            echo "No need for rebuild"
-          fi
+          echo "${{ steps.determine.outputs.rebuild }}"
 
   build-publish:
     name: Build and publish images
