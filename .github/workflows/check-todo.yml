@@ -31,8 +31,63 @@ jobs:
             echo "has_content=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger GitHub Copilot Workspace
+      - name: Check for completed PRs and update TODO.md
         if: steps.check-todo.outputs.has_content == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for completed TODO automation PRs..."
+          
+          # Check for merged PRs with todo-automation label
+          MERGED_PRS=$(gh pr list --state merged --label "todo-automation" --json number,title,mergedAt --limit 10)
+          
+          if [ "$MERGED_PRS" != "[]" ]; then
+            echo "Found merged TODO automation PRs, updating TODO.md..."
+            
+            # For each merged PR, check if its linked issue is in TODO.md
+            # and remove completed items
+            python3 scripts/update_todo_from_prs.py
+            
+            # Check if TODO.md was modified
+            if [ -n "$(git status --porcelain TODO.md)" ]; then
+              git config user.name "github-actions[bot]"
+              git config user.email "github-actions[bot]@users.noreply.github.com"
+              git add TODO.md
+              git commit -m "chore: update TODO.md after completed PRs"
+              git push
+              echo "TODO.md updated and committed"
+              
+              # Re-check if TODO.md is now empty
+              if python3 scripts/check_todo.py; then
+                echo "TODO.md is now empty, skipping issue creation"
+                exit 0
+              fi
+            fi
+          fi
+
+      - name: Check for existing TODO issue
+        if: steps.check-todo.outputs.has_content == 'true'
+        id: check-existing-issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for existing open TODO automation issues..."
+          
+          # Check for open issues with todo-automation label
+          EXISTING_ISSUES=$(gh issue list --label "todo-automation" --state open --json number,title --limit 1)
+          
+          if [ "$EXISTING_ISSUES" != "[]" ]; then
+            ISSUE_NUMBER=$(echo "$EXISTING_ISSUES" | jq -r '.[0].number')
+            echo "Found existing open issue #$ISSUE_NUMBER"
+            echo "has_existing=true" >> $GITHUB_OUTPUT
+            echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          else
+            echo "No existing open TODO issue found"
+            echo "has_existing=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger GitHub Copilot Workspace
+        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -70,3 +125,8 @@ jobs:
           rm -f "$TODO_FILE" "$ISSUE_BODY_FILE"
           
           echo "Issue created with @copilot workspace mention to trigger agent session"
+      
+      - name: Skip - existing issue found
+        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'true'
+        run: |
+          echo "Skipping issue creation - existing open TODO issue #${{ steps.check-existing-issue.outputs.issue_number }} found"
