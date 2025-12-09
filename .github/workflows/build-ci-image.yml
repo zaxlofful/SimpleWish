@@ -63,7 +63,30 @@ jobs:
       packages: write
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python for linting & tests
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Create venv and install deps for lint/tests
+        run: |
+          set -euo pipefail
+          python -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt
+
+      - name: Run flake8
+        run: |
+          set -euo pipefail
+          ./.venv/bin/python -m flake8 -q
+
+      - name: Run tests
+        run: |
+          set -euo pipefail
+          ./.venv/bin/python -m pytest -q
 
       - name: Trivy scan repository (filesystem)
         run: |
@@ -99,12 +122,26 @@ jobs:
           docker build -f .github/ci/Dockerfile.qr -t "$IMAGE" .
           docker push "$IMAGE"
 
+      - name: Show QR image info
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "QR image built:" "$IMAGE"
+          docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
+
       - name: Build and push Infra image (SHA tag)
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
           docker build -f .github/ci/Dockerfile.infra -t "$IMAGE" .
           docker push "$IMAGE"
+
+      - name: Show Infra image info
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Infra image built:" "$IMAGE"
+          docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
 
       - name: Push QR image main tag (when on main)
         if: steps.vars.outputs.PUSH_MAIN == 'true'
@@ -151,7 +188,5 @@ jobs:
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
-
-
 
       # (Previously created an artifact with CI_IMAGE_TAG/CI_IMAGE_OWNER; removed per request.)

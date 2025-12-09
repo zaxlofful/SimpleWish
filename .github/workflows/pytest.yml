@@ -1,4 +1,4 @@
-name: Lint
+name: pytest
 
 on:
   workflow_dispatch: {}
@@ -7,7 +7,7 @@ on:
   pull_request: {}
 
 jobs:
-  flake8:
+  pytest:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,10 +19,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create venv with system-site-packages and install dev requirements
+      - name: Create venv with system-site-packages and install deps
         run: |
           python -m venv --system-site-packages .venv
 
-      - name: Run flake8
+      - name: Run tests
         run: |
-          ./.venv/bin/python -m flake8 -q
+          ./.venv/bin/python -m pytest -q
