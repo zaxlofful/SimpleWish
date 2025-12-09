@@ -64,11 +64,12 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
      - Your lists will be available at your custom domain
    - **GitHub Pages** (Optional): Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
 
-**That's it!** The GitHub Actions workflows will automatically:
-- Generate HTML files from text files in the `recipients/` folder
+**That's it!** When you deploy, the build process will automatically:
+- Generate HTML files from text files in the `recipients/` folder (if any)
 - Generate QR codes for all HTML files using your configured domain
-- Commit them back to your repository
-- Your lists are ready to share!
+- Deploy everything to your hosting platform
+
+No generated files are committed to the repository - they're only created during deployment.
 
 ### Option 1b: Using Text Files (Simplified)
 
@@ -103,10 +104,12 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 
 5. **Deploy** (same as Option 1, step 6)
 
-**The GitHub Actions workflow will automatically:**
-- Generate `alice.html` from `recipients/alice.txt`
+**The deployment build process will automatically:**
+- Generate `alice.html` from `recipients/alice.txt` during the build
 - Create QR codes for the HTML file
-- Deploy to your hosting platform
+- Deploy everything to your hosting platform
+
+Generated files are not committed to the repository.
 
 See `recipients/README.md` for more details on the text file format.
 
@@ -257,15 +260,18 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
 - **Test** — Runs pytest test suite
-- **Generate QR** — Automatically generates HTML from text files and creates QR codes
+- **Generate QR** — Automatically generates and injects QR codes for manually created HTML files
 
-#### Automated HTML Generation
+#### Automated HTML Generation During Deployment
 
-The `Generate QR` workflow automatically:
+HTML files are generated from text files **during the deployment build process**, not committed to the repository.
+
+The deployment workflow automatically:
 1. Reads all `.txt` files from the `recipients/` folder
 2. Generates corresponding `.html` files (e.g., `recipients/alice.txt` → `alice.html`)
-3. Creates QR codes for each HTML file
-4. Commits the generated files back to the repository
+3. Creates QR codes for all HTML files (both manual and generated)
+4. Injects QR codes into the HTML files
+5. Deploys the final HTML files
 
 **Text File Format:**
 Each line in a recipient text file should be: `Item description URL`
@@ -277,7 +283,7 @@ Coffee maker — programmable https://example.com/coffee-maker
 Running shoes — size 10 https://example.com/shoes
 ```
 
-This will generate `bob.html` with a personalized gift list for Bob.
+This will generate `bob.html` during deployment with a personalized gift list for Bob.
 
 For more details, see `recipients/README.md`.
 
@@ -287,23 +293,36 @@ This repository is designed to work with **Cloudflare Pages** and custom domains
 
 1. **Cloudflare Pages** (Recommended):
    - Connect your repository to Cloudflare Pages through their web GUI
-   - **Important for security**: Configure to deploy only HTML files:
-     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
-     - Output directory: `public`
-   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents
-   - Note: This same command is used in the GitHub Pages workflow (`.github/workflows/deploy-pages.yml`)
+   - Configure the build settings:
+     - **Build command**: 
+       ```bash
+       pip install -r scripts/requirements.txt && \
+       python scripts/generate_html_from_recipients.py --recipients-dir recipients --template index.html --output-dir . && \
+       python scripts/generate_qr_svg.py --root-domain "$CF_PAGES_URL" --pattern "*.html" --out-dir scripts/generated_qr && \
+       python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html" && \
+       mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/
+       ```
+       Note: Replace `$CF_PAGES_URL` with your actual Cloudflare Pages URL or set it as an environment variable
+     - **Output directory**: `public`
+   - This build command:
+     1. Installs Python dependencies
+     2. Generates HTML from recipients/*.txt files
+     3. Generates QR codes for all HTML files
+     4. Injects QR codes into HTML files
+     5. Copies only HTML files to the `public` directory
    - Your lists will be available at your custom domain
 
 2. **GitHub Pages** (Optional):
    - A manual workflow is available if you prefer GitHub Pages
    - Go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow
-   - The workflow uses the same security approach: copying only HTML files to a `public` directory before deployment
+   - The workflow automatically handles all build steps (HTML generation, QR codes, injection)
    - Enable GitHub Pages in repository settings if needed
+   - Configure `ROOT_DOMAIN` secret or variable for proper QR code URLs
 
 3. **Self-hosted**:
-   - Simply copy the HTML files to any web server
-   - No build process required
-   - Recommended: Copy only `*.html` files for security
+   - Run the same build commands locally or in your CI/CD pipeline
+   - Copy only `*.html` files from the `public` directory to your web server
+   - Set the `ROOT_DOMAIN` environment variable to your deployment URL
 
 ### Per-file Metadata
 

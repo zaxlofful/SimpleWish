@@ -42,20 +42,23 @@ This will generate `alice.html` with:
 
 ## Customization
 
-The generated HTML files use the `index.html` template. If you want to customize colors or styling for a specific recipient, you can:
+The generated HTML files use the `index.html` template. Since HTML files are generated during deployment and not committed to the repository, if you want custom styling for a specific recipient:
 
-1. Let the CI generate the HTML file first
-2. Manually edit the generated HTML file to add custom meta tags (for QR colors) or CSS variables
-3. Commit the changes - the CI will preserve manual edits and only update the gift list items
+1. Create a manual HTML file instead of using a text file (e.g., copy `index.html` to `alice.html` and edit it)
+2. Add custom meta tags (for QR colors) or CSS variables
+3. Commit this manually created HTML file to the repository
 
 ## How It Works
 
 1. Add or edit `.txt` files in this folder
 2. Commit and push to GitHub
-3. The GitHub Actions workflow automatically:
+3. During deployment, the build process automatically:
    - Generates HTML files from the text files
-   - Creates QR codes for each HTML page
+   - Creates QR codes for each HTML page (both manual and generated)
+   - Injects QR codes into the HTML files
    - Deploys to GitHub Pages or Cloudflare Pages
+
+**Important**: Generated HTML files are NOT committed to the repository - they only exist during the build/deployment process.
 
 ## Notes
 

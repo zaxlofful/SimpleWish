@@ -33,6 +33,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r scripts/requirements.txt
+      
+      - name: Generate HTML files from recipients
+        run: |
+          python scripts/generate_html_from_recipients.py --recipients-dir recipients --template index.html --output-dir .
+      
+      - name: Set ROOT_DOMAIN (with default)
+        env:
+          SECRET_ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
+          VAR_ROOT_DOMAIN: ${{ vars.ROOT_DOMAIN }}
+        run: |
+          # Start with a safe default
+          echo "ROOT_DOMAIN=https://example.com" >> $GITHUB_ENV
+          # If a repository variable exists, use it (public/overrideable)
+          if [ -n "$VAR_ROOT_DOMAIN" ]; then
+            echo "ROOT_DOMAIN=$VAR_ROOT_DOMAIN" >> $GITHUB_ENV
+          fi
+          # If a secret exists, overwrite the value so private data wins
+          if [ -n "$SECRET_ROOT_DOMAIN" ]; then
+            echo "ROOT_DOMAIN=$SECRET_ROOT_DOMAIN" >> $GITHUB_ENV
+          fi
+      
+      - name: Generate QR codes
+        run: |
+          python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+      
+      - name: Inject QR codes into HTML files
+        run: |
+          python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+      
       - name: Prepare HTML files for deployment
         run: |
           mkdir public

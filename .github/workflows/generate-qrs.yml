@@ -30,10 +30,6 @@ jobs:
           ./.venv/bin/python -m pip install --upgrade pip
           ./.venv/bin/python -m pip install -r scripts/requirements.txt
 
-      - name: Generate HTML files from recipients
-        run: |
-          ./.venv/bin/python scripts/generate_html_from_recipients.py --recipients-dir recipients --template index.html --output-dir .
-
       - name: Set ROOT_DOMAIN (with default)
         env:
           SECRET_ROOT_DOMAIN: ${{ secrets.ROOT_DOMAIN }}
@@ -72,6 +68,6 @@ jobs:
         if: steps.git-changes.outputs.changes == 'true'
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
-          commit_message: "chore: generate HTML from recipients and inject QR SVGs"
+          commit_message: "chore: generate and inject QR SVGs"
           file_pattern: "*.html"
           branch: ${{ github.ref_name }}
