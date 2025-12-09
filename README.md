@@ -40,7 +40,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 
 4. **Create personalized lists**:
    ```bash
-   cp index.html alice.html
+   cp index.html steve.html
    cp index.html bob.html
    # Edit each file with gift ideas for that person
    ```
