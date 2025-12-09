@@ -59,13 +59,13 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       - **Build command** (paste into the Pages web GUI build command):
       
       ```bash
-      ROOT_DOMAIN="INSERT-DOMAIN-NAME" ./build-cloudflare.sh
+      ROOT_DOMAIN="INSERT-DOMAIN-NAME" ./setup.sh --build
       ```
       
       - **Output directory**: `public`
       - **Note**: Replace `INSERT-DOMAIN-NAME` with your actual domain (e.g., `https://yourdomain.com`)
       
-      The build script (`build-cloudflare.sh`) automatically handles:
+      The build command (`setup.sh --build`) automatically handles:
       - Setting up Python virtual environment
       - Installing dependencies
       - Generating HTML from recipient JSON files
@@ -74,33 +74,6 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       - Preparing the `public/` directory for deployment
 
       - **Why this matters**: Cloudflare Pages will deploy only what you put in `public/`, so generating and injecting pages in the build step keeps the repository free of generated artifacts and preserves privacy/security of scripts and configs.
-      
-      <details>
-      <summary>Advanced: Manual build steps (if you prefer not to use the script)</summary>
-      
-      ```bash
-      set -e
-
-      # create venv and install deps
-      python3 -m venv .venv
-      . .venv/bin/activate
-      pip install --upgrade pip
-      pip install -r scripts/requirements.txt
-
-      # generate HTML for all JSON recipients (writes files to repo root)
-      python scripts/generate_recipient.py --bulk --recipients-dir recipients
-
-      # generate QR SVGs (uses ROOT_DOMAIN env var if set)
-      python scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr --root-domain "INSERT-DOMAIN-NAME"
-
-      # inject generated SVGs into the generated HTML files
-      python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
-
-      # prepare public/ for Pages and move generated HTML there
-      mkdir -p public
-      mv -- *.html public/ || true
-      ```
-      </details>
    2. **GitHub Pages** (Optional):
       - Use the repository Actions workflow: go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow.
       - The workflow will generate per-recipient HTML from `recipients/*.json`, run QR generation and injection, and upload the produced `public/` folder to GitHub Pages.
