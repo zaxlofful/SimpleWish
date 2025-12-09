@@ -46,6 +46,8 @@ COPY --from=builder /usr/local /usr/local
 # Create non-root user
 RUN groupadd -r ci -g 1000 \
   && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci
+# Make OS release files world-readable so non-root users can detect distro
+RUN chmod a+r /etc/*release || true
 
 USER ci
 WORKDIR /home/ci
