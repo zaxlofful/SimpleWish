@@ -41,8 +41,13 @@ jobs:
 
           echo "Changed files:\n$CHANGED" >&2
 
-          # Define patterns that should trigger a rebuild
-          PATTERNS='(^|/)(requirements(-dev)?\.txt|pyproject\.toml|setup\.py|\.github/ci/|Dockerfile|\.github/ci/Dockerfile|scripts/|requirements)'
+          # Define patterns that should trigger a rebuild.
+          # Only rebuild when package requirements change or when the CI
+          # image build workflow itself changes (so we don't rebuild on
+          # unrelated script edits).
+          # Also trigger rebuild when Dockerfiles used by CI change (in
+          # `.github/ci/`) or when a top-level `Dockerfile` changes.
+          PATTERNS='(^|/)(requirements(-dev)?\.txt|\.github/workflows/build-ci-image\.yml|Dockerfile|\.github/ci/)'
 
           if echo "$CHANGED" | grep -E "$PATTERNS" >/dev/null 2>&1; then
             echo "rebuild=true" >> $GITHUB_OUTPUT
