@@ -99,7 +99,7 @@ def update_todo_file(todo_path, completed_items):
 
                 # Remove markdown list markers and checkboxes for comparison
                 line_normalized = re.sub(
-                    r'^[-*+]\s*(\[[x ]\]\s*)?',
+                    r'^\s*(?:[-*+]|\d+\.)\s*(?:\[[x ]\]\s*)?',
                     '',
                     line_normalized
                 ).strip()
