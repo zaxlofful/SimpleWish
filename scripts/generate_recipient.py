@@ -41,7 +41,7 @@ def render_from_template(template_text: str, data: dict) -> str:
         safe_title = html.escape(str(data['title']))
         s = re.sub(r'<title>.*?</title>', f'<title>{safe_title}</title>', s, flags=re.S)
 
-    # Update recipient heading: <h1 id="recipient">...<\h1>
+    # Update recipient heading: <h1 id="recipient">...</h1>
     if 'recipient' in data:
         safe_recipient = html.escape(str(data['recipient']))
         new_h1 = f'Christmas List for {safe_recipient}'

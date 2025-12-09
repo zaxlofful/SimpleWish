@@ -26,7 +26,7 @@ def test_generate_recipient_from_example():
     assert 'Raspberry Pi 5 — 8GB RAM starter kit' in rendered
 
     # Title and recipient should be updated
-    assert "<title>Alice's Christmas List</title>" in rendered
+    assert "<title>Alice&#x27;s Christmas List</title>" in rendered
     assert 'Christmas List for Alice' in rendered
 
     # Notes should be HTML-escaped (ampersand becomes &amp;)
