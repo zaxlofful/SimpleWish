@@ -30,7 +30,7 @@ def test_extract_completed_items_checkbox_pattern():
     - [x] Fix bug C
     """
     items = extract_completed_items(pr_body)
-    assert len(items) >= 2
+    assert len(items) == 2
     assert any('feature A' in item for item in items)
     assert any('bug C' in item for item in items)
 
