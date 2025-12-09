@@ -100,7 +100,7 @@ if [ "$BUILD_MODE" = true ]; then
     # Step 2: Generate HTML for all JSON recipients
     echo "Step 2/5: Generating HTML files from recipient data..."
     if [ -d "$RECIPIENTS_DIR" ] && compgen -G "$RECIPIENTS_DIR/*.json" > /dev/null; then
-        python scripts/generate_recipient.py --bulk --recipients-dir "$RECIPIENTS_DIR"
+        python3 scripts/generate_recipient.py --bulk --recipients-dir "$RECIPIENTS_DIR"
         echo "✓ HTML files generated"
     else
         echo "ℹ No recipient JSON files found in $RECIPIENTS_DIR, skipping generation"
@@ -109,13 +109,13 @@ if [ "$BUILD_MODE" = true ]; then
     
     # Step 3: Generate QR SVGs
     echo "Step 3/5: Generating QR codes..."
-    python scripts/generate_qr_svg.py --pattern "*.html" --out-dir "$QR_OUT_DIR" --root-domain "$ROOT_DOMAIN"
+    python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir "$QR_OUT_DIR" --root-domain "$ROOT_DOMAIN"
     echo "✓ QR codes generated"
     echo ""
     
     # Step 4: Inject generated SVGs into HTML files
     echo "Step 4/5: Injecting QR codes into HTML files..."
-    python scripts/inject_qr_svg.py --svg-dir "$QR_OUT_DIR" --pattern "*.html"
+    python3 scripts/inject_qr_svg.py --svg-dir "$QR_OUT_DIR" --pattern "*.html"
     echo "✓ QR codes injected"
     echo ""
     
