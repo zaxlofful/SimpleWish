@@ -16,7 +16,7 @@ jobs:
       packages: read
     container:
       image: ghcr.io/${{ github.repository_owner }}/simplewish-qr:main
-      options: --user 1000
+      options: --user 0
     steps:
       - name: Checkout
         uses: actions/checkout@v4
