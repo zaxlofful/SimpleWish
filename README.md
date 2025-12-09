@@ -89,7 +89,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       - Use the repository Actions workflow: go to Actions → "Deploy to GitHub Pages (Optional)" → Run workflow.
       - The workflow will generate per-recipient HTML from `recipients/*.json`, run QR generation and injection, and upload the produced `public/` folder to GitHub Pages.
 
-**That's it!** The GitHub Actions workflows will automatically:
+**That's it!** The Cloudflare/GitHub workflows will automatically:
 - Generate per-recipient HTML from `recipients/*.json` using `index.html` as the template
 - Generate decorated QR SVGs for each generated page and inject them between the QR markers
 - Upload the generated `public/` folder to your Pages provider (Cloudflare Pages or GitHub Pages)
