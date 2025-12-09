@@ -90,9 +90,9 @@ def ensure_badge_links():
                         with open(full, 'r', encoding='utf-8') as wf:
                             txt = wf.read()
                         # look for a name: line
-                        m = re.search(r'^\s*name:\s*["\']?(?P<wname>[^"\']+)["\']?', txt, flags=re.IGNORECASE | re.MULTILINE)
+                        m = re.search(r'^\s*name:\s*(?:["\']([^"\']*)["\']|(\S+))', txt, flags=re.IGNORECASE | re.MULTILINE)
                         if m:
-                            wname = m.group('wname').strip().lower()
+                            wname = (m.group(1) or m.group(2)).strip().lower()
                             if wname == alt_name.strip().lower():
                                 return f'https://github.com/{owner}/{repo}/actions/workflows/{fn}'
                     except Exception:
