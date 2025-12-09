@@ -49,13 +49,16 @@ jobs:
             python3 scripts/update_todo_from_prs.py
             
             # Check if TODO.md was modified
-            if [ -n "$(git status --porcelain TODO.md)" ]; then
-              git config user.name "github-actions[bot]"
-              git config user.email "github-actions[bot]@users.noreply.github.com"
-              git add TODO.md
-              git commit -m "chore: update TODO.md after completed PRs"
-              git push
-              echo "TODO.md updated and committed"
+            # Use git-auto-commit-action to commit TODO.md changes
+            echo "Committing TODO.md changes using git-auto-commit-action"
+          - name: Commit TODO.md changes
+            if: steps.check-todo.outputs.has_content == 'true'
+            id: auto-commit
+            uses: stefanzweifel/git-auto-commit-action@v4
+            with:
+              commit_message: "chore: update TODO.md after completed PRs"
+              file_pattern: "TODO.md"
+              branch: ${{ github.ref_name }}
               
               # Re-check if TODO.md is now empty
               if python3 scripts/check_todo.py; then
