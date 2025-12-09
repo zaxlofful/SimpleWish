@@ -249,6 +249,20 @@ This repository includes automated workflows:
 - **Local filtering:** The workflows apply a `todo-automation` label to automation issues so you can filter them locally (e.g., `is:issue label:todo-automation`). Workflows create this label idempotently if it is missing; to change this behavior, edit `.github/workflows/check-todo.yml`.
 
 
+Copilot automation in CI (what the `check-todo` workflow does)
+
+- The repository ships a scheduled workflow (`.github/workflows/check-todo.yml`) that automates TODO handling and can delegate work to GitHub Copilot.
+- High-level behavior:
+   - If `TODO.md` contains items, the workflow first checks for existing open issues labeled `todo-automation` to avoid duplicates.
+   - It then checks for existing Pull Requests (open and recently closed) that look like Copilot work — it matches by PR author (`copilot-swe-agent`), `todo-automation` label, a title pattern like "Process TODO.md items", or by finding a short snippet of `TODO.md` in the PR body. Closed-but-merged PRs are ignored; closed-but-unmerged PRs are treated as existing to avoid reopening duplicate work.
+   - The workflow logs the installed `gh` CLI version and whether `gh agent-task` is available in the runner (useful for debugging and diagnosing why the agent path was or wasn't used).
+   - If no existing issue or PR is found and `gh agent-task` is available, the workflow prefers `gh agent-task create` to start a Copilot agent session directly from the TODO body (this avoids creating a separate issue in many cases).
+   - If `gh agent-task` is not available or the agent task fails, the workflow falls back to creating a `todo-automation` issue, assigns it to the repository owner, and posts an `@copilot` comment so Copilot can be triggered when available.
+
+- Secrets/permissions: the workflow uses the built-in `GITHUB_TOKEN` for repository operations (creating issues, comments, labels). No extra user token is required by default. To use the `gh agent-task` path in CI, ensure the runner has a reasonably recent `gh` (v2.80.0+ recommended) installed so the `agent-task` command exists and behaves as expected.
+
+- Why this helps: the combination of detecting existing PRs (including recent closed-but-unmerged Copilot PRs), preferring the agent task when available, and having a simple fallback keeps automation idempotent and avoids duplicate issues/PRs while still making Copilot integration convenient.
+
 ### Deployment Options
 
 This repository is designed to work with **Cloudflare Pages** and custom domains. The single-file HTML design makes deployment simple:

@@ -52,19 +52,106 @@ jobs:
             echo "has_existing=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Trigger GitHub Copilot Workspace
-        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false'
+      - name: Log gh availability
+        id: gh-check
+        if: steps.check-todo.outputs.has_content == 'true'
+        run: |
+          echo "--- gh CLI debug ---"
+          AGENT_AVAILABLE=false
+          if command -v gh >/dev/null 2>&1; then
+            gh --version || true
+            if gh help agent-task >/dev/null 2>&1; then
+              echo "gh agent-task: available"
+              AGENT_AVAILABLE=true
+            else
+              echo "gh agent-task: not available"
+            fi
+          else
+            echo "gh: not installed on runner"
+          fi
+          echo "agent_task_available=$AGENT_AVAILABLE" >> $GITHUB_OUTPUT
+
+      - name: Check for existing TODO PR
+        if: steps.check-todo.outputs.has_content == 'true'
+        id: check-existing-pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "TODO.md has content - creating issue to trigger GitHub Copilot Workspace"
-          
+          echo "Checking for existing open TODO PRs..."
+          # Read a short snippet of TODO.md (if present) to detect PRs that already include the same content
+          TODO_SNIP=""
+          if [ -f TODO.md ]; then
+            TODO_SNIP=$(head -c 300 TODO.md | tr -d '\n' | sed 's/"/\\"/g' )
+          fi
+
+          # First check open PRs
+          EXISTING_PRS=$(gh pr list --state open --json number,title,author,labels,body --limit 100)
+          MATCHING_PR=""
+          echo "$EXISTING_PRS" | jq -c '.[]' | while read -r PR; do
+            NUM=$(echo "$PR" | jq -r '.number')
+            TITLE=$(echo "$PR" | jq -r '.title')
+            AUTHOR=$(echo "$PR" | jq -r '.author.login' 2>/dev/null || true)
+            LABELS=$(echo "$PR" | jq -r '.labels[]?.name' 2>/dev/null || true)
+            BODY=$(echo "$PR" | jq -r '.body' 2>/dev/null || true)
+
+            if [ "${AUTHOR}" = "copilot-swe-agent" ] || echo "$LABELS" | grep -qi "todo-automation" || echo "$TITLE" | grep -qi "Process TODO.md items" || ( [ -n "$TODO_SNIP" ] && echo "$BODY" | grep -Fqi "$TODO_SNIP" ); then
+              MATCHING_PR=$NUM
+              echo "Found matching open PR #$MATCHING_PR (title: $TITLE, author: $AUTHOR)"
+              echo "has_pr=true" >> $GITHUB_OUTPUT
+              echo "pr_number=$MATCHING_PR" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+          done
+
+          # If no matching open PR found, also check recently closed PRs to avoid reopening a closed-but-unmerged Copilot PR
+          if [ -z "$MATCHING_PR" ]; then
+            CLOSED_PRS=$(gh pr list --state closed --json number,title,author,labels,body --limit 100)
+            echo "$CLOSED_PRS" | jq -c '.[]' | while read -r PR; do
+              NUM=$(echo "$PR" | jq -r '.number')
+              TITLE=$(echo "$PR" | jq -r '.title')
+              AUTHOR=$(echo "$PR" | jq -r '.author.login' 2>/dev/null || true)
+              LABELS=$(echo "$PR" | jq -r '.labels[]?.name' 2>/dev/null || true)
+              BODY=$(echo "$PR" | jq -r '.body' 2>/dev/null || true)
+
+              if [ "${AUTHOR}" = "copilot-swe-agent" ] || echo "$LABELS" | grep -qi "todo-automation" || echo "$TITLE" | grep -qi "Process TODO.md items" || ( [ -n "$TODO_SNIP" ] && echo "$BODY" | grep -Fqi "$TODO_SNIP" ); then
+                # Check if PR was merged; skip merged PRs
+                MERGED=$(gh pr view $NUM --json merged -q .merged 2>/dev/null || echo "false")
+                if [ "$MERGED" = "true" ]; then
+                  echo "Skipping merged PR #$NUM"
+                  continue
+                fi
+                MATCHING_PR=$NUM
+                echo "Found matching closed (unmerged) PR #$MATCHING_PR (title: $TITLE, author: $AUTHOR)"
+                echo "has_pr=true" >> $GITHUB_OUTPUT
+                echo "pr_number=$MATCHING_PR" >> $GITHUB_OUTPUT
+                exit 0
+              fi
+            done
+          fi
+
+          if [ -z "$MATCHING_PR" ]; then
+            echo "No existing open or closed TODO PR found"
+            echo "has_pr=false" >> $GITHUB_OUTPUT
+          fi
+          if [ -n "$MATCHING_PR" ]; then
+            echo "Found existing open TODO PR #$MATCHING_PR"
+            echo "has_pr=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$MATCHING_PR" >> $GITHUB_OUTPUT
+          else
+            echo "No existing open TODO PR found"
+            echo "has_pr=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Prepare TODO issue body
+        id: prepare-issue
+        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false'
+        run: |
           # Write TODO content to temp file
           TODO_FILE=$(mktemp)
           if [ -f TODO.md ]; then
             cat TODO.md > "$TODO_FILE"
           fi
-          
+
           # Create issue body with proper escaping
           ISSUE_BODY_FILE=$(mktemp)
           cat > "$ISSUE_BODY_FILE" << 'EOF_BODY'
@@ -89,7 +176,34 @@ jobs:
 
           After completing the work, please update TODO.md accordingly (remove completed items or mark as done).
           EOF_FOOTER
-          
+
+          # Export file paths for later steps
+          echo "todo_file=$TODO_FILE" >> $GITHUB_OUTPUT
+          echo "issue_body_file=$ISSUE_BODY_FILE" >> $GITHUB_OUTPUT
+
+      - name: Try gh agent-task (Copilot)
+        id: try-agent
+        if: steps.gh-check.outputs.agent_task_available == 'true' && steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false'
+        run: |
+          ISSUE_BODY_FILE=${{ steps.prepare-issue.outputs.issue_body_file }}
+          echo "Attempting gh agent-task create using $ISSUE_BODY_FILE"
+          if gh agent-task create --repo "$GITHUB_REPOSITORY" --title "Process TODO.md items - $(date +%Y-%m-%d)" --body-file "$ISSUE_BODY_FILE" --follow; then
+            echo "agent_created=true" >> $GITHUB_OUTPUT
+            echo "Agent task created successfully"
+          else
+            echo "agent_created=false" >> $GITHUB_OUTPUT
+            echo "gh agent-task create failed"
+          fi
+
+      - name: Create TODO issue (fallback)
+        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false' && steps.try-agent.outputs.agent_created != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Creating TODO issue (agent task not created)"
+          TODO_FILE=${{ steps.prepare-issue.outputs.todo_file }}
+          ISSUE_BODY_FILE=${{ steps.prepare-issue.outputs.issue_body_file }}
+
           # Ensure the 'todo-automation' label exists (create if missing)
           if ! gh label view "todo-automation" >/dev/null 2>&1; then
             echo "Creating missing label 'todo-automation'"
@@ -97,7 +211,6 @@ jobs:
           fi
 
           # Create issue to trigger Copilot Workspace (apply `todo-automation` label)
-          # Capture created issue number as JSON (requires gh >= 2.x)
           ISSUE_NUMBER=$(gh issue create \
             --title "Process TODO.md items - $(date +%Y-%m-%d)" \
             --body-file "$ISSUE_BODY_FILE" \
@@ -110,18 +223,13 @@ jobs:
               --title "Process TODO.md items - $(date +%Y-%m-%d)" \
               --body-file "$ISSUE_BODY_FILE" \
               --label "todo-automation" 2>/dev/null || true)
-            # Extract number from URL ending with /issues/NNN
             ISSUE_NUMBER=$(echo "$CREATED_URL" | sed -n 's#.*/issues/\([0-9][0-9]*\).*#\1#p' || true)
           fi
 
-          # If we have an issue number, assign it to the repository owner and post a comment mentioning Copilot
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Created issue #$ISSUE_NUMBER"
-            # Parse owner from GITHUB_REPOSITORY (format: owner/repo)
             OWNER=${GITHUB_REPOSITORY%%/*}
-            # Try to assign to the repo owner (ignore failure)
             gh issue edit "$ISSUE_NUMBER" --add-assignee "$OWNER" || echo "Warning: failed to assign $OWNER to issue #$ISSUE_NUMBER"
-            # Post a comment that mentions Copilot to trigger it (only triggers if the assignee has Copilot enabled)
             gh issue comment "$ISSUE_NUMBER" --body "@copilot" || echo "Warning: failed to post Copilot mention on issue #$ISSUE_NUMBER"
           else
             echo "Warning: could not determine created issue number; skipping assignment/comment"
@@ -132,7 +240,9 @@ jobs:
 
           echo "Issue created (and assigned/commented when possible) to trigger Copilot if available"
       
-      - name: Skip - existing issue found
-        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'true'
+      - name: Skip - existing issue or PR found
+        if: steps.check-todo.outputs.has_content == 'true' && (steps.check-existing-issue.outputs.has_existing == 'true' || steps.check-existing-pr.outputs.has_pr == 'true')
         run: |
-          echo "Skipping issue creation - existing open TODO issue #${{ steps.check-existing-issue.outputs.issue_number }} found"
+          echo "Skipping issue creation - existing open TODO issue/pr found"
+          echo "Existing issue: ${{ steps.check-existing-issue.outputs.issue_number }}"
+          echo "Existing PR: ${{ steps.check-existing-pr.outputs.pr_number }}"
