@@ -1,9 +1,14 @@
 name: Render README from template
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [ main ]
-  workflow_dispatch: {}
+    # Only run when files that affect README rendering change
+    paths:
+      - 'scripts/render_readme.py'
+      - '.github/workflows/render-readme.yml'
+      - 'README.md'
 
 
 permissions:
