@@ -1,5 +1,3 @@
-import os
-
 from scripts.check_svg import main
 
 
