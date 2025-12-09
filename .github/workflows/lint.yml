@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Create venv with system-site-packages and install dev requirements
+      - name: Create venv with system-site-packages
         run: |
           python -m venv --system-site-packages .venv
 
