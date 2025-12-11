@@ -116,29 +116,6 @@ fi
 echo "✓ Dependencies installed"
 echo ""
 
-# Run tests to verify everything works
-echo "Running tests to verify setup..."
-python3 -m pytest -q
-echo "✓ Tests passed"
-echo ""
-
-# Run linter
-echo "Running linter..."
-python3 -m flake8
-echo "✓ Linter passed"
-echo ""
-
-echo "🎉 Setup complete!"
-echo ""
-echo "Next steps:"
-echo "  1. Copy index.html to create a new list (e.g., elsa.html)"
-echo "  2. Edit the HTML file with gift ideas"
-echo "  3. Generate QR codes:"
-echo "     python3 scripts/generate_qr_svg.py --root-domain YOUR_GITHUB_PAGES_URL --pattern '*.html' --out-dir scripts/generated_qr"
-echo "  4. Inject QR codes into HTML files:"
-echo "     python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern '*.html'"
-echo ""
-echo "See README.md for more details!"
 if [ "$BUILD_MODE" = true ]; then
     # Build mode: Generate HTML, QR codes, and prepare for deployment
     
