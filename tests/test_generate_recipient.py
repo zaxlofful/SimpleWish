@@ -7,7 +7,7 @@ from scripts.generate_recipient import render_from_template
 
 def test_generate_recipient_from_example():
     repo_root = Path(__file__).resolve().parent.parent
-    data_path = repo_root / 'recipients' / 'alice.json'
+    data_path = repo_root / 'recipients' / 'elsa.json'
     assert data_path.exists()
 
     data = json.loads(data_path.read_text(encoding='utf-8'))
@@ -26,8 +26,8 @@ def test_generate_recipient_from_example():
     assert 'Raspberry Pi 5 — 8GB RAM starter kit' in rendered
 
     # Title and recipient should be updated
-    assert "<title>Alice&#x27;s Christmas List</title>" in rendered
-    assert 'Christmas List for Alice' in rendered
+    assert "<title>Elsa&#x27;s Christmas List</title>" in rendered
+    assert 'Christmas List for Elsa' in rendered
 
     # Notes should be HTML-escaped (ampersand becomes &amp;)
     assert 'Shipping &amp; availability' in rendered

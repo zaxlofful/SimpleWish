@@ -189,7 +189,7 @@ You can easily customize the page theme by editing the CSS variables at the top 
 
 **Color Palette Ideas:**
 - 🔴 Classic Red: `#b71c1c` (default)
-- 🔵 Tech Blue: `#1565C0` (alice.html example)
+- 🔵 Tech Blue: `#1565C0` (elsa.html example)
 - 💚 Forest Green: `#2e7d32`
 - 💜 Royal Purple: `#6a1b9a`
 - 🧡 Warm Orange: `#e65100`
@@ -315,7 +315,7 @@ Or...Add your own to track if they opened your links!
 This is a template (consider renaming the repo when you clone it)
 - Intended workflow:
 	1. Clone this repo as a template.
-	2. Create one HTML file per person by copying `index.html` (e.g. `alice.html`, `bob.html`).
+   2. Create one HTML file per person by copying `index.html` (e.g. `elsa.html`, `bob.html`).
 	3. Use a CI job to generate and embed a per-page QR SVG into each file based on the filename and your public root domain. This keeps each file single-file and offline-friendly.
 
 Files
@@ -360,7 +360,7 @@ python .\scripts\inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.ht
 Notes:
 - You can also pass `--root-domain` directly to `generate_qr_svg.py`; when `ROOT_DOMAIN` is set in the environment the CLI will use that by default so the explicit flag is optional.
 - High-level CI flow:
-	1. Discover per-recipient files (e.g. `alice.html`, `bob.html`) in the repo.
+   1. Discover per-recipient files (e.g. `elsa.html`, `bob.html`) in the repo.
 	2. Map each filename to its public URL: `https://<root-domain>/<filename>` (ensure filenames are URL-safe).
 	3. Generate a QR SVG for that URL using a CLI or small script (`segno`, `qrcode`, `qrencode`, Node libs, etc.).
 	4. Place the SVG (inline) or data-URI into the `.qrcode-box` region of that HTML file (use a clear marker comment so replacements are idempotent).
