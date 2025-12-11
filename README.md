@@ -42,7 +42,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
 
     The project now supports generating per-recipient HTML from simple JSON files. Add one JSON file per person to the `recipients` directory. The CI build will generate HTML pages and inject QR SVGs at deploy time (generated files are not committed to the repo).
 
-    See the included `alice.html` file for a ready-made example.
+   See the included `elsa.html` file for a ready-made example.
 
 5. **Commit and push the source (NOT generated HTML)**
 
@@ -121,16 +121,16 @@ python3 -m pytest
 ### Example Files
 
 - `index.html` — Base template with classic green theme
-- `alice.html` — Example with blue theme and tech-focused gifts
+- `elsa.html` — Example with blue theme and tech-focused gifts
 
 ### Personalizing Your Lists
 
-When creating a list for someone (e.g., `alice.html`):
+When creating a list for someone (e.g., `elsa.html`):
 
 1. **Update the title and header**:
    ```html
-   <title>Alice's Christmas List</title>
-   <h1 id="recipient">Christmas List for Alice</h1>
+   <title>Elsa's Christmas List</title>
+   <h1 id="recipient">Christmas List for Elsa</h1>
    ```
 
 2. **Add gift ideas**:
@@ -185,7 +185,7 @@ You can easily customize the page theme by editing the CSS variables at the top 
 - 🍬 **candy-cane** - Striped candy cane
 - 🔔 **bell** - Christmas bell with ribbon
 
-**Example:** The `alice.html` file uses a blue theme and a snowman:
+**Example:** The `elsa.html` file uses a blue theme and a snowman:
 - Page CSS: `--accent:#1565C0` (blue for headings/links)
 - QR Code Color: `<meta name="qr-foreground-color" content="#1565C0">`
 - Snowman Code: `<meta name="qr-decoration-type" content="snowman">`

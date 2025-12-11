@@ -2,7 +2,7 @@
 """Generate a per-recipient HTML file from the `index.html` template.
 
 Usage:
-    python scripts/generate_recipient.py --data recipients/alice.json
+    python scripts/generate_recipient.py --data recipients/elsa.json
 
 The script reads `index.html`, applies values from the JSON data file,
 and writes the resulting HTML to the output path (defaults to the

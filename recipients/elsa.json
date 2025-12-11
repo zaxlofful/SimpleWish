@@ -1,0 +1,22 @@
+{
+  "recipient": "Elsa",
+  "title": "Elsa's Christmas List",
+  "sub": "Tech and books — 2024",
+  "qr_foreground": "#1565C0",
+  "qr_background": "#E3F2FD",
+  "qr_decor_type": "snowman",
+  "accent": "#1565C0",
+  "muted": "#546E7A",
+  "hint": "Books, tech, and gadgets",
+  "gifts": [
+    {"text": "Raspberry Pi 5 — 8GB RAM starter kit", "href": "https://example.com/raspberry-pi"},
+    {"text": "Python Crash Course (3rd Edition)", "href": "https://example.com/python-book"},
+    {"text": "Mechanical keyboard — Cherry MX Blue switches", "href": "https://example.com/mechanical-keyboard"},
+    {"text": "Fitness smartwatch — heart rate monitoring", "href": "https://example.com/smart-watch"},
+    {"text": "Head First Design Patterns (2nd Edition)", "href": "https://example.com/design-patterns"},
+    {"text": "Handmade wool scarf — grey", "href": "https://example.com/wool-scarf"},
+    {"text": "Noise-cancelling headphones", "href": "https://example.com/headphones"},
+    {"text": "Gift card — favorite store", "href": "https://example.com/gift-card"}
+  ],
+  "notes": "Sizes: S/M/L as noted. Shipping & availability may vary. Blue text/links mean direct purchase options."
+}
