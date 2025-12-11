@@ -175,7 +175,7 @@ else
     echo "🎉 Setup complete!"
     echo ""
     echo "Next steps:"
-    echo "  1. Copy index.html to create a new list (e.g., alice.html)"
+    echo "  1. Copy index.html to create a new list (e.g., elsa.html)"
     echo "  2. Edit the HTML file with gift ideas"
     echo "  3. Generate QR codes:"
     echo "     python3 scripts/generate_qr_svg.py --root-domain YOUR_GITHUB_PAGES_URL --pattern '*.html' --out-dir scripts/generated_qr"
