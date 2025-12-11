@@ -49,6 +49,9 @@ Thumbs.db
 # Generated QR outputs
 /scripts/generated_qr/
 
+# Build outputs
+/public/
+
 # Logs
 *.log
 
