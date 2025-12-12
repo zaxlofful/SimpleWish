@@ -2,9 +2,9 @@ from scripts.render_readme import get_owner_repo, ensure_badge_links
 
 
 def test_get_owner_repo_from_env(monkeypatch):
-    monkeypatch.setenv('GITHUB_REPOSITORY', 'alice/example')
+    monkeypatch.setenv('GITHUB_REPOSITORY', 'elsa/example')
     owner, repo = get_owner_repo()
-    assert owner == 'alice'
+    assert owner == 'elsa'
     assert repo == 'example'
 
 
