@@ -26,6 +26,17 @@ def render_from_template(template_text: str, data: dict) -> str:
         meta_block.append(f'<meta name="qr-background-color" content="{html.escape(str(data["qr_background"]), quote=True)}">')
     if data.get('qr_decor_type'):
         meta_block.append(f'<meta name="qr-decoration-type" content="{html.escape(str(data["qr_decor_type"]), quote=True)}">')
+    if data.get('qr_tree_style'):
+        meta_block.append(f'<meta name="qr-tree-style" content="{html.escape(str(data["qr_tree_style"]), quote=True)}">')
+    # Emit whether to decorate the QR (true/false). Accept booleans or string values.
+    if 'qr_decorate' in data:
+        v = data['qr_decorate']
+        if isinstance(v, bool):
+            val_str = 'true' if v else 'false'
+        else:
+            sv = str(v).strip().lower()
+            val_str = sv if sv in ('true', 'false') else str(v)
+        meta_block.append(f'<meta name="qr-decorate" content="{html.escape(val_str, quote=True)}">')
     meta_block_text = '\n  '.join(meta_block)
 
     # Try to insert after the QR metadata comment (the long comment block near head)
