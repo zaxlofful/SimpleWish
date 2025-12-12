@@ -9,14 +9,11 @@
   "muted": "#546E7A",
   "hint": "Books, tech, and gadgets",
   "gifts": [
-    {"text": "Raspberry Pi 5 — 8GB RAM starter kit", "href": "https://example.com/raspberry-pi"},
-    {"text": "Python Crash Course (3rd Edition)", "href": "https://example.com/python-book"},
-    {"text": "Mechanical keyboard — Cherry MX Blue switches", "href": "https://example.com/mechanical-keyboard"},
-    {"text": "Fitness smartwatch — heart rate monitoring", "href": "https://example.com/smart-watch"},
-    {"text": "Head First Design Patterns (2nd Edition)", "href": "https://example.com/design-patterns"},
-    {"text": "Handmade wool scarf — grey", "href": "https://example.com/wool-scarf"},
-    {"text": "Noise-cancelling headphones", "href": "https://example.com/headphones"},
-    {"text": "Gift card — favorite store", "href": "https://example.com/gift-card"}
+    {"text": "Take a Look - Rearview Mirror", "href": "https://www.rei.com/product/752285/bike-peddler-take-a-look-mirror"},
+    {"text": "Bone Conduction Headphones", "href": "https://a.co/d/f3H9KUP"},
+    {"text": "Light Blue Shorts", "href": "https://a.co/d/1UTofEV"},
+    {"text": "Gold Toe Socks (White)", "href": "https://a.co/d/4N5ilLv"},
+    {"text": "3D Printer Filament (Any Color)[Black Cheapest Right Now]", "href": "https://a.co/d/fG25uRv"}
   ],
   "notes": "Sizes: S/M/L as noted. Shipping & availability may vary. Blue text/links mean direct purchase options."
 }

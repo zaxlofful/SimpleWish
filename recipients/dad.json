@@ -1,22 +1,24 @@
 {
   "recipient": "Dad",
   "title": "Dad's Christmas List",
-  "sub": "Tech and books — 2024",
-  "qr_foreground": "#1565C0",
-  "qr_background": "#E3F2FD",
-  "qr_decor_type": "snowman",
-  "accent": "#1565C0",
-  "muted": "#546E7A",
-  "hint": "Books, tech, and gadgets",
+  "sub": "Hiking, Essentials, and Gaming — 2025",
+  "qr_foreground": "#0b6623",
+  "qr_background": "#ffffff",
+  "qr_decor_type": "tree",
+  "qr_decorate": true,
+  "qr_tree_style": "fancy",
+  "accent": "#b71c1c",
+  "muted": "#6b7280",
+  "hint": "Hiking, Essentials, and Gaming",
   "gifts": [
-    {"text": "Raspberry Pi 5 — 8GB RAM starter kit", "href": "https://example.com/raspberry-pi"},
-    {"text": "Python Crash Course (3rd Edition)", "href": "https://example.com/python-book"},
-    {"text": "Mechanical keyboard — Cherry MX Blue switches", "href": "https://example.com/mechanical-keyboard"},
-    {"text": "Fitness smartwatch — heart rate monitoring", "href": "https://example.com/smart-watch"},
-    {"text": "Head First Design Patterns (2nd Edition)", "href": "https://example.com/design-patterns"},
-    {"text": "Handmade wool scarf — grey", "href": "https://example.com/wool-scarf"},
-    {"text": "Noise-cancelling headphones", "href": "https://example.com/headphones"},
-    {"text": "Gift card — favorite store", "href": "https://example.com/gift-card"}
+    {"text": "Chair Mount - Flight Sim Game Joystick", "href": "https://a.co/d/hPfFzFP"},
+    {"text": "Raspberry Pi Zero W 2", "href": "https://a.co/d/clv05eM"},
+    {"text": "Faraday Travel Bags", "href": "https://a.co/d/2lFQscS"},
+    {"text": "Leather House Slippers"},
+    {"text": "Faraday Hiking Backpack", "href": "https://a.co/d/9hwinHQ"},
+    {"text": "Navy Blue Shorts", "href": "https://a.co/d/1wAjKdW"},
+    {"text": "Gold Toe Socks (Black)", "href": "https://a.co/d/fmEbi4p"},
+    {"text": "3D Printer Filament (Any Color)[Black Cheapest Right Now]", "href": "https://a.co/d/fG25uRv"}
   ],
-  "notes": "Sizes: S/M/L as noted. Shipping & availability may vary. Blue text/links mean direct purchase options."
+  "notes": "Sizes: L/XL/XXL as noted. Shipping & availability may vary. Blue text/links mean direct purchase options."
 }
