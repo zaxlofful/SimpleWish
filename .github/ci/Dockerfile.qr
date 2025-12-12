@@ -43,6 +43,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Copy Python runtime + installed deps (system-wide packages)
 COPY --from=builder /usr/local /usr/local
 
+# Install minimal system runtime deps required by tools used in CI (git)
+# We install git here at build time so the final runtime image includes it
+# and CI jobs don't need to install packages at runtime.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends git \
+  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 # Create non-root user
 RUN groupadd -r ci -g 1000 \
   && useradd -r -g ci -u 1000 -m -d /home/ci -s /bin/bash ci

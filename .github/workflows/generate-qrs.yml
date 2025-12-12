@@ -53,6 +53,13 @@ jobs:
       - name: Check for changes
         id: git-changes
         run: |
+          # Fail fast if `git` is not available. Installing packages inside a
+          # custom container can be platform-dependent and may hide real issues.
+          if ! command -v git >/dev/null 2>&1; then
+            echo "::error::git not found inside container; ensure the container image includes git or run commit steps on the host runner"
+            exit 1
+          fi
+
           echo "CHANGED=$(git status --porcelain)" >> $GITHUB_OUTPUT
           if [ -n "$(git status --porcelain)" ]; then
             echo "changes=true" >> $GITHUB_OUTPUT

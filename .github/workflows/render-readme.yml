@@ -35,6 +35,12 @@ jobs:
       - name: Check for changes
         id: git-changes
         run: |
+          # Fail fast if git is not installed in the runner/container.
+          if ! command -v git >/dev/null 2>&1; then
+            echo "::error::git not found in runner; ensure actions/checkout ran and git is available"
+            exit 1
+          fi
+
           echo "CHANGED=$(git status --porcelain)" >> $GITHUB_OUTPUT
           if [ -n "$(git status --porcelain)" ]; then
             echo "changes=true" >> $GITHUB_OUTPUT
