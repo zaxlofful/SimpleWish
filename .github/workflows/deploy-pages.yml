@@ -37,11 +37,10 @@ jobs:
         id: compute-root
         run: |
           # Derive owner and repo from GITHUB_REPOSITORY (owner/repo)
+          # Preserve original casing — do NOT lowercase owner or repo
           owner="${GITHUB_REPOSITORY%%/*}"
           repo="${GITHUB_REPOSITORY##*/}"
-          owner_lc=$(echo "$owner" | tr '[:upper:]' '[:lower:]')
-          repo_lc=$(echo "$repo" | tr '[:upper:]' '[:lower:]')
-          root_domain="https://${owner_lc}.github.io/${repo_lc}"
+          root_domain="https://${owner}.github.io/${repo}"
           echo "Computed ROOT_DOMAIN=$root_domain"
           echo "ROOT_DOMAIN=$root_domain" >> $GITHUB_ENV
 
