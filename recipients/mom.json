@@ -1,13 +1,15 @@
 {
   "recipient": "Mom",
   "title": "Mom's Christmas List",
-  "sub": "Tech and books — 2024",
+  "sub": "Hiking, Essentials, and Gaming — 2025",
   "qr_foreground": "#1565C0",
   "qr_background": "#E3F2FD",
-  "qr_decor_type": "snowman",
+  "qr_decor_type": "santa",
+  "qr_decorate": true,
+  "qr_tree_style": "fancy",
   "accent": "#1565C0",
   "muted": "#546E7A",
-  "hint": "Books, tech, and gadgets",
+  "hint": "Hiking, Essentials, and Gaming",
   "gifts": [
     {"text": "Anker Nano Power Bank, Ultra-Slim", "href": "https://a.co/d/aAnDQPq"},
     {"text": "Desktop Mug Warmer/Cooler", "href": "https://a.co/d/f22PLa9"},

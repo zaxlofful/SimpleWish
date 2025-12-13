@@ -1,13 +1,15 @@
 {
   "recipient": "Katy Perry",
   "title": "Katy Perry's Christmas List",
-  "sub": "Tech and books — 2024",
+  "sub": "Hiking, Essentials, and Gaming — 2025",
   "qr_foreground": "#1565C0",
   "qr_background": "#E3F2FD",
   "qr_decor_type": "snowman",
+  "qr_decorate": true,
+  "qr_tree_style": "fancy",
   "accent": "#1565C0",
   "muted": "#546E7A",
-  "hint": "Books, tech, and gadgets",
+  "hint": "Hiking, Essentials, and Gaming",
   "gifts": [
     {"text": "Take a Look - Rearview Mirror", "href": "https://www.rei.com/product/752285/bike-peddler-take-a-look-mirror"},
     {"text": "Bone Conduction Headphones", "href": "https://a.co/d/f3H9KUP"},
