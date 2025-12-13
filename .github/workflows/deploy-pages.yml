@@ -40,7 +40,7 @@ jobs:
           source .venv/bin/activate
           pip install -r scripts/requirements.txt
           python3 scripts/generate_recipient.py --bulk
-          python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
+          python3 scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
           python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Prepare HTML files for deployment
