@@ -33,6 +33,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Compute ROOT_DOMAIN
+        id: compute-root
+        run: |
+          # Derive owner and repo from GITHUB_REPOSITORY (owner/repo)
+          owner="${GITHUB_REPOSITORY%%/*}"
+          repo="${GITHUB_REPOSITORY##*/}"
+          owner_lc=$(echo "$owner" | tr '[:upper:]' '[:lower:]')
+          repo_lc=$(echo "$repo" | tr '[:upper:]' '[:lower:]')
+          root_domain="https://${owner_lc}.github.io/${repo_lc}"
+          echo "Computed ROOT_DOMAIN=$root_domain"
+          echo "ROOT_DOMAIN=$root_domain" >> $GITHUB_ENV
+
       - name: Generate HTML files with QR codes
         run: |
           python3 -m venv .venv
