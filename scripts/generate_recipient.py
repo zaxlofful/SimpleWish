@@ -157,7 +157,10 @@ def main():
             except Exception as e:
                 print(f'Failed to read {jf}: {e}')
                 continue
-            _write_for_data(d)
+            # Use only the JSON filename (same stem) for the generated HTML filename
+            # so outputs are written to the current working directory (e.g. 'dad.html')
+            out_name = jf.with_suffix('.html').name
+            _write_for_data(d, out_name)
         return 0
 
     # Single-file mode
@@ -173,7 +176,16 @@ def main():
     with data_path.open('r', encoding='utf-8') as f:
         data = json.load(f)
 
-    _write_for_data(data, args.out)
+    # If --out provided, use it; otherwise use the JSON filename (same stem). This
+    # ensures the generated HTML filename matches the source JSON filename.
+    if args.out:
+        out_arg = args.out
+    else:
+        # Default to the JSON filename's basename (no path) so output lands
+        # in the repository root (e.g. 'dad.html') unless --out was provided.
+        out_arg = data_path.with_suffix('.html').name
+
+    _write_for_data(data, out_arg)
     return 0
 
 
