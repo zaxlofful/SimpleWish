@@ -51,11 +51,6 @@ jobs:
         run: |
           ./setup.sh --build
 
-      - name: Prepare HTML files for deployment
-        run: |
-          mkdir public
-          find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/
-
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
