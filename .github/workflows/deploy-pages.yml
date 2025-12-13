@@ -33,6 +33,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Compute ROOT_DOMAIN
         id: compute-root
         run: |
@@ -44,24 +47,15 @@ jobs:
           echo "Computed ROOT_DOMAIN=$root_domain"
           echo "ROOT_DOMAIN=$root_domain" >> $GITHUB_ENV
 
-      - name: Generate HTML files with QR codes
+      - name: Run setup.sh --build
         run: |
-          python3 -m venv .venv
-          chmod +x .venv/bin/activate
-          source .venv/bin/activate
-          pip install -r scripts/requirements.txt
-          python3 scripts/generate_recipient.py --bulk
-          python3 scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
-          python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          ./setup.sh --build
 
       - name: Prepare HTML files for deployment
         run: |
           mkdir public
           find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/
-      
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

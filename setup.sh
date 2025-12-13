@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ "$BUILD_MODE" = true ]; then
-    echo "🎄 SimpleWish - Cloudflare Pages Build"
+    echo "🎄 SimpleWish - Build SSG Files"
     echo "========================================"
     echo ""
     if [ -n "$CF_PAGES_URL" ]; then
@@ -102,25 +102,33 @@ fi
 echo ""
 
 # Activate virtual environment and install dependencies
-if [ "$BUILD_MODE" = true ]; then
-    echo "Step 1/5: Installing dependencies..."
-else
-    echo "Installing dependencies..."
-fi
+echo "Installing dependencies..."
 source .venv/bin/activate
 pip install -q --upgrade pip
 pip install -q -r scripts/requirements.txt
-if [ "$BUILD_MODE" = false ]; then
-    pip install -q -r scripts/requirements-dev.txt
-fi
+pip install -q -r scripts/requirements-dev.txt
 echo "✓ Dependencies installed"
+echo ""
+
+# Run tests and linter
+
+# Run tests to verify everything works
+echo "Running tests to verify setup..."
+python3 -m pytest -q
+echo "✓ Tests passed"
+echo ""
+
+# Run linter
+echo "Running linter..."
+python3 -m flake8
+echo "✓ Linter passed"
 echo ""
 
 if [ "$BUILD_MODE" = true ]; then
     # Build mode: Generate HTML, QR codes, and prepare for deployment
     
-    # Step 2: Generate HTML for all JSON recipients
-    echo "Step 2/5: Generating HTML files from recipient data..."
+    # Step 1: Generate HTML for all JSON recipients
+    echo "Step 1/4: Generating HTML files from recipient data..."
     if [ -d "$RECIPIENTS_DIR" ] && compgen -G "$RECIPIENTS_DIR/*.json" > /dev/null; then
         python3 scripts/generate_recipient.py --bulk --recipients-dir "$RECIPIENTS_DIR"
         echo "✓ HTML files generated"
@@ -129,20 +137,20 @@ if [ "$BUILD_MODE" = true ]; then
     fi
     echo ""
     
-    # Step 3: Generate QR SVGs
-    echo "Step 3/5: Generating QR codes..."
+    # Step 2: Generate QR SVGs
+    echo "Step 2/4: Generating QR codes..."
     python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir "$QR_OUT_DIR" --root-domain "$ROOT_DOMAIN"
     echo "✓ QR codes generated"
     echo ""
     
-    # Step 4: Inject generated SVGs into HTML files
-    echo "Step 4/5: Injecting QR codes into HTML files..."
+    # Step 3: Inject generated SVGs into HTML files
+    echo "Step 3/4: Injecting QR codes into HTML files..."
     python3 scripts/inject_qr_svg.py --svg-dir "$QR_OUT_DIR" --pattern "*.html"
     echo "✓ QR codes injected"
     echo ""
     
-    # Step 5: Prepare public directory
-    echo "Step 5/5: Preparing output directory..."
+    # Step 4: Prepare public directory
+    echo "Step 4/4: Preparing output directory..."
     mkdir -p "$PUBLIC_DIR"
     # Move HTML files if they exist
     if compgen -G "*.html" > /dev/null; then
@@ -156,22 +164,8 @@ if [ "$BUILD_MODE" = true ]; then
     echo "🎉 Build complete!"
     echo ""
     echo "Output directory: $PUBLIC_DIR"
-    echo "Ready for Cloudflare Pages deployment"
+    echo "Ready for Static Deployment"
 else
-    # Setup mode: Run tests and linter
-    
-    # Run tests to verify everything works
-    echo "Running tests to verify setup..."
-    python3 -m pytest -q
-    echo "✓ Tests passed"
-    echo ""
-    
-    # Run linter
-    echo "Running linter..."
-    python3 -m flake8
-    echo "✓ Linter passed"
-    echo ""
-    
     echo "🎉 Setup complete!"
     echo ""
     echo "Next steps:"
