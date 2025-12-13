@@ -36,11 +36,12 @@ jobs:
       - name: Generate HTML files with QR codes
         run: |
           python3 -m venv .venv
-          ./.venv/bin/activate
+          chmod +x .venv/bin/activate
+          source .venv/bin/activate
           pip install -r scripts/requirements.txt
-          python3 ./scripts/generate_recipient.py --bulk
-          python3 ./scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
-          python3 ./scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          python3 scripts/generate_recipient.py --bulk
+          python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
+          python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Prepare HTML files for deployment
         run: |
