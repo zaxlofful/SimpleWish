@@ -5,6 +5,8 @@
   "qr_foreground": "#1565C0",
   "qr_background": "#E3F2FD",
   "qr_decor_type": "snowman",
+  "qr_decorate": true,
+  "qr_tree_style": "fancy",
   "accent": "#1565C0",
   "muted": "#546E7A",
   "hint": "Books, tech, and gadgets",

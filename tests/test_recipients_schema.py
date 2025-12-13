@@ -43,8 +43,12 @@ def test_recipient_json_files_well_formed_and_have_required_fields():
                 href = g.get('href')
                 assert isinstance(href, str) and href.strip(), f"{jf.name}: gift #{i} has invalid 'href'"
 
-        # Optional QR-related fields, if present, should be strings or booleans (for qr_decorate)
-        for opt in ('qr_foreground', 'qr_background', 'qr_decor_type', 'qr_tree_style', 'qr_decorate'):
+        # qr_decorate is required and must be a boolean
+        assert 'qr_decorate' in data, f"{jf.name}: missing required 'qr_decorate' (true/false)"
+        assert isinstance(data['qr_decorate'], bool), f"{jf.name}: 'qr_decorate' must be a boolean"
+
+        # Other QR-related fields remain optional; if present they must be strings
+        for opt in ('qr_foreground', 'qr_background', 'qr_decor_type', 'qr_tree_style'):
             if opt in data:
                 val = data[opt]
-                assert isinstance(val, (str, bool)), f"{jf.name}: optional field '{opt}' must be a string or boolean"
+                assert isinstance(val, str), f"{jf.name}: optional field '{opt}' must be a string"
