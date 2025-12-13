@@ -79,14 +79,18 @@ def render_from_template(template_text: str, data: dict) -> str:
     if 'gifts' in data and isinstance(data['gifts'], list):
         list_items = []
         for g in data['gifts']:
-            href = str(g.get('href', '#'))
             text = g.get('text', '')
-            # HTML-escape the visible text and the href for safety
+            href = g.get('href')
+            # HTML-escape the visible text for safety
             safe_text = html.escape(str(text))
-            safe_href = html.escape(href, quote=True)
-            list_items.append(
-                f'          <li><a href="{safe_href}" target="_blank" rel="noopener">{safe_text}</a></li>'
-            )
+            # If an href is provided and non-empty, render as a link; otherwise render plain text
+            if href:
+                safe_href = html.escape(str(href), quote=True)
+                list_items.append(
+                    f'          <li><a href="{safe_href}" target="_blank" rel="noopener">{safe_text}</a></li>'
+                )
+            else:
+                list_items.append(f'          <li>{safe_text}</li>')
         list_html = '\n'.join(list_items)
         s = re.sub(r'(<ul id="gift-list"[\s\S]*?>)\s*[\s\S]*?(</ul>)', rf'\1\n{list_html}\n        \2', s, flags=re.S)
 
