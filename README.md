@@ -111,6 +111,7 @@ pip install -r scripts/requirements-dev.txt
 
 # Run tests to verify
 python3 -m pytest
+python3 -m flake8
 ```
 
 ## 📝 Customization
