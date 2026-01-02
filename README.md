@@ -457,4 +457,4 @@ Security notes:
 - CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
 
 
-Enjoy! Happy holidays.
+Enjoy! Merry Christmas!
