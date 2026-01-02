@@ -338,37 +338,73 @@ def generate_svg(
     have width/height set to 250 and a viewBox inserted if missing.
     """
     # Create QR with requested error correction level.
+    # Use no background fill (light=None) to create a transparent QR code that allows CSS-based coloring
     qr = segno.make(url, micro=False, error=ecc)
     svg = qr.svg_inline(
-        dark=foreground_color, light=background_color, border=border
+        dark=foreground_color, light=None, border=border
     )
 
-    # Replace black fills with currentColor so CSS can recolor the QR
-    rgb_pattern = r'(?i)fill=["\']\s*rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)\s*["\']'
-    hex0_pattern = r'(?i)fill=["\']\s*#0{3,6}\s*["\']'
-    svg = re.sub(rgb_pattern, 'fill="currentColor"', svg)
-    svg = re.sub(hex0_pattern, 'fill="currentColor"', svg)
+    # Replace stroke colors with currentColor so CSS can control QR color.
+    # QR codes rendered by segno use stroke (not fill) for the modules.
+    # Match hex colors (e.g., #0b6623, #000, #000000)
+    svg = re.sub(
+        r'stroke=["\']#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})["\']',
+        'stroke="currentColor"',
+        svg
+    )
 
-    # Replace fill declarations inside style attributes
+    # Also replace RGB stroke colors if present
+    svg = re.sub(
+        r'stroke=["\']rgb\([^)]+\)["\']',
+        'stroke="currentColor"',
+        svg
+    )
+
+    # Replace stroke declarations inside style attributes
     def _fix_style(m):
         s = m.group(1)
         s = re.sub(
-            r'(?i)fill\s*:\s*rgb\(\s*0\s*,\s*0\s*,\s*0\s*\)',
-            'fill:currentColor',
+            r'(?i)stroke\s*:\s*#[0-9a-fA-F]{3,6}',
+            'stroke:currentColor',
             s,
         )
-        s = re.sub(r'(?i)fill\s*:\s*#0{3,6}', 'fill:currentColor', s)
+        s = re.sub(
+            r'(?i)stroke\s*:\s*rgb\([^)]+\)',
+            'stroke:currentColor',
+            s,
+        )
         return f'style="{s}"'
 
     svg = re.sub(r'(?i)style\s*=\s*"([^"]*)"', _fix_style, svg)
 
-    # Ensure the root <svg> has a helpful class and a data attribute with the
-    # default foreground color
+    # Ensure the root <svg> has helpful classes and a data attribute with the
+    # default foreground color. Add both 'qr-svg' and 'qrcode-box' classes
+    # to support CSS-based coloring.
     def _add_data_attr(m):
         tag = m.group(1)
         attrs = m.group(2) or ''
+        # Ensure the existing segno class is preserved and that both
+        # "qr-svg" and "qrcode-box" classes are present. The
+        # "qr-svg" class is required for correct color handling when
+        # the SVG uses `currentColor` with transparency.
         if re.search(r'\bclass\s*=\s*"', attrs) is None:
-            attrs += ' class="qr-svg"'
+            # No existing class attribute: add both qr-svg and qrcode-box
+            attrs += ' class="qr-svg qrcode-box"'
+        else:
+            # Existing class attribute: ensure both qr-svg and qrcode-box are present
+            class_match = re.search(r'class="([^"]*)"', attrs)
+            if class_match:
+                existing_classes = class_match.group(1).split()
+                if 'qr-svg' not in existing_classes:
+                    existing_classes.append('qr-svg')
+                if 'qrcode-box' not in existing_classes:
+                    existing_classes.append('qrcode-box')
+                new_class_value = ' '.join(existing_classes)
+                attrs = (
+                    attrs[:class_match.start(1)]
+                    + new_class_value
+                    + attrs[class_match.end(1):]
+                )
         # expose the default foreground color so CSS can override via
         # currentColor
         data_attr_pat = r'\bdata-qr-default-foreground-color\s*=\s*"'
