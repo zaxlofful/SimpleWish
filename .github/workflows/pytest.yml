@@ -55,7 +55,7 @@ jobs:
           
           # Create issue body
           ISSUE_BODY_FILE=$(mktemp)
-          cat > "$ISSUE_BODY_FILE" << 'EOF'
+          cat > "$ISSUE_BODY_FILE" << EOF
           ## Test Failure
           
           The pytest test suite has failed on the main branch.
