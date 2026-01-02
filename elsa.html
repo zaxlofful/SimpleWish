@@ -42,7 +42,7 @@
   .qrcode-box{position:absolute;top:28px;right:28px;width:250px;text-align:center;color:#1565C0}
   
   /* CSS-based QR code coloring: SVG uses currentColor which inherits from .qrcode-box color property */
-  /* The QR code has a transparent background, so the background color shows through from the container */
+  /* QR paths have no background fill; this rule gives the SVG element itself a white background instead of showing the container background */
   .qrcode-box svg, .qrcode-box img {width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:block}
   #qrcode{width:250px;height:250px;margin:0 auto;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center}
   .qr-label{margin-top:8px;margin-bottom:0;font-size:0.8rem;color:var(--muted)}

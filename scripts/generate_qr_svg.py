@@ -338,7 +338,7 @@ def generate_svg(
     have width/height set to 250 and a viewBox inserted if missing.
     """
     # Create QR with requested error correction level.
-    # Use transparent background (None) to enable CSS-based coloring
+    # Use no background fill (light=None) to create a transparent QR code that allows CSS-based coloring
     qr = segno.make(url, micro=False, error=ecc)
     svg = qr.svg_inline(
         dark=foreground_color, light=None, border=border
@@ -384,14 +384,22 @@ def generate_svg(
         tag = m.group(1)
         attrs = m.group(2) or ''
         if re.search(r'\bclass\s*=\s*"', attrs) is None:
+            # No existing class attribute: add both qr-svg and qrcode-box
             attrs += ' class="qr-svg qrcode-box"'
         else:
-            # If class already exists, append qrcode-box if not present
-            if 'qrcode-box' not in attrs:
-                attrs = re.sub(
-                    r'class="([^"]*)"',
-                    r'class="\1 qrcode-box"',
-                    attrs
+            # Existing class attribute: ensure both qr-svg and qrcode-box are present
+            class_match = re.search(r'class="([^"]*)"', attrs)
+            if class_match:
+                existing_classes = class_match.group(1).split()
+                if 'qr-svg' not in existing_classes:
+                    existing_classes.append('qr-svg')
+                if 'qrcode-box' not in existing_classes:
+                    existing_classes.append('qrcode-box')
+                new_class_value = ' '.join(existing_classes)
+                attrs = (
+                    attrs[:class_match.start(1)]
+                    + new_class_value
+                    + attrs[class_match.end(1):]
                 )
         # expose the default foreground color so CSS can override via
         # currentColor
