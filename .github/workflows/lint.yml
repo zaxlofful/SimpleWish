@@ -16,6 +16,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      issues: write
     container:
       image: ghcr.io/${{ github.repository_owner }}/simplewish-infra:main
       options: --user 0
@@ -28,5 +29,57 @@ jobs:
           python -m venv --system-site-packages .venv
 
       - name: Run flake8
+        id: flake8
+        continue-on-error: true
         run: |
           ./.venv/bin/python -m flake8 -q
+
+      - name: Create issue on failure
+        if: steps.flake8.outcome == 'failure' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check for existing open lint failure issues
+          EXISTING_ISSUES=$(gh issue list --label "lint-failure" --state open --json number --limit 1)
+          
+          if [ "$EXISTING_ISSUES" != "[]" ]; then
+            echo "Existing open lint failure issue found, skipping issue creation"
+            exit 0
+          fi
+          
+          # Ensure the 'lint-failure' label exists
+          if ! gh label view "lint-failure" >/dev/null 2>&1; then
+            echo "Creating missing label 'lint-failure'"
+            gh label create "lint-failure" --description "Issues created by lint workflow failures" --color d73a4a || true
+          fi
+          
+          # Create issue body
+          ISSUE_BODY_FILE=$(mktemp)
+          cat > "$ISSUE_BODY_FILE" << EOF
+          ## Lint Failure
+          
+          The flake8 linter has failed on the main branch.
+          
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          
+          Please investigate and fix the linting issues.
+          
+          To reproduce locally:
+          ```bash
+          python -m flake8
+          ```
+          EOF
+          
+          # Create issue
+          gh issue create \
+            --title "Lint failure on main - $(date +%Y-%m-%d)" \
+            --body-file "$ISSUE_BODY_FILE" \
+            --label "lint-failure"
+          
+          rm -f "$ISSUE_BODY_FILE"
+
+      - name: Fail workflow if flake8 failed
+        if: steps.flake8.outcome == 'failure'
+        run: exit 1
