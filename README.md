@@ -240,6 +240,20 @@ This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
 - **pytest** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
+- **Update Python/Docker** — Periodically checks for Python updates and creates PRs
+
+**Python and Docker Version Updates**
+
+- The repository includes a scheduled workflow (`.github/workflows/update-python-docker.yml`) that automatically keeps Python and Docker images up-to-date.
+- High-level behavior:
+   - Runs every 2 months (first day at 3 AM UTC) and can be manually triggered via `workflow_dispatch`
+   - Detects the latest stable Python version from Docker Hub (currently supports Python 3.8-3.20)
+   - Updates all Python version references in Dockerfiles and workflow files
+   - Runs comprehensive tests (linting, pytest, Docker builds) to verify compatibility
+   - Creates a PR with the updates if all tests pass, or reports failures for manual intervention
+   - Checks for existing update PRs to avoid duplicates using the `python-update` label
+- Files updated: `.github/ci/Dockerfile.infra`, `.github/ci/Dockerfile.qr`, `.github/workflows/build-ci-image.yml`, `.github/workflows/check-todo.yml`
+- Why this helps: Keeps the repository secure and up-to-date with the latest Python releases without manual intervention, ensuring compatibility is tested before merging.
 
 **Copilot Trigger & Automation Label**
 
