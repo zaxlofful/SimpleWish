@@ -41,10 +41,12 @@ def get_latest_python_version() -> Optional[str]:
             match = re.match(pattern, tag_name)
             if match:
                 version = match.group(1)
-                # Only include stable versions (3.8 through 3.13 as of 2026)
-                # Exclude versions that might be in alpha/beta
+                # Only include stable Python 3.x versions
+                # We assume versions 3.8 and above are relevant for this project
+                # The upper bound is intentionally generous to auto-adopt new
+                # stable releases; the workflow will test compatibility anyway
                 major, minor = map(int, version.split('.'))
-                if major == 3 and 8 <= minor <= 13:
+                if major == 3 and 8 <= minor <= 20:
                     versions.append(version)
 
         if not versions:
