@@ -383,6 +383,10 @@ def generate_svg(
     def _add_data_attr(m):
         tag = m.group(1)
         attrs = m.group(2) or ''
+        # Ensure the existing segno class is preserved and that both
+        # "qr-svg" and "qrcode-box" classes are present. The
+        # "qr-svg" class is required for correct color handling when
+        # the SVG uses `currentColor` with transparency.
         if re.search(r'\bclass\s*=\s*"', attrs) is None:
             # No existing class attribute: add both qr-svg and qrcode-box
             attrs += ' class="qr-svg qrcode-box"'
