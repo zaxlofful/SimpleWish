@@ -348,7 +348,7 @@ def generate_svg(
     # QR codes rendered by segno use stroke (not fill) for the modules.
     # Match hex colors (e.g., #0b6623, #000, #000000)
     svg = re.sub(
-        r'stroke=["\']#[0-9a-fA-F]{3,6}["\']',
+        r'stroke=["\']#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})["\']',
         'stroke="currentColor"',
         svg
     )
