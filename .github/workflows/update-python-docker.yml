@@ -1,0 +1,218 @@
+name: Update Python and Docker versions
+
+on:
+  # Run every 2 months (first day at 3 AM UTC)
+  schedule:
+    - cron: '0 3 1 */2 *'
+  # Allow manual triggering for testing
+  workflow_dispatch: {}
+
+jobs:
+  update-python:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check for Python updates
+        id: check-update
+        run: |
+          python3 scripts/update_python_version.py
+          if [ $? -eq 0 ]; then
+            echo "update_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "update_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get updated Python version
+        id: get-version
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          # Extract the new Python version from build-ci-image.yml
+          NEW_VERSION=$(grep -m1 "python-version:" .github/workflows/build-ci-image.yml | sed -E "s/.*python-version:\s*['\"]?([0-9.]+)['\"]?.*/\1/")
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Updated to Python $NEW_VERSION"
+
+      - name: Create venv and install deps
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          set -euo pipefail
+          python3 -m venv .venv
+          ./.venv/bin/python -m pip install --upgrade pip
+          ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt
+
+      - name: Run linting tests
+        id: lint-test
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          set -euo pipefail
+          echo "Running flake8..."
+          ./.venv/bin/python -m flake8 -q
+          echo "lint_passed=true" >> $GITHUB_OUTPUT
+
+      - name: Run pytest tests
+        id: pytest-test
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          set -euo pipefail
+          echo "Running pytest..."
+          ./.venv/bin/python -m pytest -q
+          echo "tests_passed=true" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        if: steps.check-update.outputs.update_available == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test build Docker images
+        id: docker-test
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          set -euo pipefail
+          echo "Testing QR Dockerfile build..."
+          docker build -f .github/ci/Dockerfile.qr -t test-qr:latest .
+          echo "Testing Infra Dockerfile build..."
+          docker build -f .github/ci/Dockerfile.infra -t test-infra:latest .
+          echo "docker_build_passed=true" >> $GITHUB_OUTPUT
+
+      - name: Run tests in Docker container
+        id: docker-pytest
+        if: steps.check-update.outputs.update_available == 'true'
+        run: |
+          set -euo pipefail
+          echo "Running pytest in Docker container..."
+          docker run --rm -v "$PWD:/workspace" -w /workspace test-infra:latest bash -c "python -m venv --system-site-packages .venv && ./.venv/bin/python -m pytest -q"
+          echo "docker_tests_passed=true" >> $GITHUB_OUTPUT
+
+      - name: Check for existing update PR
+        id: check-pr
+        if: steps.check-update.outputs.update_available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for existing Python update PRs..."
+          EXISTING_PRS=$(gh pr list --state open --label "python-update" --json number,title --limit 1)
+          if [ "$EXISTING_PRS" != "[]" ]; then
+            PR_NUMBER=$(echo "$EXISTING_PRS" | jq -r '.[0].number')
+            echo "Found existing open PR #$PR_NUMBER"
+            echo "has_existing=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          else
+            echo "No existing open Python update PR found"
+            echo "has_existing=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: |
+          steps.check-update.outputs.update_available == 'true' &&
+          steps.lint-test.outputs.lint_passed == 'true' &&
+          steps.pytest-test.outputs.tests_passed == 'true' &&
+          steps.docker-test.outputs.docker_build_passed == 'true' &&
+          steps.docker-pytest.outputs.docker_tests_passed == 'true' &&
+          steps.check-pr.outputs.has_existing != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          NEW_VERSION="${{ steps.get-version.outputs.new_version }}"
+          BRANCH_NAME="automated/update-python-${NEW_VERSION}"
+          
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
+          
+          # Add changes
+          git add .github/ci/Dockerfile.infra
+          git add .github/ci/Dockerfile.qr
+          git add .github/workflows/build-ci-image.yml
+          git add .github/workflows/check-todo.yml
+          
+          # Commit changes
+          git commit -m "chore: update Python to version ${NEW_VERSION}
+
+          - Update Dockerfile.infra to use python:${NEW_VERSION}-slim
+          - Update Dockerfile.qr to use python:${NEW_VERSION}-slim
+          - Update build-ci-image.yml to use Python ${NEW_VERSION}
+          - Update check-todo.yml to use Python ${NEW_VERSION}
+          
+          All tests passed:
+          - Linting: ✓
+          - Pytest: ✓
+          - Docker builds: ✓
+          - Docker tests: ✓"
+          
+          # Push branch
+          git push origin "$BRANCH_NAME"
+          
+          # Ensure the 'python-update' label exists
+          if ! gh label view "python-update" >/dev/null 2>&1; then
+            echo "Creating missing label 'python-update'"
+            gh label create "python-update" --description "Automated Python version updates" --color 0366d6 || true
+          fi
+          
+          # Create PR
+          gh pr create \
+            --title "chore: Update Python to version ${NEW_VERSION}" \
+            --body "## Automated Python and Docker Version Update
+
+          This PR updates the Python version used across the repository from the current version to **${NEW_VERSION}**.
+
+          ### Changes Made
+          - Updated \`.github/ci/Dockerfile.infra\` to use \`python:${NEW_VERSION}-slim\`
+          - Updated \`.github/ci/Dockerfile.qr\` to use \`python:${NEW_VERSION}-slim\`
+          - Updated \`.github/workflows/build-ci-image.yml\` to use Python ${NEW_VERSION}
+          - Updated \`.github/workflows/check-todo.yml\` to use Python ${NEW_VERSION}
+
+          ### Test Results
+          All automated tests have passed:
+          - ✅ Linting (flake8)
+          - ✅ Unit tests (pytest)
+          - ✅ Docker image builds
+          - ✅ Tests in Docker containers
+
+          ### What to Review
+          - Verify that all CI workflows pass successfully
+          - Check that no new deprecation warnings are introduced
+          - Ensure Docker images build and push correctly
+
+          This PR was automatically created by the \`update-python-docker\` workflow." \
+            --label "python-update" \
+            --base main \
+            --head "$BRANCH_NAME"
+
+      - name: Handle test failures
+        if: |
+          steps.check-update.outputs.update_available == 'true' &&
+          (steps.lint-test.outputs.lint_passed != 'true' ||
+           steps.pytest-test.outputs.tests_passed != 'true' ||
+           steps.docker-test.outputs.docker_build_passed != 'true' ||
+           steps.docker-pytest.outputs.docker_tests_passed != 'true')
+        run: |
+          echo "❌ Tests failed with the new Python version"
+          echo "Lint passed: ${{ steps.lint-test.outputs.lint_passed }}"
+          echo "Pytest passed: ${{ steps.pytest-test.outputs.tests_passed }}"
+          echo "Docker build passed: ${{ steps.docker-test.outputs.docker_build_passed }}"
+          echo "Docker tests passed: ${{ steps.docker-pytest.outputs.docker_tests_passed }}"
+          echo ""
+          echo "Manual intervention required to fix compatibility issues."
+          echo "The version update has been applied but not committed."
+          exit 1
+
+      - name: No update needed
+        if: steps.check-update.outputs.update_available != 'true'
+        run: |
+          echo "✅ Already using the latest Python version"
+
+      - name: Skip - existing PR found
+        if: steps.check-update.outputs.update_available == 'true' && steps.check-pr.outputs.has_existing == 'true'
+        run: |
+          echo "ℹ️ Skipping PR creation - existing Python update PR found: #${{ steps.check-pr.outputs.pr_number }}"
