@@ -52,7 +52,24 @@ jobs:
             echo "has_existing=false" >> $GITHUB_OUTPUT
           fi
 
-
+      - name: Log gh availability
+        id: gh-check
+        if: steps.check-todo.outputs.has_content == 'true'
+        run: |
+          echo "--- gh CLI debug ---"
+          AGENT_AVAILABLE=false
+          if command -v gh >/dev/null 2>&1; then
+            gh --version || true
+            if gh help agent-task >/dev/null 2>&1; then
+              echo "gh agent-task: available"
+              AGENT_AVAILABLE=true
+            else
+              echo "gh agent-task: not available"
+            fi
+          else
+            echo "gh: not installed on runner"
+          fi
+          echo "agent_task_available=$AGENT_AVAILABLE" >> $GITHUB_OUTPUT
 
       - name: Check for existing TODO PR
         if: steps.check-todo.outputs.has_content == 'true'
@@ -164,13 +181,28 @@ jobs:
           echo "todo_file=$TODO_FILE" >> $GITHUB_OUTPUT
           echo "issue_body_file=$ISSUE_BODY_FILE" >> $GITHUB_OUTPUT
 
-
-      - name: Create TODO issue
-        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false'
+      - name: Try gh agent-task (Copilot)
+        id: try-agent
+        if: steps.gh-check.outputs.agent_task_available == 'true' && steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Creating TODO issue"
+          ISSUE_BODY_FILE=${{ steps.prepare-issue.outputs.issue_body_file }}
+          echo "Attempting gh agent-task create using $ISSUE_BODY_FILE"
+          if gh agent-task create --repo "$GITHUB_REPOSITORY" --from-file "$ISSUE_BODY_FILE" --follow; then
+            echo "agent_created=true" >> $GITHUB_OUTPUT
+            echo "Agent task created successfully"
+          else
+            echo "agent_created=false" >> $GITHUB_OUTPUT
+            echo "gh agent-task create failed"
+          fi
+
+      - name: Create TODO issue (fallback)
+        if: steps.check-todo.outputs.has_content == 'true' && steps.check-existing-issue.outputs.has_existing == 'false' && steps.check-existing-pr.outputs.has_pr == 'false' && steps.try-agent.outputs.agent_created != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Creating TODO issue (agent task not created)"
           TODO_FILE=${{ steps.prepare-issue.outputs.todo_file }}
           ISSUE_BODY_FILE=${{ steps.prepare-issue.outputs.issue_body_file }}
 
