@@ -400,11 +400,7 @@ def generate_svg(
                 if 'qrcode-box' not in existing_classes:
                     existing_classes.append('qrcode-box')
                 new_class_value = ' '.join(existing_classes)
-                attrs = (
-                    attrs[:class_match.start(1)]
-                    + new_class_value
-                    + attrs[class_match.end(1):]
-                )
+                attrs = attrs[:class_match.start(1)] + new_class_value + attrs[class_match.end(1):]
         # expose the default foreground color so CSS can override via
         # currentColor
         data_attr_pat = r'\bdata-qr-default-foreground-color\s*=\s*"'

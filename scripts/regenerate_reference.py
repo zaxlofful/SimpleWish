@@ -10,11 +10,10 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if REPO_ROOT not in sys.path:
     sys.path.insert(0, REPO_ROOT)
 
-from scripts.generate_qr_svg import generate_svg, sanitize_svg_for_html
-import scripts.generate_qr_svg as gen_module
-
 
 def main():
+    from scripts.generate_qr_svg import generate_svg, sanitize_svg_for_html
+    import scripts.generate_qr_svg as gen_module
     # Match CLI/test defaults used in tests
     gen_module.__overlay_multiplier__ = 3.0
     gen_module.__overlay_shift_x__ = 0.90
