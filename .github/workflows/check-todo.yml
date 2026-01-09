@@ -224,6 +224,9 @@ jobs:
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Created issue #$ISSUE_NUMBER"
             # Try to assign to Copilot bot using GitHub App username
+            # Note: The exact username may vary depending on the GitHub Copilot installation
+            # Common usernames include 'copilot' and 'github-copilot[bot]'
+            # If assignment fails, the @copilot mention below will still notify Copilot
             if gh issue edit "$ISSUE_NUMBER" --add-assignee "copilot" 2>/dev/null; then
               echo "Successfully assigned issue to 'copilot'"
             elif gh issue edit "$ISSUE_NUMBER" --add-assignee "github-copilot[bot]" 2>/dev/null; then
