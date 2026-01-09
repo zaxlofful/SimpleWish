@@ -223,6 +223,15 @@ jobs:
 
           if [ -n "$ISSUE_NUMBER" ]; then
             echo "Created issue #$ISSUE_NUMBER"
+            
+            # Assign to repository owner
+            OWNER=${GITHUB_REPOSITORY%%/*}
+            if gh issue edit "$ISSUE_NUMBER" --add-assignee "$OWNER" 2>/dev/null; then
+              echo "Successfully assigned issue to repository owner '$OWNER'"
+            else
+              echo "Warning: failed to assign repository owner to issue #$ISSUE_NUMBER"
+            fi
+            
             # Try to assign to Copilot bot using GitHub App username
             # Note: The exact username may vary depending on the GitHub Copilot installation
             # Common usernames include 'copilot' and 'github-copilot[bot]'
@@ -234,6 +243,7 @@ jobs:
             else
               echo "Warning: failed to assign Copilot to issue #$ISSUE_NUMBER (tried 'copilot' and 'github-copilot[bot]')"
             fi
+            
             gh issue comment "$ISSUE_NUMBER" --body "@copilot" || echo "Warning: failed to post Copilot mention on issue #$ISSUE_NUMBER"
           else
             echo "Warning: could not determine created issue number; skipping assignment/comment"
