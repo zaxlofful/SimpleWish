@@ -18,6 +18,7 @@ jobs:
     permissions:
       packages: write
       contents: read
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,6 +46,8 @@ jobs:
           ./.venv/bin/python -m pytest -q
 
       - name: Trivy scan repository (filesystem)
+        id: trivy-repo
+        continue-on-error: true
         run: |
           echo "Running Trivy filesystem scan on repository (debug mode; fails on HIGH/CRITICAL)..."
           # Mount the runner workspace into the container read-only.
@@ -72,6 +75,8 @@ jobs:
           fi
 
       - name: Build and push QR image (SHA tag)
+        id: build-qr
+        continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -79,6 +84,7 @@ jobs:
           docker push "$IMAGE"
 
       - name: Show QR image info
+        if: steps.build-qr.outcome == 'success'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -86,6 +92,8 @@ jobs:
           docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
 
       - name: Build and push Infra image (SHA tag)
+        id: build-infra
+        continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -93,6 +101,7 @@ jobs:
           docker push "$IMAGE"
 
       - name: Show Infra image info
+        if: steps.build-infra.outcome == 'success'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -100,7 +109,7 @@ jobs:
           docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
 
       - name: Push QR image main tag (when on main)
-        if: steps.vars.outputs.PUSH_MAIN == 'true'
+        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-qr.outcome == 'success'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -109,7 +118,7 @@ jobs:
           docker push "$MAIN_IMAGE"
 
       - name: Push Infra image main tag (when on main)
-        if: steps.vars.outputs.PUSH_MAIN == 'true'
+        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-infra.outcome == 'success'
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -118,6 +127,9 @@ jobs:
           docker push "$MAIN_IMAGE"
 
       - name: Trivy scan QR image
+        id: trivy-qr
+        if: steps.build-qr.outcome == 'success'
+        continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -132,6 +144,9 @@ jobs:
           }
 
       - name: Trivy scan Infra image
+        id: trivy-infra
+        if: steps.build-infra.outcome == 'success'
+        continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
@@ -144,5 +159,133 @@ jobs:
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
+
+      - name: Create issue on Docker build failure
+        if: (steps.build-qr.outcome == 'failure' || steps.build-infra.outcome == 'failure') && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check for existing open docker build failure issues
+          EXISTING_ISSUES=$(gh issue list --label "docker-build-failure" --state open --json number --limit 1)
+          
+          if [ "$EXISTING_ISSUES" != "[]" ]; then
+            echo "Existing open docker build failure issue found, skipping issue creation"
+            exit 0
+          fi
+          
+          # Ensure the 'docker-build-failure' label exists
+          if ! gh label view "docker-build-failure" >/dev/null 2>&1; then
+            echo "Creating missing label 'docker-build-failure'"
+            gh label create "docker-build-failure" --description "Issues created by Docker image build failures" --color d73a4a || true
+          fi
+          
+          # Determine which image(s) failed
+          FAILED_IMAGES=""
+          if [ "${{ steps.build-qr.outcome }}" = "failure" ]; then
+            FAILED_IMAGES="${FAILED_IMAGES}QR image "
+          fi
+          if [ "${{ steps.build-infra.outcome }}" = "failure" ]; then
+            FAILED_IMAGES="${FAILED_IMAGES}Infra image "
+          fi
+          
+          # Create issue body
+          ISSUE_BODY_FILE=$(mktemp)
+          cat > "$ISSUE_BODY_FILE" << EOF
+          ## Docker Build Failure
+          
+          Docker image build has failed on the main branch.
+          
+          **Failed Images:** ${FAILED_IMAGES}
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          
+          Please investigate and fix the Docker build issues.
+          
+          To reproduce locally:
+          \`\`\`bash
+          # For QR image:
+          docker build -f .github/ci/Dockerfile.qr -t simplewish-qr:test .
+          
+          # For Infra image:
+          docker build -f .github/ci/Dockerfile.infra -t simplewish-infra:test .
+          \`\`\`
+          EOF
+          
+          # Create issue
+          gh issue create \
+            --title "Docker build failure on main - $(date +%Y-%m-%d)" \
+            --body-file "$ISSUE_BODY_FILE" \
+            --label "docker-build-failure"
+          
+          rm -f "$ISSUE_BODY_FILE"
+
+      - name: Create issue on Trivy scan failure
+        if: (steps.trivy-repo.outcome == 'failure' || steps.trivy-qr.outcome == 'failure' || steps.trivy-infra.outcome == 'failure') && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check for existing open security scan failure issues
+          EXISTING_ISSUES=$(gh issue list --label "security-scan-failure" --state open --json number --limit 1)
+          
+          if [ "$EXISTING_ISSUES" != "[]" ]; then
+            echo "Existing open security scan failure issue found, skipping issue creation"
+            exit 0
+          fi
+          
+          # Ensure the 'security-scan-failure' label exists
+          if ! gh label view "security-scan-failure" >/dev/null 2>&1; then
+            echo "Creating missing label 'security-scan-failure'"
+            gh label create "security-scan-failure" --description "Issues created by security scan failures" --color d73a4a || true
+          fi
+          
+          # Determine which scan(s) failed
+          FAILED_SCANS=""
+          if [ "${{ steps.trivy-repo.outcome }}" = "failure" ]; then
+            FAILED_SCANS="${FAILED_SCANS}Repository filesystem scan "
+          fi
+          if [ "${{ steps.trivy-qr.outcome }}" = "failure" ]; then
+            FAILED_SCANS="${FAILED_SCANS}QR image scan "
+          fi
+          if [ "${{ steps.trivy-infra.outcome }}" = "failure" ]; then
+            FAILED_SCANS="${FAILED_SCANS}Infra image scan "
+          fi
+          
+          # Create issue body
+          ISSUE_BODY_FILE=$(mktemp)
+          cat > "$ISSUE_BODY_FILE" << EOF
+          ## Security Scan Failure
+          
+          Trivy security scan has detected HIGH/CRITICAL vulnerabilities on the main branch.
+          
+          **Failed Scans:** ${FAILED_SCANS}
+          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+          
+          Please investigate and fix the security vulnerabilities.
+          
+          To reproduce locally:
+          \`\`\`bash
+          # For repository scan:
+          docker run --rm -v "\$PWD:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs /workspace --severity HIGH,CRITICAL
+          
+          # For image scans (after building):
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL simplewish-qr:test
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL simplewish-infra:test
+          \`\`\`
+          EOF
+          
+          # Create issue
+          gh issue create \
+            --title "Security scan failure on main - $(date +%Y-%m-%d)" \
+            --body-file "$ISSUE_BODY_FILE" \
+            --label "security-scan-failure"
+          
+          rm -f "$ISSUE_BODY_FILE"
+
+      - name: Fail workflow if any step failed
+        if: steps.trivy-repo.outcome == 'failure' || steps.build-qr.outcome == 'failure' || steps.build-infra.outcome == 'failure' || steps.trivy-qr.outcome == 'failure' || steps.trivy-infra.outcome == 'failure'
+        run: exit 1
 
       # (Previously created an artifact with CI_IMAGE_TAG/CI_IMAGE_OWNER; removed per request.)
