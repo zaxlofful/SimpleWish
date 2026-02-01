@@ -84,8 +84,7 @@ jobs:
             'build',
           ]
           
-          # Exclude specific URL patterns that are known to cause issues
-          exclude_path = []
+          # Exclude specific URL patterns (configured per scope below)
           exclude_link_local = false
           EOF
           
@@ -100,8 +99,8 @@ jobs:
             echo "" >> lychee.toml
             echo "# Check only internal repository links" >> lychee.toml
             echo "include_verbatim = true" >> lychee.toml
-            echo "# Only check links to this repository and relative links" >> lychee.toml
-            # For internal only, we'll use the include pattern instead
+            # For internal-only checking, lychee will still check all links but
+            # the user can filter results to focus on internal repository links
           elif [ "$SCOPE" = "all" ]; then
             echo "" >> lychee.toml
             echo "# Check all links (both internal and external)" >> lychee.toml
