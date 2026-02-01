@@ -67,7 +67,6 @@ jobs:
           # Exclude common patterns that don't need checking
           exclude = [
             # Build artifacts and dependencies
-            'node_modules',
             '.venv',
             'venv',
             '__pycache__',
@@ -76,9 +75,7 @@ jobs:
             # Version control
             '.git',
             
-            # Common development files
-            'package-lock.json',
-            'yarn.lock',
+            # Python development files
             'Pipfile.lock',
             
             # Generated files
@@ -97,7 +94,7 @@ jobs:
             echo "" >> lychee.toml
             echo "# Check only external links (exclude internal repository links)" >> lychee.toml
             echo "exclude_link_local = true" >> lychee.toml
-            echo 'exclude_path = ["^https://github.com/${{ github.repository }}", "^/", "^#"]' >> lychee.toml
+            echo "exclude_path = [\"^https://github.com/${{ github.repository }}\", \"^/\", \"^#\"]" >> lychee.toml
           elif [ "$SCOPE" = "internal" ]; then
             echo "" >> lychee.toml
             echo "# Check only internal repository links" >> lychee.toml
