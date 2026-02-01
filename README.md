@@ -249,9 +249,9 @@ The link checker workflow (`.github/workflows/check-links.yml`) automatically va
 
 - **Schedule**: Runs weekly on Mondays at 9 AM UTC
 - **Manual Trigger**: Can be run manually from the Actions tab with configurable scope:
-  - `external` (default): Check only external links (to other websites)
-  - `internal`: Check only internal repository links
-  - `all`: Check both internal and external links
+  - `external` (default): Check only external links (excludes links to this repository)
+  - `internal`: Check all links (useful for reviewing both internal and external together)
+  - `all`: Check all links (same as internal, includes everything)
 - **Issue Creation**: Automatically creates or updates an issue labeled `link-check` when broken links are found
 - **Smart Detection**: Avoids duplicate issues by checking for existing open link-check issues
 - **Detailed Reports**: Provides comprehensive reports with all broken links and suggested fixes
