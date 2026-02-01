@@ -240,6 +240,22 @@ This repository includes automated workflows:
 - **Lint** — Runs flake8 on Python code
 - **pytest** — Runs pytest test suite
 - **Generate QR** — Automatically generates and commits QR codes
+- **Check Links** — Validates links in the repository and creates issues for broken ones
+
+**Link Checker Workflow**
+
+The link checker workflow (`.github/workflows/check-links.yml`) automatically validates all links in the repository:
+
+- **Schedule**: Runs weekly on Mondays at 9 AM UTC
+- **Manual Trigger**: Can be run manually from the Actions tab with configurable scope:
+  - `external` (default): Check only external links (to other websites)
+  - `internal`: Check only internal repository links
+  - `all`: Check both internal and external links
+- **Issue Creation**: Automatically creates or updates an issue labeled `link-check` when broken links are found
+- **Smart Detection**: Avoids duplicate issues by checking for existing open link-check issues
+- **Detailed Reports**: Provides comprehensive reports with all broken links and suggested fixes
+
+The workflow scans all Markdown, HTML, JSON, and Python files for links and validates them with multiple retries and configurable timeouts to handle temporary failures.
 
 **Copilot Trigger & Automation Label**
 
