@@ -55,7 +55,7 @@ jobs:
           # User agent string
           user_agent = "Mozilla/5.0 (compatible; SimpleWish-LinkChecker/1.0; +https://github.com/${{ github.repository }})"
           
-          # Accept any SSL certificate (some sites have issues)
+          # Accept these HTTP status codes as valid responses
           accept = [200, 204, 206, 301, 302, 303, 307, 308, 429]
           
           # Timeout for requests (in seconds)
@@ -92,15 +92,16 @@ jobs:
           if [ "$SCOPE" = "external" ]; then
             echo "" >> lychee.toml
             echo "# Check only external links (exclude internal repository links)" >> lychee.toml
+            echo "# Also skip local file and localhost URLs" >> lychee.toml
             echo "exclude_link_local = true" >> lychee.toml
             # Use printf to properly handle the variable and quotes
             printf 'exclude_path = ["^https://github.com/%s", "^/", "^#"]\n' "${{ github.repository }}" >> lychee.toml
           elif [ "$SCOPE" = "internal" ]; then
             echo "" >> lychee.toml
-            echo "# Check only internal repository links" >> lychee.toml
+            echo "# Check only internal repository links (repo URLs and relative/anchor links)" >> lychee.toml
             echo "include_verbatim = true" >> lychee.toml
-            # For internal-only checking, lychee will still check all links but
-            # the user can filter results to focus on internal repository links
+            # Exclude all external URLs that are not this repository
+            printf 'exclude_path = ["^https?://(?!github.com/%s)", "^mailto:", "^tel:"]\n' "${{ github.repository }}" >> lychee.toml
           elif [ "$SCOPE" = "all" ]; then
             echo "" >> lychee.toml
             echo "# Check all links (both internal and external)" >> lychee.toml
@@ -216,7 +217,7 @@ jobs:
           
           You can manually trigger a link check from the [Actions tab](${{ github.server_url }}/${{ github.repository }}/actions/workflows/check-links.yml) with different scopes:
           - **external**: Check only external links (default)
-          - **internal**: Check only internal repository links
+          - **internal**: Check only internal repository links (this repo + relative/anchor links)
           - **all**: Check both internal and external links
           EOF
           
@@ -234,7 +235,7 @@ jobs:
           rm -f "$ISSUE_BODY_FILE"
 
       - name: Upload link check results
-        if: always()
+        if: always() && hashFiles('lychee-output.md') != ''
         uses: actions/upload-artifact@v4
         with:
           name: link-check-results
