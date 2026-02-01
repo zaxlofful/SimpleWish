@@ -53,7 +53,7 @@ jobs:
           max_retries = 3
           
           # User agent string
-          user_agent = "Mozilla/5.0 (compatible; SimpleWish-LinkChecker/1.0; +https://github.com/zaxlofful/SimpleWish)"
+          user_agent = "Mozilla/5.0 (compatible; SimpleWish-LinkChecker/1.0; +https://github.com/${{ github.repository }})"
           
           # Accept any SSL certificate (some sites have issues)
           accept = [200, 204, 206, 301, 302, 303, 307, 308, 429]
@@ -97,7 +97,7 @@ jobs:
             echo "" >> lychee.toml
             echo "# Check only external links (exclude internal repository links)" >> lychee.toml
             echo "exclude_link_local = true" >> lychee.toml
-            echo "exclude_path = ['^https://github.com/${{ github.repository }}', '^/$', '^#']" >> lychee.toml
+            echo 'exclude_path = ["^https://github.com/${{ github.repository }}", "^/", "^#"]' >> lychee.toml
           elif [ "$SCOPE" = "internal" ]; then
             echo "" >> lychee.toml
             echo "# Check only internal repository links" >> lychee.toml
