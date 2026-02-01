@@ -41,8 +41,8 @@ jobs:
         run: |
           SCOPE="${{ steps.scope.outputs.scope }}"
           
-          # Base configuration
-          cat > lychee.toml << 'EOF'
+          # Base configuration (use unquoted heredoc delimiter to allow variable expansion)
+          cat > lychee.toml << EOF
           # Maximum number of concurrent network requests
           max_concurrency = 8
           
@@ -94,7 +94,8 @@ jobs:
             echo "" >> lychee.toml
             echo "# Check only external links (exclude internal repository links)" >> lychee.toml
             echo "exclude_link_local = true" >> lychee.toml
-            echo "exclude_path = [\"^https://github.com/${{ github.repository }}\", \"^/\", \"^#\"]" >> lychee.toml
+            # Use printf to properly handle the variable and quotes
+            printf 'exclude_path = ["^https://github.com/%s", "^/", "^#"]\n' "${{ github.repository }}" >> lychee.toml
           elif [ "$SCOPE" = "internal" ]; then
             echo "" >> lychee.toml
             echo "# Check only internal repository links" >> lychee.toml
