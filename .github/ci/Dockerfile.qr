@@ -1,5 +1,5 @@
 # ---------- Stage 1: builder ----------
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -24,14 +24,15 @@ RUN apt-get update \
 # Install Python deps system-wide (wheels get built here if needed)
 # Copy only requirements.txt for QR generation (minimal attack surface)
 COPY scripts/requirements.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+RUN pip install --no-cache-dir --upgrade setuptools>=75.0.0 && \
+    pip install --no-cache-dir -r /tmp/requirements.txt \
   && rm /tmp/requirements.txt
 
 # At this point /usr/local has Python + runtime deps system-wide installed.
 
 
 # ---------- Stage 2: runtime ----------
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 

@@ -1,5 +1,5 @@
 # ---------- Stage 1: builder ----------
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -24,14 +24,15 @@ RUN apt-get update \
 # Install Python deps system-wide (wheels get built here if needed)
 # Copy both requirements files for testing/linting infrastructure
 COPY scripts/requirements.txt scripts/requirements-dev.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt \
+RUN pip install --no-cache-dir --upgrade setuptools>=75.0.0 && \
+    pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt \
   && rm /tmp/requirements.txt /tmp/requirements-dev.txt
 
 # At this point /usr/local has Python + runtime + dev deps system-wide installed.
 
 
 # ---------- Stage 2: runtime ----------
-FROM python:3.11-slim AS runtime
+FROM python:3.13-slim AS runtime
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 

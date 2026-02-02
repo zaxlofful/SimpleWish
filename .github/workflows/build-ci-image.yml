@@ -74,57 +74,27 @@ jobs:
             echo "PUSH_MAIN=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build and push QR image (SHA tag)
+      - name: Build QR image locally
         id: build-qr
         continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Building QR image locally: $IMAGE"
           docker build -f .github/ci/Dockerfile.qr -t "$IMAGE" .
-          docker push "$IMAGE"
-
-      - name: Show QR image info
-        if: steps.build-qr.outcome == 'success'
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
-          echo "QR image built:" "$IMAGE"
+          echo "QR image built successfully"
           docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
 
-      - name: Build and push Infra image (SHA tag)
+      - name: Build Infra image locally
         id: build-infra
         continue-on-error: true
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Building Infra image locally: $IMAGE"
           docker build -f .github/ci/Dockerfile.infra -t "$IMAGE" .
-          docker push "$IMAGE"
-
-      - name: Show Infra image info
-        if: steps.build-infra.outcome == 'success'
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
-          echo "Infra image built:" "$IMAGE"
+          echo "Infra image built successfully"
           docker image inspect --format '{{.Id}} {{join .RepoTags ","}}' "$IMAGE" || docker images --no-trunc | head -n 10
-
-      - name: Push QR image main tag (when on main)
-        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-qr.outcome == 'success'
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
-          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:main
-          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
-          docker push "$MAIN_IMAGE"
-
-      - name: Push Infra image main tag (when on main)
-        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-infra.outcome == 'success'
-        run: |
-          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
-          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:main
-          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
-          docker push "$MAIN_IMAGE"
 
       - name: Trivy scan QR image
         id: trivy-qr
@@ -133,9 +103,7 @@ jobs:
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
-          echo "Pulling image $IMAGE locally for scanning..."
-          docker pull "$IMAGE"
-          echo "Scanning pulled image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
+          echo "Scanning local QR image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
           # Mount the Docker socket so Trivy can inspect the local docker image
           # Using Trivy from GHCR instead of Docker Hub for security
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
@@ -150,15 +118,47 @@ jobs:
         run: |
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
-          echo "Pulling image $IMAGE locally for scanning..."
-          docker pull "$IMAGE"
-          echo "Scanning pulled image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
+          echo "Scanning local Infra image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
           # Mount the Docker socket so Trivy can inspect the local docker image
           # Using Trivy from GHCR instead of Docker Hub for security
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
+
+      - name: Push QR image (SHA tag)
+        if: steps.build-qr.outcome == 'success' && steps.trivy-qr.outcome == 'success'
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Pushing QR image: $IMAGE"
+          docker push "$IMAGE"
+
+      - name: Push Infra image (SHA tag)
+        if: steps.build-infra.outcome == 'success' && steps.trivy-infra.outcome == 'success'
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          echo "Pushing Infra image: $IMAGE"
+          docker push "$IMAGE"
+
+      - name: Push QR image main tag (when on main)
+        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-qr.outcome == 'success' && steps.trivy-qr.outcome == 'success'
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
+          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:main
+          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
+          docker push "$MAIN_IMAGE"
+
+      - name: Push Infra image main tag (when on main)
+        if: steps.vars.outputs.PUSH_MAIN == 'true' && steps.build-infra.outcome == 'success' && steps.trivy-infra.outcome == 'success'
+        run: |
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          SHA_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
+          MAIN_IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:main
+          docker tag "$SHA_IMAGE" "$MAIN_IMAGE"
+          docker push "$MAIN_IMAGE"
 
       - name: Create issue on Docker build failure
         if: (steps.build-qr.outcome == 'failure' || steps.build-infra.outcome == 'failure') && github.event_name == 'push' && github.ref == 'refs/heads/main'
