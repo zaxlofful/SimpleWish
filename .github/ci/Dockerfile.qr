@@ -18,18 +18,16 @@ RUN apt-get update \
        libssl-dev \
        pkg-config \
        libc6-dev \
-  && python -m pip install --upgrade pip setuptools wheel \
+  && python -m pip install --upgrade pip setuptools==80.10.2 wheel \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python deps system-wide (wheels get built here if needed)
 # Copy only requirements.txt for QR generation (minimal attack surface)
 COPY scripts/requirements.txt /tmp/
-RUN pip install --no-cache-dir --upgrade setuptools>=75.0.0 && \
-    pip install --no-cache-dir -r /tmp/requirements.txt \
+RUN pip install --no-cache-dir -r /tmp/requirements.txt \
   && rm /tmp/requirements.txt
 
 # At this point /usr/local has Python + runtime deps system-wide installed.
-
 
 # ---------- Stage 2: runtime ----------
 FROM python:3.14-slim AS runtime

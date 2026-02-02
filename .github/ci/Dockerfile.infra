@@ -18,14 +18,13 @@ RUN apt-get update \
        libssl-dev \
        pkg-config \
        libc6-dev \
-  && python -m pip install --upgrade pip setuptools wheel \
+  && python -m pip install --upgrade pip setuptools==80.10.2 wheel \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python deps system-wide (wheels get built here if needed)
 # Copy both requirements files for testing/linting infrastructure
 COPY scripts/requirements.txt scripts/requirements-dev.txt /tmp/
-RUN pip install --no-cache-dir --upgrade setuptools>=75.0.0 && \
-    pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt \
+RUN pip install --no-cache-dir -r /tmp/requirements.txt -r /tmp/requirements-dev.txt \
   && rm /tmp/requirements.txt /tmp/requirements-dev.txt
 
 # At this point /usr/local has Python + runtime + dev deps system-wide installed.
