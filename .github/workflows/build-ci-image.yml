@@ -49,10 +49,10 @@ jobs:
         id: trivy-repo
         continue-on-error: true
         run: |
-          echo "Running Trivy filesystem scan on repository (debug mode; fails on HIGH/CRITICAL)..."
+          echo "Running Trivy filesystem scan on repository (fails on HIGH/CRITICAL)..."
           # Mount the runner workspace into the container read-only.
           # Using Trivy from GHCR instead of Docker Hub for security
-          docker run --rm -v "${{ github.workspace }}:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs --debug /workspace --exit-code 1 --severity HIGH,CRITICAL || {
+          docker run --rm -v "${{ github.workspace }}:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs /workspace --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
