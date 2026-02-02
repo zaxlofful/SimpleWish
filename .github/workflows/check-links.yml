@@ -4,17 +4,7 @@ on:
   schedule:
     # Run weekly on Mondays at 9 AM UTC
     - cron: '0 9 * * 1'
-  workflow_dispatch:
-    inputs:
-      check_scope:
-        description: 'Scope of link checking'
-        required: false
-        default: 'external'
-        type: choice
-        options:
-          - external
-          - internal
-          - all
+  workflow_dispatch: {}
 
 jobs:
   check-links:
@@ -23,132 +13,18 @@ jobs:
       contents: read
       issues: write
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set link check scope
-        id: scope
-        run: |
-          # Default to external if not specified
-          SCOPE="${{ github.event.inputs.check_scope }}"
-          if [ -z "$SCOPE" ]; then
-            SCOPE="external"
-          fi
-          echo "scope=$SCOPE" >> $GITHUB_OUTPUT
-          echo "Checking links with scope: $SCOPE"
-
-      - name: Create lychee config
-        run: |
-          SCOPE="${{ steps.scope.outputs.scope }}"
-          
-          # Base configuration (use unquoted heredoc delimiter to allow variable expansion)
-          cat > lychee.toml << EOF
-          # Maximum number of concurrent network requests
-          max_concurrency = 8
-          
-          # Wait time between retries (in seconds)
-          retry_wait_time = 2
-          
-          # Maximum number of retries per link
-          max_retries = 3
-          
-          # User agent string
-          user_agent = "Mozilla/5.0 (compatible; SimpleWish-LinkChecker/1.0; +https://github.com/${{ github.repository }})"
-          
-          # Accept these HTTP status codes as valid responses
-          accept = [200, 204, 206, 301, 302, 303, 307, 308, 429]
-          
-          # Timeout for requests (in seconds)
-          timeout = 20
-          
-          # Check links in HTML, Markdown, and text files
-          include = ['.']
-          
-          # Exclude common patterns that don't need checking
-          exclude = [
-            # Build artifacts and dependencies
-            '.venv',
-            'venv',
-            '__pycache__',
-            '*.pyc',
-            
-            # Version control
-            '.git',
-            
-            # Python development files
-            'Pipfile.lock',
-            
-            # Generated files
-            'public',
-            'dist',
-            'build',
-          ]
-          
-          # Exclude specific URL patterns (configured per scope below)
-          exclude_link_local = false
-          EOF
-          
-          # Add scope-specific configuration
-          if [ "$SCOPE" = "external" ]; then
-            echo "" >> lychee.toml
-            echo "# Check only external links (exclude internal repository links)" >> lychee.toml
-            echo "# Also skip local file and localhost URLs" >> lychee.toml
-            echo "exclude_link_local = true" >> lychee.toml
-            # Use printf to properly handle the variable and quotes
-            printf 'exclude_path = ["^https://github.com/%s", "^/", "^#"]\n' "${{ github.repository }}" >> lychee.toml
-          elif [ "$SCOPE" = "internal" ]; then
-            echo "" >> lychee.toml
-            echo "# Check only internal repository links (repo URLs and relative/anchor links)" >> lychee.toml
-            echo "include_verbatim = true" >> lychee.toml
-            # Exclude all external URLs that are not this repository
-            printf 'exclude_path = ["^https?://(?!github.com/%s)", "^mailto:", "^tel:"]\n' "${{ github.repository }}" >> lychee.toml
-          elif [ "$SCOPE" = "all" ]; then
-            echo "" >> lychee.toml
-            echo "# Check all links (both internal and external)" >> lychee.toml
-            echo "include_verbatim = true" >> lychee.toml
-          fi
-          
-          echo "Generated lychee.toml configuration:"
-          cat lychee.toml
-
-      - name: Run lychee link checker
+      - name: Check Links
         id: lychee
         uses: lycheeverse/lychee-action@v2
         with:
-          args: >-
-            --config lychee.toml
-            --verbose
-            --no-progress
-            '**/*.md'
-            '**/*.html'
-            '**/*.json'
-            '**/*.py'
-          format: markdown
-          output: lychee-output.md
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if any links are broken
-        id: check-broken
-        if: always()
-        run: |
-          if [ -f lychee-output.md ]; then
-            # Check if there are any broken links in the output
-            if grep -q "❌" lychee-output.md || grep -q "Failed:" lychee-output.md; then
-              echo "has_broken=true" >> $GITHUB_OUTPUT
-              echo "Found broken links"
-            else
-              echo "has_broken=false" >> $GITHUB_OUTPUT
-              echo "No broken links found"
-            fi
-          else
-            echo "has_broken=false" >> $GITHUB_OUTPUT
-            echo "No output file found"
-          fi
-
+          fail: false
+      
       - name: Check for existing link check issue
         id: check-existing-issue
-        if: steps.check-broken.outputs.has_broken == 'true'
+        if: steps.lychee.outputs.exit_code != 0
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -166,95 +42,11 @@ jobs:
             echo "No existing open link check issue found"
             echo "has_existing=false" >> $GITHUB_OUTPUT
           fi
-
-      - name: Create or update issue for broken links
-        if: steps.check-broken.outputs.has_broken == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          SCOPE="${{ steps.scope.outputs.scope }}"
-          EXISTING_ISSUE="${{ steps.check-existing-issue.outputs.issue_number }}"
-          
-          # Ensure the 'link-check' label exists
-          if ! gh label view "link-check" >/dev/null 2>&1; then
-            echo "Creating missing label 'link-check'"
-            gh label create "link-check" --description "Issues created by link checker" --color 0e8a16 || true
-          fi
-          
-          # Prepare issue body
-          ISSUE_BODY_FILE=$(mktemp)
-          cat > "$ISSUE_BODY_FILE" << EOF
-          ## 🔗 Broken Links Detected
-          
-          The automated link checker found broken links in the repository.
-          
-          **Check Scope:** \`$SCOPE\` links
-          **Workflow Run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          **Date:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          
-          ### Broken Links Report
-          
-          EOF
-          
-          # Add the lychee output to the issue body
-          if [ -f lychee-output.md ]; then
-            echo "" >> "$ISSUE_BODY_FILE"
-            cat lychee-output.md >> "$ISSUE_BODY_FILE"
-          fi
-          
-          cat >> "$ISSUE_BODY_FILE" << EOF
-          
-          ---
-          
-          ### How to Fix
-          
-          1. Review the broken links above
-          2. Update or remove invalid links
-          3. For temporary failures, links will be rechecked in the next scheduled run
-          4. Close this issue once all links are fixed
-          
-          ### Re-run Link Check
-          
-          You can manually trigger a link check from the [Actions tab](${{ github.server_url }}/${{ github.repository }}/actions/workflows/check-links.yml) with different scopes:
-          - **external**: Check only external links (default)
-          - **internal**: Check only internal repository links (this repo + relative/anchor links)
-          - **all**: Check both internal and external links
-          EOF
-          
-          if [ -n "$EXISTING_ISSUE" ]; then
-            echo "Updating existing issue #$EXISTING_ISSUE"
-            gh issue comment "$EXISTING_ISSUE" --body-file "$ISSUE_BODY_FILE"
-          else
-            echo "Creating new issue"
-            gh issue create \
-              --title "🔗 Broken links detected - $(date +%Y-%m-%d)" \
-              --body-file "$ISSUE_BODY_FILE" \
-              --label "link-check"
-          fi
-          
-          rm -f "$ISSUE_BODY_FILE"
-
-      - name: Upload link check results
-        if: always() && hashFiles('lychee-output.md') != ''
-        uses: actions/upload-artifact@v4
+      
+      - name: Create Issue From File
+        if: steps.lychee.outputs.exit_code != 0 && steps.check-existing-issue.outputs.has_existing == 'false'
+        uses: peter-evans/create-issue-from-file@v5
         with:
-          name: link-check-results
-          path: lychee-output.md
-          retention-days: 30
-
-      - name: Summary
-        if: always()
-        run: |
-          SCOPE="${{ steps.scope.outputs.scope }}"
-          echo "### Link Check Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Scope:** $SCOPE links" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ "${{ steps.check-broken.outputs.has_broken }}" = "true" ]; then
-            echo "❌ **Status:** Broken links found" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "See the full report in the artifacts or the created/updated issue." >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ **Status:** All links are valid" >> $GITHUB_STEP_SUMMARY
-          fi
+          title: Latest Bad Link Checker Report
+          content-filepath: ./lychee/out.md
+          labels: link-check
