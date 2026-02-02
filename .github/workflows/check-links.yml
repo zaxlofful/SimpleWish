@@ -119,12 +119,12 @@ jobs:
             --config lychee.toml
             --verbose
             --no-progress
-            --format markdown
-            --output lychee-output.md
             '**/*.md'
             '**/*.html'
             '**/*.json'
             '**/*.py'
+          format: markdown
+          output: lychee-output.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
