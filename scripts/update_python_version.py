@@ -13,8 +13,9 @@ from typing import Optional
 
 def get_latest_python_version() -> Optional[str]:
     """
-    Get the latest stable Python version from python.org.
-    Returns version string like '3.12' or None on failure.
+    Determine the latest stable Python 3.x version by querying Docker Hub
+    `library/python` tags (e.g. "3.12-slim").
+    Returns a version string like "3.12" or None on failure.
     """
     try:
         # Try to use the Docker Hub API to find available Python versions
@@ -32,8 +33,9 @@ def get_latest_python_version() -> Optional[str]:
         # Parse JSON response
         data = json.loads(result.stdout)
 
-        # Look for tags like "3.12-slim", "3.11-slim", etc.
-        pattern = r'^(\d+\.\d+)-slim$'
+        # Look for tags like "3.12-slim", "3.11-slim", and also patch tags like
+        # "3.12.1-slim". We normalize to the major.minor part (e.g. "3.12").
+        pattern = r'^(\d+\.\d+)(?:\.\d+)?-slim$'
         versions = []
 
         for tag_info in data.get('results', []):
@@ -41,12 +43,11 @@ def get_latest_python_version() -> Optional[str]:
             match = re.match(pattern, tag_name)
             if match:
                 version = match.group(1)
-                # Only include stable Python 3.x versions
-                # We assume versions 3.8 and above are relevant for this project
-                # The upper bound is intentionally generous to auto-adopt new
-                # stable releases; the workflow will test compatibility anyway
+                # We assume versions 3.8 and above are relevant for this project;
+                # the workflow will test compatibility with newer Python 3 releases
+                # automatically.
                 major, minor = map(int, version.split('.'))
-                if major == 3 and 8 <= minor <= 20:
+                if major == 3 and minor >= 8:
                     versions.append(version)
 
         if not versions:
@@ -68,11 +69,24 @@ def get_latest_docker_slim_tag(python_version: str) -> Optional[str]:
     Get the latest Docker slim image tag for the given Python version.
     Returns tag like '3.12-slim' or None on failure.
     """
+    # Validate input format
+    if not re.match(r'^\d+\.\d+$', python_version):
+        print(f"Invalid Python version format: {python_version}")
+        return None
+
     try:
-        # Use Docker Hub API to get tags for python image
-        slim_tag = f"{python_version}-slim"
+        # Check if docker command is available
+        docker_check = subprocess.run(
+            ['docker', '--version'],
+            capture_output=True,
+            timeout=10
+        )
+        if docker_check.returncode != 0:
+            print("Docker is not available in the environment")
+            return None
 
         # Verify the tag exists by trying to pull image metadata
+        slim_tag = f"{python_version}-slim"
         result = subprocess.run(
             ['docker', 'manifest', 'inspect', f'python:{slim_tag}'],
             capture_output=True,
@@ -86,6 +100,9 @@ def get_latest_docker_slim_tag(python_version: str) -> Optional[str]:
         else:
             print(f"Docker image python:{slim_tag} not found")
             return None
+    except FileNotFoundError:
+        print("Docker command not found in PATH")
+        return None
     except Exception as e:
         print(f"Error getting Docker slim tag: {e}")
         return None
@@ -103,7 +120,7 @@ def update_file_content(
     Returns True if changes were made, False otherwise.
     """
     try:
-        content = file_path.read_text()
+        content = file_path.read_text(encoding='utf-8')
         original_content = content
 
         # Update python-version: references in YAML files
@@ -121,7 +138,7 @@ def update_file_content(
         )
 
         if content != original_content:
-            file_path.write_text(content)
+            file_path.write_text(content, encoding='utf-8')
             print(f"Updated {file_path}")
             return True
         else:
@@ -139,7 +156,7 @@ def get_current_python_version(repo_root: Path) -> Optional[str]:
     """
     workflow_file = repo_root / ".github" / "workflows" / "build-ci-image.yml"
     try:
-        content = workflow_file.read_text()
+        content = workflow_file.read_text(encoding='utf-8')
         match = re.search(r"python-version:\s*['\"]?(\d+\.\d+)['\"]?", content)
         if match:
             return match.group(1)

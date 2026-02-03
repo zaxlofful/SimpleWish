@@ -7,12 +7,17 @@ on:
   # Allow manual triggering for testing
   workflow_dispatch: {}
 
+concurrency:
+  group: python-docker-update
+  cancel-in-progress: true
+
 jobs:
   update-python:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
+      issues: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,11 +38,15 @@ jobs:
       - name: Check for Python updates
         id: check-update
         run: |
+          set -euo pipefail
+          # Run the update script; if it fails, this step (and workflow) will fail.
           python3 scripts/update_python_version.py
-          if [ $? -eq 0 ]; then
-            echo "update_available=true" >> $GITHUB_OUTPUT
+
+          # Determine whether any tracked files were modified by the script.
+          if git diff --quiet; then
+            echo "update_available=false" >> "$GITHUB_OUTPUT"
           else
-            echo "update_available=false" >> $GITHUB_OUTPUT
+            echo "update_available=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Get updated Python version
@@ -99,6 +108,24 @@ jobs:
           docker run --rm -v "$PWD:/workspace" -w /workspace test-infra:latest bash -c "python -m venv --system-site-packages .venv && ./.venv/bin/python -m pytest -q"
           echo "docker_tests_passed=true" >> $GITHUB_OUTPUT
 
+      - name: Check for existing update issue
+        id: check-issue
+        if: steps.check-update.outputs.update_available == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Checking for existing Python update issues..."
+          EXISTING_ISSUES=$(gh issue list --state open --label "python-update" --json number,title --limit 1)
+          if [ "$EXISTING_ISSUES" != "[]" ]; then
+            ISSUE_NUMBER=$(echo "$EXISTING_ISSUES" | jq -r '.[0].number')
+            echo "Found existing open issue #$ISSUE_NUMBER"
+            echo "has_existing=true" >> $GITHUB_OUTPUT
+            echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          else
+            echo "No existing open Python update issue found"
+            echo "has_existing=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Check for existing update PR
         id: check-pr
         if: steps.check-update.outputs.update_available == 'true'
@@ -117,6 +144,59 @@ jobs:
             echo "has_existing=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Create issue for update
+        id: create-issue
+        if: |
+          steps.check-update.outputs.update_available == 'true' &&
+          steps.lint-test.outputs.lint_passed == 'true' &&
+          steps.pytest-test.outputs.tests_passed == 'true' &&
+          steps.docker-test.outputs.docker_build_passed == 'true' &&
+          steps.docker-pytest.outputs.docker_tests_passed == 'true' &&
+          steps.check-issue.outputs.has_existing != 'true' &&
+          steps.check-pr.outputs.has_existing != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          NEW_VERSION="${{ steps.get-version.outputs.new_version }}"
+          
+          # Ensure the 'python-update' label exists
+          if ! gh label view "python-update" >/dev/null 2>&1; then
+            echo "Creating missing label 'python-update'"
+            gh label create "python-update" --description "Automated Python version updates" --color 0366d6 || true
+          fi
+          
+          # Create issue with heredoc
+          cat > /tmp/issue_body.txt << 'ISSUE_EOF'
+          ## Python and Docker Version Update Available
+          
+          A new stable Python version is available.
+          
+          ### Proposed Changes
+          - Update `.github/ci/Dockerfile.infra` to use new Python slim image
+          - Update `.github/ci/Dockerfile.qr` to use new Python slim image
+          - Update `.github/workflows/build-ci-image.yml` to use new Python version
+          - Update `.github/workflows/check-todo.yml` to use new Python version
+          
+          ### Automated Test Results
+          All automated tests have passed with the new version:
+          - ✅ Linting (flake8)
+          - ✅ Unit tests (pytest)
+          - ✅ Docker image builds
+          - ✅ Tests in Docker containers
+          
+          ### Next Steps
+          A pull request will be automatically created and linked to this issue with the necessary changes.
+          ISSUE_EOF
+          
+          ISSUE_NUMBER=$(gh issue create \
+            --title "Update Python to version ${NEW_VERSION}" \
+            --body-file /tmp/issue_body.txt \
+            --label "python-update" \
+            --json number -q '.number')
+          
+          echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "Created issue #$ISSUE_NUMBER"
+
       - name: Create Pull Request
         if: |
           steps.check-update.outputs.update_available == 'true' &&
@@ -124,6 +204,7 @@ jobs:
           steps.pytest-test.outputs.tests_passed == 'true' &&
           steps.docker-test.outputs.docker_build_passed == 'true' &&
           steps.docker-pytest.outputs.docker_tests_passed == 'true' &&
+          steps.check-issue.outputs.has_existing != 'true' &&
           steps.check-pr.outputs.has_existing != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,6 +214,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
           NEW_VERSION="${{ steps.get-version.outputs.new_version }}"
+          ISSUE_NUMBER="${{ steps.create-issue.outputs.issue_number }}"
           BRANCH_NAME="automated/update-python-${NEW_VERSION}"
           
           # Create and switch to new branch
@@ -144,55 +226,61 @@ jobs:
           git add .github/workflows/build-ci-image.yml
           git add .github/workflows/check-todo.yml
           
-          # Commit changes
-          git commit -m "chore: update Python to version ${NEW_VERSION}
-
-          - Update Dockerfile.infra to use python:${NEW_VERSION}-slim
-          - Update Dockerfile.qr to use python:${NEW_VERSION}-slim
-          - Update build-ci-image.yml to use Python ${NEW_VERSION}
-          - Update check-todo.yml to use Python ${NEW_VERSION}
+          # Commit changes with proper formatting
+          git commit \
+            -m "chore: update Python to version ${NEW_VERSION}" \
+            -m "" \
+            -m "- Update Dockerfile.infra to use python:${NEW_VERSION}-slim" \
+            -m "- Update Dockerfile.qr to use python:${NEW_VERSION}-slim" \
+            -m "- Update build-ci-image.yml to use Python ${NEW_VERSION}" \
+            -m "- Update check-todo.yml to use Python ${NEW_VERSION}" \
+            -m "" \
+            -m "All tests passed:" \
+            -m "- Linting: ✓" \
+            -m "- Pytest: ✓" \
+            -m "- Docker builds: ✓" \
+            -m "- Docker tests: ✓" \
+            -m "" \
+            -m "Fixes #${ISSUE_NUMBER}"
           
-          All tests passed:
-          - Linting: ✓
-          - Pytest: ✓
-          - Docker builds: ✓
-          - Docker tests: ✓"
+          # Push branch (allow updating existing automation branch if it already exists)
+          git push --force-with-lease origin "$BRANCH_NAME" || git push origin "$BRANCH_NAME"
           
-          # Push branch
-          git push origin "$BRANCH_NAME"
+          # Create PR body with heredoc
+          cat > /tmp/pr_body.txt << 'PR_EOF'
+          ## Automated Python and Docker Version Update
           
-          # Ensure the 'python-update' label exists
-          if ! gh label view "python-update" >/dev/null 2>&1; then
-            echo "Creating missing label 'python-update'"
-            gh label create "python-update" --description "Automated Python version updates" --color 0366d6 || true
-          fi
+          This PR updates the Python version used across the repository.
           
-          # Create PR
-          gh pr create \
-            --title "chore: Update Python to version ${NEW_VERSION}" \
-            --body "## Automated Python and Docker Version Update
-
-          This PR updates the Python version used across the repository from the current version to **${NEW_VERSION}**.
-
           ### Changes Made
-          - Updated \`.github/ci/Dockerfile.infra\` to use \`python:${NEW_VERSION}-slim\`
-          - Updated \`.github/ci/Dockerfile.qr\` to use \`python:${NEW_VERSION}-slim\`
-          - Updated \`.github/workflows/build-ci-image.yml\` to use Python ${NEW_VERSION}
-          - Updated \`.github/workflows/check-todo.yml\` to use Python ${NEW_VERSION}
-
+          - Updated `.github/ci/Dockerfile.infra` to use new Python slim image
+          - Updated `.github/ci/Dockerfile.qr` to use new Python slim image
+          - Updated `.github/workflows/build-ci-image.yml` to use new Python version
+          - Updated `.github/workflows/check-todo.yml` to use new Python version
+          
           ### Test Results
           All automated tests have passed:
           - ✅ Linting (flake8)
           - ✅ Unit tests (pytest)
           - ✅ Docker image builds
           - ✅ Tests in Docker containers
-
+          
           ### What to Review
           - Verify that all CI workflows pass successfully
           - Check that no new deprecation warnings are introduced
           - Ensure Docker images build and push correctly
-
-          This PR was automatically created by the \`update-python-docker\` workflow." \
+          
+          This PR was automatically created by the `update-python-docker` workflow.
+          PR_EOF
+          
+          # Add issue reference to PR body
+          echo "" >> /tmp/pr_body.txt
+          echo "Closes #${ISSUE_NUMBER}" >> /tmp/pr_body.txt
+          
+          # Create PR linked to the issue
+          gh pr create \
+            --title "chore: Update Python to version ${NEW_VERSION}" \
+            --body-file /tmp/pr_body.txt \
             --label "python-update" \
             --base main \
             --head "$BRANCH_NAME"
@@ -220,7 +308,13 @@ jobs:
         run: |
           echo "✅ Already using the latest Python version"
 
-      - name: Skip - existing PR found
-        if: steps.check-update.outputs.update_available == 'true' && steps.check-pr.outputs.has_existing == 'true'
+      - name: Skip - existing issue or PR found
+        if: steps.check-update.outputs.update_available == 'true' && (steps.check-issue.outputs.has_existing == 'true' || steps.check-pr.outputs.has_existing == 'true')
         run: |
-          echo "ℹ️ Skipping PR creation - existing Python update PR found: #${{ steps.check-pr.outputs.pr_number }}"
+          echo "ℹ️ Skipping creation - existing Python update issue/PR found"
+          if [ "${{ steps.check-issue.outputs.has_existing }}" == "true" ]; then
+            echo "Existing issue: #${{ steps.check-issue.outputs.issue_number }}"
+          fi
+          if [ "${{ steps.check-pr.outputs.has_existing }}" == "true" ]; then
+            echo "Existing PR: #${{ steps.check-pr.outputs.pr_number }}"
+          fi
