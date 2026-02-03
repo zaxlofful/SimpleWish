@@ -45,7 +45,8 @@ def get_latest_python_version() -> Optional[str]:
                 version = match.group(1)
                 # We assume versions 3.8 and above are relevant for this project;
                 # the workflow will test compatibility with newer Python 3 releases
-                # automatically.
+                # automatically. Limit to Python 3.x only to prevent automatic
+                # adoption of Python 4.x which may have breaking changes.
                 major, minor = map(int, version.split('.'))
                 if major == 3 and minor >= 8:
                     versions.append(version)

@@ -38,12 +38,18 @@ jobs:
       - name: Check for Python updates
         id: check-update
         run: |
-          set -euo pipefail
           # Run the update script; if it fails, this step (and workflow) will fail.
+          set -euo pipefail
           python3 scripts/update_python_version.py
 
           # Determine whether any tracked files were modified by the script.
-          if git diff --quiet; then
+          # git diff exits with 1 if there are differences, so disable pipefail for this check
+          set +e
+          git diff --quiet
+          DIFF_EXIT=$?
+          set -e
+          
+          if [ $DIFF_EXIT -eq 0 ]; then
             echo "update_available=false" >> "$GITHUB_OUTPUT"
           else
             echo "update_available=true" >> "$GITHUB_OUTPUT"
@@ -243,8 +249,12 @@ jobs:
             -m "" \
             -m "Fixes #${ISSUE_NUMBER}"
           
-          # Push branch (allow updating existing automation branch if it already exists)
-          git push --force-with-lease origin "$BRANCH_NAME" || git push origin "$BRANCH_NAME"
+          # Push branch (use force-with-lease to allow updates if no remote changes)
+          if ! git push --force-with-lease origin "$BRANCH_NAME"; then
+            echo "⚠️  Force-with-lease failed - remote branch has been updated by another process"
+            echo "Attempting regular push (will fail if branch exists with different history)"
+            git push origin "$BRANCH_NAME"
+          fi
           
           # Create PR body with heredoc
           cat > /tmp/pr_body.txt << 'PR_EOF'
