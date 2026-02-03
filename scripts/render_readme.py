@@ -2,6 +2,7 @@
 import os
 import re
 import subprocess
+from urllib.parse import urlparse
 
 OUTPUT = 'README.md'
 
@@ -156,7 +157,14 @@ def ensure_badge_links():
         img_url = im.group(1).strip() if im else ''
         img_parsed = extract_owner_repo_from_url(img_url) if img_url else None
         # If it's a GitHub actions badge for this repo, link to the workflow page
-        if img_url and 'github.com' in img_url and '/actions/workflows/' in img_url and img_parsed == (owner.lower(), repo.lower()):
+        if img_url:
+            parsed = urlparse(img_url)
+            host = (parsed.hostname or '').lower()
+            path = parsed.path or ''
+        else:
+            host = ''
+            path = ''
+        if img_url and host == 'github.com' and '/actions/workflows/' in path and img_parsed == (owner.lower(), repo.lower()):
             mb = re.search(r'/actions/workflows/(?P<wf>[^/]+)(?:/badge\.svg(?:\?.*)?)?$', img_url)
             wf_basename = mb.group('wf') if mb else None
             alt_name = os.path.splitext(wf_basename)[0] if wf_basename else None
