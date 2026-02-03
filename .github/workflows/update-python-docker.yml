@@ -26,7 +26,7 @@ jobs:
         id: current-version
         run: |
           # Extract current Python version from build-ci-image.yml
-          CURRENT_VERSION=$(grep -m1 "python-version:" .github/workflows/build-ci-image.yml | sed -E "s/.*python-version:\s*['\"]?([0-9.]+)['\"]?.*/\1/")
+          CURRENT_VERSION=$(grep -m1 "python-version:" .github/workflows/build-ci-image.yml | sed -E "s/.*python-version:[[:space:]]*['\"]?([0-9.]+)['\"]?.*/\1/")
           echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
           echo "Using Python $CURRENT_VERSION for workflow execution"
 
@@ -60,9 +60,15 @@ jobs:
         if: steps.check-update.outputs.update_available == 'true'
         run: |
           # Extract the new Python version from build-ci-image.yml
-          NEW_VERSION=$(grep -m1 "python-version:" .github/workflows/build-ci-image.yml | sed -E "s/.*python-version:\s*['\"]?([0-9.]+)['\"]?.*/\1/")
+          NEW_VERSION=$(grep -m1 "python-version:" .github/workflows/build-ci-image.yml | sed -E "s/.*python-version:[[:space:]]*['\"]?([0-9.]+)['\"]?.*/\1/")
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "Updated to Python $NEW_VERSION"
+
+      - name: Set up new Python version for testing
+        if: steps.check-update.outputs.update_available == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.get-version.outputs.new_version }}
 
       - name: Create venv and install deps
         if: steps.check-update.outputs.update_available == 'true'
@@ -75,6 +81,7 @@ jobs:
       - name: Run linting tests
         id: lint-test
         if: steps.check-update.outputs.update_available == 'true'
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Running flake8..."
@@ -84,6 +91,7 @@ jobs:
       - name: Run pytest tests
         id: pytest-test
         if: steps.check-update.outputs.update_available == 'true'
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Running pytest..."
@@ -97,6 +105,7 @@ jobs:
       - name: Test build Docker images
         id: docker-test
         if: steps.check-update.outputs.update_available == 'true'
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Testing QR Dockerfile build..."
@@ -108,10 +117,11 @@ jobs:
       - name: Run tests in Docker container
         id: docker-pytest
         if: steps.check-update.outputs.update_available == 'true'
+        continue-on-error: true
         run: |
           set -euo pipefail
           echo "Running pytest in Docker container..."
-          docker run --rm -v "$PWD:/workspace" -w /workspace test-infra:latest bash -c "python -m venv --system-site-packages .venv && ./.venv/bin/python -m pytest -q"
+          docker run --rm --user 0 -v "$PWD:/workspace" -w /workspace test-infra:latest bash -c "python -m venv --system-site-packages .venv && ./.venv/bin/python -m pytest -q"
           echo "docker_tests_passed=true" >> $GITHUB_OUTPUT
 
       - name: Check for existing update issue
@@ -154,10 +164,10 @@ jobs:
         id: create-issue
         if: |
           steps.check-update.outputs.update_available == 'true' &&
-          steps.lint-test.outputs.lint_passed == 'true' &&
-          steps.pytest-test.outputs.tests_passed == 'true' &&
-          steps.docker-test.outputs.docker_build_passed == 'true' &&
-          steps.docker-pytest.outputs.docker_tests_passed == 'true' &&
+          steps.lint-test.outcome == 'success' &&
+          steps.pytest-test.outcome == 'success' &&
+          steps.docker-test.outcome == 'success' &&
+          steps.docker-pytest.outcome == 'success' &&
           steps.check-issue.outputs.has_existing != 'true' &&
           steps.check-pr.outputs.has_existing != 'true'
         env:
@@ -206,10 +216,10 @@ jobs:
       - name: Create Pull Request
         if: |
           steps.check-update.outputs.update_available == 'true' &&
-          steps.lint-test.outputs.lint_passed == 'true' &&
-          steps.pytest-test.outputs.tests_passed == 'true' &&
-          steps.docker-test.outputs.docker_build_passed == 'true' &&
-          steps.docker-pytest.outputs.docker_tests_passed == 'true' &&
+          steps.lint-test.outcome == 'success' &&
+          steps.pytest-test.outcome == 'success' &&
+          steps.docker-test.outcome == 'success' &&
+          steps.docker-pytest.outcome == 'success' &&
           steps.check-issue.outputs.has_existing != 'true' &&
           steps.check-pr.outputs.has_existing != 'true'
         env:
@@ -297,17 +307,18 @@ jobs:
 
       - name: Handle test failures
         if: |
+          always() &&
           steps.check-update.outputs.update_available == 'true' &&
-          (steps.lint-test.outputs.lint_passed != 'true' ||
-           steps.pytest-test.outputs.tests_passed != 'true' ||
-           steps.docker-test.outputs.docker_build_passed != 'true' ||
-           steps.docker-pytest.outputs.docker_tests_passed != 'true')
+          (steps.lint-test.outcome == 'failure' ||
+           steps.pytest-test.outcome == 'failure' ||
+           steps.docker-test.outcome == 'failure' ||
+           steps.docker-pytest.outcome == 'failure')
         run: |
           echo "❌ Tests failed with the new Python version"
-          echo "Lint passed: ${{ steps.lint-test.outputs.lint_passed }}"
-          echo "Pytest passed: ${{ steps.pytest-test.outputs.tests_passed }}"
-          echo "Docker build passed: ${{ steps.docker-test.outputs.docker_build_passed }}"
-          echo "Docker tests passed: ${{ steps.docker-pytest.outputs.docker_tests_passed }}"
+          echo "Lint outcome: ${{ steps.lint-test.outcome }}"
+          echo "Pytest outcome: ${{ steps.pytest-test.outcome }}"
+          echo "Docker build outcome: ${{ steps.docker-test.outcome }}"
+          echo "Docker tests outcome: ${{ steps.docker-pytest.outcome }}"
           echo ""
           echo "Manual intervention required to fix compatibility issues."
           echo "The version update has been applied but not committed."

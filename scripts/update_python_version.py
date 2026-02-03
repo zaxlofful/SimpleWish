@@ -208,18 +208,36 @@ def main():
 
     # Update files
     changes_made = False
+    failed_files = []
     for file_path in files_to_update:
-        if file_path.exists():
-            if update_file_content(
-                file_path,
-                current_version,
-                latest_version,
-                current_docker_tag,
-                latest_docker_tag
-            ):
-                changes_made = True
+        if not file_path.exists():
+            print(f"Error: File not found: {file_path}")
+            failed_files.append(str(file_path))
+            continue
+        
+        result = update_file_content(
+            file_path,
+            current_version,
+            latest_version,
+            current_docker_tag,
+            latest_docker_tag
+        )
+        if result:
+            changes_made = True
         else:
-            print(f"Warning: File not found: {file_path}")
+            # Check if file still contains old version (update failed)
+            try:
+                content = file_path.read_text(encoding='utf-8')
+                if current_version in content or current_docker_tag in content:
+                    print(f"Error: Failed to update {file_path}")
+                    failed_files.append(str(file_path))
+            except Exception as e:
+                print(f"Error checking {file_path}: {e}")
+                failed_files.append(str(file_path))
+
+    if failed_files:
+        print(f"\nError: Failed to update the following files: {', '.join(failed_files)}")
+        sys.exit(1)
 
     if changes_made:
         print("\nSuccessfully updated Python version references")
