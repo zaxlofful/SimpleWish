@@ -307,7 +307,7 @@ jobs:
 
       - name: Handle test failures
         if: |
-          always() &&
+          !cancelled() &&
           steps.check-update.outputs.update_available == 'true' &&
           (steps.lint-test.outcome == 'failure' ||
            steps.pytest-test.outcome == 'failure' ||

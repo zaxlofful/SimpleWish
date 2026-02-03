@@ -225,11 +225,16 @@ def main():
         if result:
             changes_made = True
         else:
-            # Check if file still contains old version (update failed)
+            # Check if file still contains the exact old patterns (update failed)
+            # Use word boundaries and specific patterns to avoid false positives
             try:
                 content = file_path.read_text(encoding='utf-8')
-                if current_version in content or current_docker_tag in content:
-                    print(f"Error: Failed to update {file_path}")
+                # Check for old version patterns that should have been replaced
+                old_version_pattern = rf"python-version:\s*['\"]?{re.escape(current_version)}['\"]?"
+                old_docker_pattern = rf"FROM python:{re.escape(current_docker_tag)}"
+                
+                if re.search(old_version_pattern, content) or re.search(old_docker_pattern, content):
+                    print(f"Error: Failed to update {file_path} - old version patterns still present")
                     failed_files.append(str(file_path))
             except Exception as e:
                 print(f"Error checking {file_path}: {e}")
