@@ -7,7 +7,7 @@ on:
     # Only run when Python files or dependency lists change
     paths:
       - '**/*.py'
-      - 'requirements*.txt'
+      - '**/requirements*.txt'
   pull_request: {}
 
 jobs:
