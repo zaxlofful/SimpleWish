@@ -6,7 +6,7 @@ on:
     branches: [ main ]
     # Only run this workflow when files that affect the CI image change
     paths:
-      - 'requirements*.txt'
+      - '**/requirements*.txt'
       - '.github/workflows/build-ci-image.yml'
       - 'Dockerfile'
       - '.github/ci/**'
