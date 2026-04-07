@@ -14,6 +14,40 @@ import re
 import html
 from pathlib import Path
 
+# ---------------------------------------------------------------------------
+# Security helpers
+# ---------------------------------------------------------------------------
+
+# Allowlist for CSS color values injected into <style> blocks.
+# Accepts: #rgb, #rrggbb, #rgba, #rrggbbaa, rgb(...), rgba(...),
+#          hsl(...), hsla(...), and CSS named colors (letters/hyphens only).
+_CSS_COLOR_RE = re.compile(
+    r'^(?:'
+    r'#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})'   # hex
+    r'|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)'       # rgb()
+    r'|rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*'    # rgba()
+    r'(?:0|1|0?\.\d+)\s*\)'
+    r'|hsl\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*\)'     # hsl()
+    r'|hsla\(\s*\d{1,3}\s*,\s*\d{1,3}%\s*,\s*\d{1,3}%\s*,\s*'  # hsla()
+    r'(?:0|1|0?\.\d+)\s*\)'
+    r'|[a-zA-Z-]{2,30}'                                          # named color
+    r')$'
+)
+
+# Allowlist for URL schemes in gift href attributes.
+_SAFE_HREF_SCHEMES = ('http://', 'https://', 'mailto:')
+
+
+def _is_safe_css_color(value: str) -> bool:
+    """Return True only when *value* is a safe, well-formed CSS color."""
+    return bool(_CSS_COLOR_RE.match(str(value).strip()))
+
+
+def _is_safe_href(value: str) -> bool:
+    """Return True only when *value* starts with an allowed URL scheme."""
+    v = str(value).strip()
+    return any(v.lower().startswith(s) for s in _SAFE_HREF_SCHEMES)
+
 
 def render_from_template(template_text: str, data: dict) -> str:
     s = template_text
@@ -63,12 +97,17 @@ def render_from_template(template_text: str, data: dict) -> str:
         safe_sub = html.escape(str(data['sub']))
         s = re.sub(r'(<p class="sub">).*?(</p>)', rf'\1{safe_sub}\2', s, flags=re.S)
 
-    # Update CSS variables --accent and --muted inside :root
+    # Update CSS variables --accent and --muted inside :root.
+    # Only values that match the safe CSS color allowlist are accepted;
+    # anything else is silently ignored to prevent CSS injection.
     if 'accent' in data:
-        # accent is a CSS color value; keep as provided but coerce to str
-        s = re.sub(r'(--accent:\s*)[^;]+;', rf'\1{str(data["accent"])};', s)
+        color_val = str(data['accent'])
+        if _is_safe_css_color(color_val):
+            s = re.sub(r'(--accent:\s*)[^;]+;', rf'\1{color_val};', s)
     if 'muted' in data:
-        s = re.sub(r'(--muted:\s*)[^;]+;', rf'\1{str(data["muted"])};', s)
+        color_val = str(data['muted'])
+        if _is_safe_css_color(color_val):
+            s = re.sub(r'(--muted:\s*)[^;]+;', rf'\1{color_val};', s)
 
     # Update hint text
     if 'hint' in data:
@@ -83,8 +122,10 @@ def render_from_template(template_text: str, data: dict) -> str:
             href = g.get('href')
             # HTML-escape the visible text for safety
             safe_text = html.escape(str(text))
-            # If an href is provided and non-empty, render as a link; otherwise render plain text
-            if href:
+            # If an href is provided and non-empty, render as a link only
+            # when the scheme is safe (http/https/mailto); otherwise render
+            # plain text to prevent javascript: / data: URL injection.
+            if href and _is_safe_href(href):
                 safe_href = html.escape(str(href), quote=True)
                 list_items.append(
                     f'          <li><a href="{safe_href}" target="_blank" rel="noopener">{safe_text}</a></li>'
