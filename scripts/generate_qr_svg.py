@@ -597,8 +597,9 @@ def sanitize_svg_for_html(svg: str, pretty: bool = True, indent_spaces: int = 2)
     svg = re.sub(r'<script\b[^>]*/>', '', svg, flags=re.I)
     # remove inline event-handler attributes (onclick=, onload=, onerror=, etc.)
     svg = re.sub(r'\bon\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|\S+)', '', svg, flags=re.I)
-    # remove <style> blocks that could break the host page's CSS cascade
-    svg = re.sub(r'<style\b[^>]*>.*?</style\s*>', '', svg, flags=re.I | re.S)
+    # remove <style> blocks that could break the host page's CSS cascade.
+    # Use [^>]* for the closing tag to mirror the <script> handling above.
+    svg = re.sub(r'<style\b[^>]*>.*?</style[^>]*>', '', svg, flags=re.I | re.S)
 
     # If pretty is disabled, return the cleaned SVG unchanged.
     if not pretty:
