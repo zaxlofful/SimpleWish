@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from scripts.inject_qr_svg import inject, MARKER_START, MARKER_END
 
 
@@ -56,3 +58,22 @@ def test_inject_indentation_tab(tmp_path):
     # injected lines should start with indentation matching the marker
     # we expect the injected SVG to start on the same indentation as the marker
     assert '\n\t<svg' in new_content
+
+
+@pytest.mark.parametrize(
+    'svg',
+    [
+        '<svg><script>alert(1)</script></svg>',
+        '<svg><foreignObject><div>bad</div></foreignObject></svg>',
+        '<svg onload="alert(1)"><rect/></svg>',
+        '<svg><rect fill="url(https://evil.example/pixel)"/></svg>',
+    ],
+)
+def test_inject_rejects_active_svg_content(tmp_path, svg):
+    html = tmp_path / 'sample.html'
+    original = make_html_with_marker(html)
+
+    with pytest.raises(ValueError, match='unsafe SVG'):
+        inject(svg, str(html))
+
+    assert html.read_text(encoding='utf-8') == original

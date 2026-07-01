@@ -14,12 +14,89 @@ import argparse
 import glob
 import os
 import re
+from xml.etree import ElementTree
 
 MARKER_START = '<!-- QR-PLACEHOLDER-START -->'
 MARKER_END = '<!-- QR-PLACEHOLDER-END -->'
+SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
+ALLOWED_SVG_TAGS = {
+    'circle',
+    'ellipse',
+    'g',
+    'path',
+    'polygon',
+    'rect',
+    'svg',
+}
+ALLOWED_SVG_ATTRIBUTES = {
+    'aria-hidden',
+    'class',
+    'cx',
+    'cy',
+    'd',
+    'data-qr-default-foreground-color',
+    'fill',
+    'height',
+    'id',
+    'opacity',
+    'points',
+    'r',
+    'rx',
+    'ry',
+    'stroke',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'stroke-width',
+    'transform',
+    'viewBox',
+    'width',
+    'x',
+    'y',
+}
+DANGEROUS_SVG_VALUE_RE = re.compile(
+    r'(?:url\s*\(|javascript\s*:|data\s*:)',
+    re.IGNORECASE,
+)
+
+
+def _qualified_name(name: str) -> tuple[str, str]:
+    if name.startswith('{'):
+        namespace, local_name = name[1:].split('}', 1)
+        return namespace, local_name
+    return '', name
+
+
+def validate_svg(svg_content: str) -> None:
+    """Reject markup outside the generator's static SVG subset."""
+    if re.search(r'<!DOCTYPE|<!ENTITY|<\?', svg_content, re.IGNORECASE):
+        raise ValueError('unsafe SVG declaration')
+    try:
+        root = ElementTree.fromstring(svg_content)
+    except ElementTree.ParseError as exc:
+        raise ValueError('unsafe SVG: invalid XML') from exc
+
+    root_namespace, root_name = _qualified_name(root.tag)
+    if root_name != 'svg' or root_namespace not in {'', SVG_NAMESPACE}:
+        raise ValueError('unsafe SVG root element')
+
+    for element in root.iter():
+        namespace, tag = _qualified_name(element.tag)
+        if namespace != root_namespace or tag not in ALLOWED_SVG_TAGS:
+            raise ValueError(f'unsafe SVG element: {tag}')
+        for raw_attribute, value in element.attrib.items():
+            attribute_namespace, attribute = _qualified_name(raw_attribute)
+            if (
+                attribute_namespace
+                or attribute not in ALLOWED_SVG_ATTRIBUTES
+            ):
+                raise ValueError(f'unsafe SVG attribute: {attribute}')
+            if DANGEROUS_SVG_VALUE_RE.search(value):
+                raise ValueError(f'unsafe SVG value in {attribute}')
 
 
 def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> bool:
+    validate_svg(svg_content)
+
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
