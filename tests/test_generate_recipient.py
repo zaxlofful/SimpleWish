@@ -53,3 +53,21 @@ def test_render_rejects_non_hex_colors(field):
 
     with pytest.raises(ValueError, match=field):
         render_from_template(template, data)
+
+
+def test_render_drops_javascript_gift_link():
+    template = '<ul id="gift-list"><li>placeholder</li></ul>'
+    data = {
+        'gifts': [
+            {
+                'text': 'Click me',
+                'href': 'javascript:alert(document.cookie)',
+            }
+        ]
+    }
+
+    rendered = render_from_template(template, data)
+
+    assert '<li>Click me</li>' in rendered
+    assert 'href=' not in rendered
+    assert 'javascript:' not in rendered

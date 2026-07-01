@@ -13,9 +13,11 @@ import json
 import re
 import html
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 HEX_COLOR_RE = re.compile(r'^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$')
+CONTROL_CHARACTER_RE = re.compile(r'[\x00-\x1f\x7f]')
 
 
 def validate_color(value: object, field: str) -> str:
@@ -23,6 +25,20 @@ def validate_color(value: object, field: str) -> str:
     if not HEX_COLOR_RE.fullmatch(color):
         raise ValueError(f'{field} must be a 3- or 6-digit hex color')
     return color
+
+
+def safe_web_url(value: object) -> str | None:
+    url = str(value).strip()
+    if CONTROL_CHARACTER_RE.search(url):
+        return None
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+    except ValueError:
+        return None
+    if parsed.scheme.lower() not in {'http', 'https'} or not hostname:
+        return None
+    return url
 
 
 def render_from_template(template_text: str, data: dict) -> str:
@@ -97,8 +113,9 @@ def render_from_template(template_text: str, data: dict) -> str:
             # HTML-escape the visible text for safety
             safe_text = html.escape(str(text))
             # If an href is provided and non-empty, render as a link; otherwise render plain text
-            if href:
-                safe_href = html.escape(str(href), quote=True)
+            safe_url = safe_web_url(href) if href else None
+            if safe_url:
+                safe_href = html.escape(safe_url, quote=True)
                 list_items.append(
                     f'          <li><a href="{safe_href}" target="_blank" rel="noopener">{safe_text}</a></li>'
                 )
