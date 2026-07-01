@@ -54,3 +54,4 @@ def test_pr_checks_do_not_receive_issue_write_permission():
         assert 'container:' not in check_job
         assert 'issues: write' not in check_job
         assert 'contents: read' in check_job
+        assert 'persist-credentials: false' in check_job
