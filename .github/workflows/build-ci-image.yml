@@ -15,6 +15,8 @@ jobs:
   build-publish:
     name: Build and publish images
     runs-on: ubuntu-22.04
+    env:
+      TRIVY_IMAGE: ghcr.io/aquasecurity/trivy@sha256:be1190afcb28352bfddc4ddeb71470835d16462af68d310f9f4bca710961a41e # 0.70.0
     permissions:
       packages: write
       contents: read
@@ -51,8 +53,7 @@ jobs:
         run: |
           echo "Running Trivy filesystem scan on repository (fails on HIGH/CRITICAL)..."
           # Mount the runner workspace into the container read-only.
-          # Using Trivy from GHCR instead of Docker Hub for security
-          docker run --rm -v "${{ github.workspace }}:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs /workspace --exit-code 1 --severity HIGH,CRITICAL || {
+          docker run --rm -v "${{ github.workspace }}:/workspace:ro" "$TRIVY_IMAGE" fs /workspace --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in the repo files";
             exit 1;
           }
@@ -104,9 +105,9 @@ jobs:
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-qr:${{ steps.vars.outputs.IMAGE_TAG }}
           echo "Scanning local QR image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
-          # Mount the Docker socket so Trivy can inspect the local docker image
-          # Using Trivy from GHCR instead of Docker Hub for security
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+          IMAGE_TAR="$RUNNER_TEMP/simplewish-qr.tar"
+          docker save --output "$IMAGE_TAR" "$IMAGE"
+          docker run --rm -v "$IMAGE_TAR:/scan/image.tar:ro" "$TRIVY_IMAGE" image --input /scan/image.tar --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
@@ -119,9 +120,9 @@ jobs:
           OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
           IMAGE=ghcr.io/${OWNER_LC}/simplewish-infra:${{ steps.vars.outputs.IMAGE_TAG }}
           echo "Scanning local Infra image $IMAGE with Trivy (fails on HIGH/CRITICAL)..."
-          # Mount the Docker socket so Trivy can inspect the local docker image
-          # Using Trivy from GHCR instead of Docker Hub for security
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --exit-code 1 --severity HIGH,CRITICAL $IMAGE || {
+          IMAGE_TAR="$RUNNER_TEMP/simplewish-infra.tar"
+          docker save --output "$IMAGE_TAR" "$IMAGE"
+          docker run --rm -v "$IMAGE_TAR:/scan/image.tar:ro" "$TRIVY_IMAGE" image --input /scan/image.tar --exit-code 1 --severity HIGH,CRITICAL || {
             echo "Trivy found HIGH/CRITICAL vulnerabilities in image $IMAGE";
             exit 1;
           }
@@ -268,11 +269,13 @@ jobs:
           To reproduce locally:
           \`\`\`bash
           # For repository scan:
-          docker run --rm -v "\$PWD:/workspace:ro" ghcr.io/aquasecurity/trivy:latest fs /workspace --severity HIGH,CRITICAL
+          docker run --rm -v "\$PWD:/workspace:ro" "$TRIVY_IMAGE" fs /workspace --severity HIGH,CRITICAL
           
           # For image scans (after building):
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL simplewish-qr:test
-          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/aquasecurity/trivy:latest image --severity HIGH,CRITICAL simplewish-infra:test
+          docker save --output simplewish-qr.tar simplewish-qr:test
+          docker run --rm -v "\$PWD/simplewish-qr.tar:/scan/image.tar:ro" "$TRIVY_IMAGE" image --input /scan/image.tar --severity HIGH,CRITICAL
+          docker save --output simplewish-infra.tar simplewish-infra:test
+          docker run --rm -v "\$PWD/simplewish-infra.tar:/scan/image.tar:ro" "$TRIVY_IMAGE" image --input /scan/image.tar --severity HIGH,CRITICAL
           \`\`\`
           EOF
           
