@@ -2,6 +2,8 @@ import json
 import re
 from pathlib import Path
 
+import pytest
+
 from scripts.generate_recipient import render_from_template
 
 
@@ -31,3 +33,23 @@ def test_generate_recipient_from_example():
 
     # Notes should be HTML-escaped (ampersand becomes &amp;)
     assert 'Shipping &amp; availability' in rendered
+
+
+@pytest.mark.parametrize(
+    'field',
+    ['accent', 'muted', 'qr_foreground', 'qr_background'],
+)
+def test_render_rejects_non_hex_colors(field):
+    template = (
+        '<!-- QR metadata: test -->'
+        '<style>:root { --accent:#b71c1c; --muted:#6b7280; }</style>'
+    )
+    data = {
+        field: (
+            'red; } body::before { '
+            'content: url(https://evil.example/collect) }'
+        )
+    }
+
+    with pytest.raises(ValueError, match=field):
+        render_from_template(template, data)

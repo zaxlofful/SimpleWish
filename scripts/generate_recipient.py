@@ -15,15 +15,27 @@ import html
 from pathlib import Path
 
 
+HEX_COLOR_RE = re.compile(r'^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$')
+
+
+def validate_color(value: object, field: str) -> str:
+    color = str(value).strip()
+    if not HEX_COLOR_RE.fullmatch(color):
+        raise ValueError(f'{field} must be a 3- or 6-digit hex color')
+    return color
+
+
 def render_from_template(template_text: str, data: dict) -> str:
     s = template_text
 
     # Insert per-page meta tags for QR immediately after the QR metadata comment
     meta_block = []
     if data.get('qr_foreground'):
-        meta_block.append(f'<meta name="qr-foreground-color" content="{html.escape(str(data["qr_foreground"]), quote=True)}">')
+        color = validate_color(data['qr_foreground'], 'qr_foreground')
+        meta_block.append(f'<meta name="qr-foreground-color" content="{color}">')
     if data.get('qr_background'):
-        meta_block.append(f'<meta name="qr-background-color" content="{html.escape(str(data["qr_background"]), quote=True)}">')
+        color = validate_color(data['qr_background'], 'qr_background')
+        meta_block.append(f'<meta name="qr-background-color" content="{color}">')
     if data.get('qr_decor_type'):
         meta_block.append(f'<meta name="qr-decoration-type" content="{html.escape(str(data["qr_decor_type"]), quote=True)}">')
     if data.get('qr_tree_style'):
@@ -65,10 +77,11 @@ def render_from_template(template_text: str, data: dict) -> str:
 
     # Update CSS variables --accent and --muted inside :root
     if 'accent' in data:
-        # accent is a CSS color value; keep as provided but coerce to str
-        s = re.sub(r'(--accent:\s*)[^;]+;', rf'\1{str(data["accent"])};', s)
+        accent = validate_color(data['accent'], 'accent')
+        s = re.sub(r'(--accent:\s*)[^;]+;', rf'\1{accent};', s)
     if 'muted' in data:
-        s = re.sub(r'(--muted:\s*)[^;]+;', rf'\1{str(data["muted"])};', s)
+        muted = validate_color(data['muted'], 'muted')
+        s = re.sub(r'(--muted:\s*)[^;]+;', rf'\1{muted};', s)
 
     # Update hint text
     if 'hint' in data:
