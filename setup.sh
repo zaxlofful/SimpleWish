@@ -151,14 +151,11 @@ if [ "$BUILD_MODE" = true ]; then
     
     # Step 4: Prepare public directory
     echo "Step 4/4: Preparing output directory..."
-    mkdir -p "$PUBLIC_DIR"
-    # Move HTML files if they exist
-    if compgen -G "*.html" > /dev/null; then
-        mv -- *.html "$PUBLIC_DIR/"
-        echo "✓ Files moved to $PUBLIC_DIR/"
-    else
-        echo "⚠ No HTML files found to move"
-    fi
+    python3 scripts/stage_public.py \
+        --root "." \
+        --recipients-dir "$RECIPIENTS_DIR" \
+        --public-dir "$PUBLIC_DIR"
+    echo "✓ Manifest files copied to $PUBLIC_DIR/"
     echo ""
     
     echo "🎉 Build complete!"
