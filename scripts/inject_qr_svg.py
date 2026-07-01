@@ -85,10 +85,10 @@ def validate_svg(svg_content: str) -> None:
             raise ValueError(f'unsafe SVG element: {tag}')
         for raw_attribute, value in element.attrib.items():
             attribute_namespace, attribute = _qualified_name(raw_attribute)
-            if (
+            invalid_attribute = bool(
                 attribute_namespace
-                or attribute not in ALLOWED_SVG_ATTRIBUTES
-            ):
+            ) or attribute not in ALLOWED_SVG_ATTRIBUTES
+            if invalid_attribute:
                 raise ValueError(f'unsafe SVG attribute: {attribute}')
             if DANGEROUS_SVG_VALUE_RE.search(value):
                 raise ValueError(f'unsafe SVG value in {attribute}')
