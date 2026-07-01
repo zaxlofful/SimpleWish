@@ -1,7 +1,9 @@
 from pathlib import Path
+import sys
 
 import pytest
 
+import scripts.inject_qr_svg as inject_module
 from scripts.inject_qr_svg import inject, MARKER_START, MARKER_END
 
 
@@ -77,3 +79,35 @@ def test_inject_rejects_active_svg_content(tmp_path, svg):
         inject(svg, str(html))
 
     assert html.read_text(encoding='utf-8') == original
+
+
+def test_cli_injects_only_html_matching_pattern(tmp_path, monkeypatch):
+    svg_dir = tmp_path / 'generated'
+    svg_dir.mkdir()
+    (svg_dir / 'sample.svg').write_text(
+        '<svg><rect/></svg>',
+        encoding='utf-8',
+    )
+    root_html = tmp_path / 'sample.html'
+    root_original = make_html_with_marker(root_html)
+    public_dir = tmp_path / 'public'
+    public_dir.mkdir()
+    public_html = public_dir / 'sample.html'
+    make_html_with_marker(public_html)
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        'argv',
+        [
+            'inject_qr_svg.py',
+            '--svg-dir',
+            'generated',
+            '--pattern',
+            'public/*.html',
+        ],
+    )
+
+    assert inject_module.main() == 0
+    assert root_html.read_text(encoding='utf-8') == root_original
+    assert '<rect' in public_html.read_text(encoding='utf-8')

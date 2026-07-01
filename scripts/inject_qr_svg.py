@@ -180,12 +180,26 @@ def main():
         print('No SVG files found to inject')
         return 0
 
+    html_targets = {}
+    for html_path in glob.glob(args.pattern):
+        basename = os.path.splitext(os.path.basename(html_path))[0]
+        if basename in html_targets:
+            print(
+                f'Ambiguous HTML basename {basename}; '
+                f'matched both {html_targets[basename]} and {html_path}'
+            )
+            return 2
+        html_targets[basename] = html_path
+
     updated = 0
     for svg_path in svgs:
         basename = os.path.splitext(os.path.basename(svg_path))[0]
-        html_path = f'{basename}.html'
-        if not os.path.exists(html_path):
-            print(f'No matching HTML file for {svg_path}; expected {html_path}; skipping')
+        html_path = html_targets.get(basename)
+        if html_path is None:
+            print(
+                f'No HTML file matching {args.pattern} '
+                f'for {svg_path}; skipping'
+            )
             continue
         with open(svg_path, 'r', encoding='utf-8') as f:
             svg_content = f.read()
@@ -193,6 +207,7 @@ def main():
             updated += 1
 
     print(f'Done — injected into {updated} files')
+    return 0
 
 
 if __name__ == '__main__':
