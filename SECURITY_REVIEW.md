@@ -2,6 +2,30 @@
 
 Date: 2026-07-01
 
+## Remediation disposition
+
+Validated on 2026-06-30 against the repository's actual trust boundaries:
+
+- **Fixed:** FINDING-001 (`beb50d4`), FINDING-002 (`7d28a51`),
+  FINDING-006 (`64ef4f4`), FINDING-009 (`4b0885e`),
+  FINDING-012 (`c777260`), FINDING-015 (`afbba03`, `2636e58`),
+  FINDING-016 (`60a977d`), FINDING-017 (`2636e58`, `1811ec4`),
+  FINDING-018 (`6d013a8`), and FINDING-019 (`c433c3f`).
+- **Correctness issue fixed:** FINDING-010 (`f95a4a9`). Ignoring
+  `--pattern` was real but was not a security boundary bypass.
+- **Not vulnerabilities:** FINDING-003, FINDING-004, FINDING-007,
+  FINDING-008, and FINDING-011 describe explicit path controls available
+  only to the local process invoker or build operator, who already has the
+  same filesystem authority.
+- **Not reachable as reported:** FINDING-005 describes a fallback inside
+  a nested helper that every CLI path calls with an explicit output name.
+- **Intended trusted-input behavior:** FINDING-013 treats reviewed
+  `TODO.md` content on the default branch as agent instructions by design;
+  resulting changes remain pull requests requiring review.
+- **No privilege boundary:** FINDING-014 requires control of the local Git
+  remote or workflow files. Either capability already permits direct README
+  modification, while Actions supplies `GITHUB_REPOSITORY` itself.
+
 ## Scope and methodology
 
 This review followed the requested four-pass methodology against the checked-out repository:
