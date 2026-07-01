@@ -14,11 +14,11 @@ jobs:
       issues: write
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Check Links
         id: lychee
-        uses: lycheeverse/lychee-action@v2
+        uses: lycheeverse/lychee-action@885c65f3dc543b57c898c8099f4e08c8afd178a2 # v2.6.1
         with:
           fail: false
       
@@ -45,7 +45,7 @@ jobs:
       
       - name: Create Issue From File
         if: steps.lychee.outputs.exit_code != 0 && steps.check-existing-issue.outputs.has_existing == 'false'
-        uses: peter-evans/create-issue-from-file@v5
+        uses: peter-evans/create-issue-from-file@e8ef132d6df98ed982188e460ebb3b5d4ef3a9cd # v5.0.1
         with:
           title: Latest Bad Link Checker Report
           content-filepath: ./lychee/out.md
