@@ -140,3 +140,20 @@ def test_update_todo_file_nonexistent_file():
     modified = update_todo_file(todo_path, completed_items)
 
     assert modified is False
+
+
+def test_update_todo_file_does_not_remove_word_subset(tmp_path):
+    todo_path = tmp_path / 'TODO.md'
+    original = (
+        '1. Add a safe deployment manifest\n'
+        '2. Rotate root domain configuration\n'
+    )
+    todo_path.write_text(original, encoding='utf-8')
+
+    modified = update_todo_file(
+        todo_path,
+        ['a', 'rotate root domain'],
+    )
+
+    assert modified is False
+    assert todo_path.read_text(encoding='utf-8') == original

@@ -106,17 +106,10 @@ def update_todo_file(todo_path, completed_items):
                     line_normalized
                 ).strip()
 
-                # Check for substantial match using word-based comparison
-                # to avoid false positives from simple substring matching
-                completed_words = set(completed_normalized.split())
-                line_words = set(line_normalized.split())
-
-                # Match if completed item words are subset of line words,
-                # or if there's exact equality
+                # Only exact normalized matches are safe. Word-subset
+                # matching lets short PR-body phrases delete unrelated TODOs.
                 exact_match = (completed_normalized == line_normalized)
-                has_words = (completed_words and line_words)
-                word_subset = has_words and completed_words.issubset(line_words)
-                if exact_match or word_subset:
+                if exact_match:
                     should_keep = False
                     removed_count += 1
                     print(f"Removing completed item: {line_stripped}")
