@@ -107,8 +107,9 @@ cd SimpleWish
 # Or manually set up (all platforms)
 python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r scripts/requirements.txt
-pip install -r scripts/requirements-dev.txt
+pip install --require-hashes \
+  -r scripts/requirements.txt \
+  -r scripts/requirements-dev.txt
 
 # Run tests to verify
 python3 -m pytest
@@ -284,11 +285,11 @@ This repository is designed to work with **Cloudflare Pages** and custom domains
 
 1. **Cloudflare Pages** (Recommended):
    - Connect your repository to Cloudflare Pages through their web GUI
-   - **Important for security**: Configure to deploy only HTML files:
-     - Build command: `mkdir public && find . -maxdepth 1 -type f -name '*.html' -print0 | xargs -0 -I {} cp -- '{}' public/`
+   - **Important for security**: Configure the manifest-based build:
+     - Build command: `./setup.sh --build`
      - Output directory: `public`
-   - Why this matters: Cloudflare Pages will only deploy what's in the `public` folder, preventing accidental exposure of scripts, configuration files, or other repository contents
-   - Note: This same command is used in the GitHub Pages workflow (`.github/workflows/deploy-pages.yml`)
+   - Why this matters: the build stages only `index.html` and HTML pages whose basenames match `recipients/*.json`, preventing unrelated root HTML from being published
+   - Note: The GitHub Pages workflow (`.github/workflows/deploy-pages.yml`) uses the same build
    - Your lists will be available at your custom domain
 
 2. **GitHub Pages** (Optional):
@@ -359,7 +360,7 @@ POSIX / macOS / Linux (bash/zsh):
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r scripts/requirements.txt
+pip install --require-hashes -r scripts/requirements.txt
 export ROOT_DOMAIN="https://yourdomain.example"
 python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
 python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
@@ -369,7 +370,7 @@ Windows PowerShell:
 ```powershell
 python -m venv .venv
 & .\.venv\Scripts\Activate.ps1
-pip install -r scripts/requirements.txt
+pip install --require-hashes -r scripts/requirements.txt
 $env:ROOT_DOMAIN = 'https://yourdomain.example'
 python .\scripts\generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
 python .\scripts\inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
@@ -444,34 +445,33 @@ See `python3 scripts/generate_qr_svg.py --help` for all options.
 
 ## CI image and secure runner notes
 
-- This repository builds and publishes a minimal Debian-based CI image to GitHub Container Registry (GHCR) and uses that curated image for all CI runs on Linux runners. The image is built from `.github/ci/Dockerfile` (using `python:3.11-slim`) and pushed to `ghcr.io/<owner>/simplewish-ci:<sha>` and `:main` by the automated build workflow.
-- Workflows pin to the `main` image tag and the SHA-tagged image for immutability. Cryptographic signing was previously used but has been removed from the automated build workflow and will be rethought.
+- This repository builds and publishes Alpine-based `simplewish-qr` and `simplewish-infra` images from `.github/ci/`.
+- Lint, pytest, and QR generation workflows use commit-pinned GitHub Actions and hash-verified Python dependencies directly; they do not execute mutable `:main` container tags.
   
 TODO: Re-evaluate image signing and verification
 - The repository previously used `cosign` (keyless) to sign published images. That signing step has been removed from the automated build workflow. Consider one of the following approaches in future iterations:
 	- Reintroduce cosign with a vetted key-management approach (e.g., short-lived KMS-backed keys and GitHub OIDC), or
 	- Use GitHub Container Registry immutability settings and repository variables to pin approved SHA tags, and document a manual verification procedure.
   
-For now the CI image workflow publishes an image tagged with the commit SHA and, when on `main`, a `:main` tag; consuming workflows should pin to the SHA tag exposed via the `CI_IMAGE_TAG` repository variable.
-
-Note about CI workflow linter warnings
-- You may see linter/editor warnings about `vars.CI_IMAGE_TAG` being unavailable for `container.image` at workflow-compile time. These are expected because the variable is created by the build workflow and may not exist at compile-time for consumer workflows. The repository intentionally uses `workflow_run` and fallbacks to ensure jobs run even when the variable is not set.
+The CI image workflow publishes commit-SHA tags and a convenience `:main` tag. Security-sensitive workflow execution should use an immutable digest or avoid the image, as current workflows do.
 
 Build and publish the CI image (done automatically on push to `main`):
 
 ```bash
 # Build locally (optional)
-docker build -f .github/ci/Dockerfile -t ghcr.io/$GITHUB_ACTOR/simplewish-ci:local .
+docker build -f .github/ci/Dockerfile.qr -t ghcr.io/$GITHUB_ACTOR/simplewish-qr:local .
+docker build -f .github/ci/Dockerfile.infra -t ghcr.io/$GITHUB_ACTOR/simplewish-infra:local .
 
 # Push (requires GHCR login)
-docker tag ghcr.io/$GITHUB_ACTOR/simplewish-ci:local ghcr.io/<owner>/simplewish-ci:main
-docker push ghcr.io/<owner>/simplewish-ci:main
+docker push ghcr.io/$GITHUB_ACTOR/simplewish-qr:local
+docker push ghcr.io/$GITHUB_ACTOR/simplewish-infra:local
 ```
 
 Security notes:
-- The CI image is pinned by tag in workflows; for fully immutable runs the image is also published with the commit SHA as a tag (the build workflow does this).
-- The build workflow also runs a vulnerability scan (Trivy). Image signing via `cosign` was previously used but is not performed by the automated build workflow anymore.
-- CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
+- Third-party actions are pinned to full commit SHAs.
+- Python installs require reviewed SHA-256 hashes for direct and transitive dependencies.
+- Trivy is pinned by digest and scans saved image tarballs without receiving the Docker socket.
+- Pull-request lint and test jobs have read-only contents permission and do not persist checkout credentials.
 
 
 Enjoy! Merry Christmas!

@@ -105,15 +105,15 @@ If you need to change the default QR color in-browser without regenerating the S
 ## GitHub Actions workflows
 This repository includes several GitHub Actions workflows that power CI, testing, image builds, QR generation, and optional deployments. Read the workflow YAML files in `.github/workflows/` before editing CI logic.
 
-- `build-ci-image.yml` — Build and publish CI images to GHCR (produces `simplewish-qr` and `simplewish-infra`). Trigger: `push` to `main` and manual (`workflow_dispatch`). Other workflows use these images as containers.
--- `lint.yml` — Run flake8 inside the infra container. Trigger: manual or after the Build workflow completes successfully (uses `workflow_run`).
--- `pytest.yml` — Run pytest inside the infra container. Trigger: manual or after the Build workflow completes successfully.
+- `build-ci-image.yml` — Build, scan, and publish optional CI images to GHCR (produces `simplewish-qr` and `simplewish-infra`). Trigger: relevant pushes to `main` and manual (`workflow_dispatch`).
+-- `lint.yml` — Run flake8 with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
+-- `pytest.yml` — Run pytest with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
 -- `pr-ci.yml` — (removed) Previously provided a combined PR check; lint and test workflows now run individually on PRs.
-- `generate-qrs.yml` — Generate QR SVGs and inject them into HTML files, then commit changes. Trigger: manual or after the CI image build completes successfully. Important: this workflow reads the `ROOT_DOMAIN` repo variable/secret to build public URLs and runs inside the `simplewish-qr` container.
-- `deploy-pages.yml` — Optional, manual deployment to GitHub Pages. It intentionally copies only `*.html` to a `public/` folder before uploading to Pages. Trigger: manual (`workflow_dispatch`).
+- `generate-qrs.yml` — Generate QR SVGs and inject them into HTML files, then commit changes. Trigger: manual or HTML pushes to `main`. This workflow reads the `ROOT_DOMAIN` repo variable/secret and installs hash-verified dependencies directly.
+- `deploy-pages.yml` — Optional, manual deployment to GitHub Pages. It stages only `index.html` and recipient-manifest pages into `public/` before upload. Trigger: manual (`workflow_dispatch`).
 
 Notes:
-- Many workflows are written to be safe (they use container images from GHCR and `workflow_run` sequencing). If you change the image names or tags, update dependent workflows accordingly.
+- Workflow actions are pinned to full commit SHAs. Keep pins immutable and retain `--require-hashes` for Python installs.
 - `generate-qrs.yml` expects a repository-level `ROOT_DOMAIN` secret or variable (recommended). If not present it falls back to `https://example.com` in the workflow.
 - `generate-qrs.yml` expects a repository-level `ROOT_DOMAIN` secret or variable (recommended). If not present it falls back to `https://example.com` in the workflow. The workflow sets `ROOT_DOMAIN` with precedence: default (`https://example.com`) -> repo variable `ROOT_DOMAIN` -> secret `ROOT_DOMAIN` (secret overwrites variable).
 

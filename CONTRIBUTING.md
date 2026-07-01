@@ -24,8 +24,9 @@ python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
-pip install -r scripts/requirements.txt
-pip install -r scripts/requirements-dev.txt
+pip install --require-hashes \
+  -r scripts/requirements.txt \
+  -r scripts/requirements-dev.txt
 ```
 
 ### Running Tests
