@@ -10,20 +10,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Build-time system deps for Python packages
-RUN apk add --no-cache --virtual .build-deps \
-       build-base \
-       libffi-dev \
-       openssl-dev \
-       pkgconfig \
-  && python -m pip install --upgrade pip setuptools==80.10.2 wheel \
-  && apk del .build-deps \
-  && rm -rf /tmp/* /var/tmp/*
-
-# Install Python deps system-wide (wheels get built here if needed)
 # Copy only requirements.txt for QR generation (minimal attack surface)
 COPY scripts/requirements.txt /tmp/
-RUN pip install --no-cache-dir -r /tmp/requirements.txt \
+RUN pip install --no-cache-dir --require-hashes -r /tmp/requirements.txt \
   && rm /tmp/requirements.txt
 
 # At this point /usr/local has Python + runtime deps system-wide installed.

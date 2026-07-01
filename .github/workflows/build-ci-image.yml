@@ -34,8 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m venv .venv
-          ./.venv/bin/python -m pip install --upgrade pip
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt
+          ./.venv/bin/python -m pip install --require-hashes -r scripts/requirements.txt -r scripts/requirements-dev.txt
 
       - name: Run flake8
         run: |

@@ -27,7 +27,7 @@ jobs:
       - name: Install lint dependencies
         run: |
           python -m venv .venv
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt -r scripts/requirements-dev.txt
+          ./.venv/bin/python -m pip install --require-hashes -r scripts/requirements.txt -r scripts/requirements-dev.txt
 
       - name: Run flake8
         id: flake8

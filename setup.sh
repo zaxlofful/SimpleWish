@@ -104,9 +104,9 @@ echo ""
 # Activate virtual environment and install dependencies
 echo "Installing dependencies..."
 source .venv/bin/activate
-pip install -q --upgrade pip
-pip install -q -r scripts/requirements.txt
-pip install -q -r scripts/requirements-dev.txt
+pip install -q --require-hashes \
+    -r scripts/requirements.txt \
+    -r scripts/requirements-dev.txt
 echo "✓ Dependencies installed"
 echo ""
 

@@ -25,7 +25,7 @@ jobs:
       - name: Install QR dependencies
         run: |
           python -m venv .venv
-          ./.venv/bin/python -m pip install -r scripts/requirements.txt
+          ./.venv/bin/python -m pip install --require-hashes -r scripts/requirements.txt
 
       - name: Set ROOT_DOMAIN (with default)
         env:

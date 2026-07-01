@@ -1,1 +1,2 @@
-segno==1.4
+segno==1.4 \
+    --hash=sha256:00e6db1fbe82aa2010b3af5fc10f4f9524b76e2877190b0f3895e992fcb6fc88
