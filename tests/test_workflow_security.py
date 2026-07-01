@@ -55,3 +55,11 @@ def test_pr_checks_do_not_receive_issue_write_permission():
         assert 'issues: write' not in check_job
         assert 'contents: read' in check_job
         assert 'persist-credentials: false' in check_job
+
+
+def test_qr_change_output_is_single_line():
+    workflow = (
+        WORKFLOWS_DIR / 'generate-qrs.yml'
+    ).read_text(encoding='utf-8')
+
+    assert 'CHANGED=$(git status --porcelain)' not in workflow

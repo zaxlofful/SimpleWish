@@ -54,7 +54,6 @@ jobs:
       - name: Check for changes
         id: git-changes
         run: |
-          echo "CHANGED=$(git status --porcelain)" >> $GITHUB_OUTPUT
           if [ -n "$(git status --porcelain)" ]; then
             echo "changes=true" >> $GITHUB_OUTPUT
           else
