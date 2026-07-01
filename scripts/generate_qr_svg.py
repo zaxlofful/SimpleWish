@@ -26,6 +26,27 @@ import urllib.parse
 import segno
 
 
+UNSAFE_URL_CHARACTER_RE = re.compile(r'[\x00-\x20\x7f]')
+
+
+def validate_root_domain(value: str) -> str:
+    """Return an HTTP(S) root URL or raise ValueError."""
+    root_domain = str(value)
+    if UNSAFE_URL_CHARACTER_RE.search(root_domain):
+        raise ValueError('root domain must not contain spaces or controls')
+    try:
+        parsed = urllib.parse.urlparse(root_domain)
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError as exc:
+        raise ValueError('root domain is not a valid URL') from exc
+    if parsed.scheme.lower() not in {'http', 'https'} or not hostname:
+        raise ValueError(
+            'root domain must be an absolute HTTP or HTTPS URL'
+        )
+    return root_domain
+
+
 def read_meta_tags_from_html(path: str):
     """Return a mapping of meta tag names to content.
 
@@ -718,6 +739,11 @@ def main():
     )
     args = parser.parse_args()
 
+    try:
+        root_domain = validate_root_domain(args.root_domain)
+    except ValueError as exc:
+        parser.error(str(exc))
+
     os.makedirs(args.out_dir, exist_ok=True)
 
     files = glob.glob(args.pattern)
@@ -728,7 +754,7 @@ def main():
     for path in files:
         basename = os.path.splitext(os.path.basename(path))[0]
         public_url = urllib.parse.urljoin(
-            args.root_domain.rstrip('/') + '/',
+            root_domain.rstrip('/') + '/',
             urllib.parse.quote(os.path.basename(path)),
         )
 

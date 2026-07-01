@@ -1,7 +1,11 @@
 import hashlib
 import os
 import re
+import sys
 
+import pytest
+
+import scripts.generate_qr_svg as gen_module
 from scripts.generate_qr_svg import generate_svg
 
 
@@ -155,6 +159,38 @@ def test_read_meta_tags_from_html(tmp_path):
     assert meta.get('qr-foreground-color') == '#abc123'
     assert meta.get('qr-background-color') == '#ffffff'
     assert meta.get('qr-decorate') == 'false'
+
+
+@pytest.mark.parametrize(
+    'root_domain',
+    ['javascript:', 'data:text/html,', 'https://example.com\nmalicious'],
+)
+def test_cli_rejects_unsafe_root_domain(
+    root_domain,
+    tmp_path,
+    monkeypatch,
+):
+    (tmp_path / 'index.html').write_text('<html></html>', encoding='utf-8')
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        sys,
+        'argv',
+        [
+            'generate_qr_svg.py',
+            '--root-domain',
+            root_domain,
+            '--pattern',
+            '*.html',
+            '--out-dir',
+            'generated',
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        gen_module.main()
+
+    assert exc.value.code == 2
+    assert not (tmp_path / 'generated').exists()
 
 
 def test_qr_generation_matches_reference():
