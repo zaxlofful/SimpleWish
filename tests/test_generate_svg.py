@@ -161,9 +161,22 @@ def test_read_meta_tags_from_html(tmp_path):
     assert meta.get('qr-decorate') == 'false'
 
 
+def test_validate_root_domain_allows_path_prefix():
+    from scripts.generate_qr_svg import validate_root_domain
+    url = 'https://yourname.github.io/SimpleWish'
+    assert validate_root_domain(url) == url
+
+
 @pytest.mark.parametrize(
     'root_domain',
-    ['javascript:', 'data:text/html,', 'https://example.com\nmalicious'],
+    [
+        'javascript:',
+        'data:text/html,',
+        'https://example.com\nmalicious',
+        'https://user:secret@example.com',
+        'https://example.com/?tracking=1',
+        'https://example.com/#fragment',
+    ],
 )
 def test_cli_rejects_unsafe_root_domain(
     root_domain,

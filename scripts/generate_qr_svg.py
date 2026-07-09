@@ -44,6 +44,12 @@ def validate_root_domain(value: str) -> str:
         raise ValueError(
             'root domain must be an absolute HTTP or HTTPS URL'
         )
+    if parsed.username or parsed.password:
+        raise ValueError('root domain must not include credentials')
+    if parsed.params or parsed.query or parsed.fragment:
+        raise ValueError(
+            'root domain must not include query or fragment components'
+        )
     return root_domain
 
 
