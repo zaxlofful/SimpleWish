@@ -71,3 +71,21 @@ def test_render_drops_javascript_gift_link():
     assert '<li>Click me</li>' in rendered
     assert 'href=' not in rendered
     assert 'javascript:' not in rendered
+
+
+def test_render_drops_credentialed_gift_link():
+    template = '<ul id="gift-list"><li>placeholder</li></ul>'
+    data = {
+        'gifts': [
+            {
+                'text': 'Sneaky link',
+                'href': 'https://user:secret@example.com/gift',
+            }
+        ]
+    }
+
+    rendered = render_from_template(template, data)
+
+    assert '<li>Sneaky link</li>' in rendered
+    assert 'href=' not in rendered
+    assert 'secret' not in rendered

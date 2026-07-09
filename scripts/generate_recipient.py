@@ -34,9 +34,12 @@ def safe_web_url(value: object) -> str | None:
     try:
         parsed = urlparse(url)
         hostname = parsed.hostname
+        parsed.port
     except ValueError:
         return None
     if parsed.scheme.lower() not in {'http', 'https'} or not hostname:
+        return None
+    if parsed.username or parsed.password:
         return None
     return url
 
