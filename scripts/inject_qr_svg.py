@@ -95,8 +95,6 @@ def validate_svg(svg_content: str) -> None:
 
 
 def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> bool:
-    validate_svg(svg_content)
-
     with open(html_path, 'r', encoding='utf-8') as f:
         content = f.read()
 
@@ -113,6 +111,10 @@ def inject(svg_content: str, html_path: str, preserve_manual: bool = False) -> b
     if preserve_manual and existing_block.strip():
         print(f'Manual content detected in {html_path}; skipping.')
         return False
+
+    # Validate only once injection will actually happen, so a rejected SVG
+    # cannot abort runs that would have skipped this file anyway.
+    validate_svg(svg_content)
 
     # Detect indentation of the marker's line and match it.
     # If the file uses tabs at the marker line, add one tab; otherwise add

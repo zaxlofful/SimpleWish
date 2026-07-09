@@ -41,6 +41,17 @@ def test_inject_preserve_manual(tmp_path):
     assert changed is False
 
 
+def test_inject_preserve_manual_skips_before_validation(tmp_path):
+    html = tmp_path / 'manual.html'
+    content = f"start\n{MARKER_START}\n    MANUAL CONTENT\n{MARKER_END}\nend\n"
+    html.write_text(content, encoding='utf-8')
+
+    svg = '<svg><script>alert(1)</script></svg>'
+    changed = inject(svg, str(html), preserve_manual=True)
+    assert changed is False
+    assert html.read_text(encoding='utf-8') == content
+
+
 def test_inject_no_markers(tmp_path):
     html = tmp_path / 'nomarker.html'
     html.write_text('no markers here', encoding='utf-8')
