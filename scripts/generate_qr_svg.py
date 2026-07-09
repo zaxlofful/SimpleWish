@@ -575,12 +575,31 @@ def generate_svg(
 
 
 def sanitize_svg_for_html(svg: str, pretty: bool = True, indent_spaces: int = 2) -> str:
-    """Strip XML prolog and DOCTYPE so the SVG is safe to embed directly
-    in HTML."""
+    """Strip XML prolog, DOCTYPE, and potentially dangerous elements so the
+    SVG is safe to embed directly in HTML.
+
+    Removes:
+    * XML processing instructions (<?xml ...?>)
+    * DOCTYPE declarations
+    * <script> / <style> tags (and their content) — SVG <script> executes
+      in the host page context when inlined; SVG <style> can break page CSS.
+    * Inline event-handler attributes (on*="...") that could execute JS.
+    """
     # remove XML prolog like <?xml version="1.0" encoding="utf-8"?>
     svg = re.sub(r'^\s*<\?xml[^>]*>\s*', '', svg)
     # remove DOCTYPE declarations
     svg = re.sub(r'<!DOCTYPE[^>]*>\s*', '', svg, flags=re.I)
+    # remove <script> blocks (including content) — case-insensitive.
+    # Use [^>]* for the closing tag to also match non-standard end tags like
+    # </script  whitespace> or </script data-x="y"> that simple \s* would miss.
+    svg = re.sub(r'<script\b[^>]*>.*?</script[^>]*>', '', svg, flags=re.I | re.S)
+    # remove self-closing <script /> tags
+    svg = re.sub(r'<script\b[^>]*/>', '', svg, flags=re.I)
+    # remove inline event-handler attributes (onclick=, onload=, onerror=, etc.)
+    svg = re.sub(r'\bon\w+\s*=\s*(?:"[^"]*"|\'[^\']*\'|\S+)', '', svg, flags=re.I)
+    # remove <style> blocks that could break the host page's CSS cascade.
+    # Use [^>]* for the closing tag to mirror the <script> handling above.
+    svg = re.sub(r'<style\b[^>]*>.*?</style[^>]*>', '', svg, flags=re.I | re.S)
 
     # If pretty is disabled, return the cleaned SVG unchanged.
     if not pretty:
