@@ -8,12 +8,15 @@ BUILD_MODE=false
 
 # Auto-detect Cloudflare Pages environment and set ROOT_DOMAIN accordingly
 # Cloudflare Pages provides CF_PAGES_URL which contains the deployment URL
+ROOT_DOMAIN_DEFAULTED=false
 if [ -n "$CF_PAGES_URL" ]; then
     # Running in Cloudflare Pages build environment
     ROOT_DOMAIN="${ROOT_DOMAIN:-$CF_PAGES_URL}"
-else
-    # Not in Cloudflare Pages environment or CF_PAGES_URL not available
-    ROOT_DOMAIN="${ROOT_DOMAIN:-INSERT-DOMAIN-NAME}"
+elif [ -z "$ROOT_DOMAIN" ]; then
+    # No deployment URL available; use the same safe default as the QR
+    # generator so the build succeeds (QR codes will point at example.com).
+    ROOT_DOMAIN="https://example.com"
+    ROOT_DOMAIN_DEFAULTED=true
 fi
 
 RECIPIENTS_DIR="${RECIPIENTS_DIR:-recipients}"
@@ -36,7 +39,7 @@ while [[ $# -gt 0 ]]; do
             echo "Environment variables for --build mode:"
             echo "  ROOT_DOMAIN      Domain for QR codes"
             echo "                   Auto-detected from CF_PAGES_URL when running in Cloudflare Pages"
-            echo "                   Falls back to INSERT-DOMAIN-NAME if not set"
+            echo "                   Falls back to https://example.com if not set"
             echo "  RECIPIENTS_DIR   Directory with recipient JSON files (default: recipients)"
             echo "  QR_OUT_DIR       Output directory for QR SVGs (default: scripts/generated_qr)"
             echo "  PUBLIC_DIR       Output directory for deployment (default: public)"
@@ -68,6 +71,11 @@ if [ "$BUILD_MODE" = true ]; then
         echo "  Using CF_PAGES_URL: $CF_PAGES_URL"
         echo ""
     fi
+    if [ "$ROOT_DOMAIN_DEFAULTED" = true ]; then
+        echo "⚠ ROOT_DOMAIN is not set; QR codes will point at https://example.com"
+        echo "  Set the ROOT_DOMAIN environment variable to your deployment URL."
+        echo ""
+    fi
     echo "Configuration:"
     echo "  ROOT_DOMAIN: $ROOT_DOMAIN"
     echo "  RECIPIENTS_DIR: $RECIPIENTS_DIR"
@@ -88,6 +96,11 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 PYTHON_VERSION=$(python3 --version | cut -d' ' -f2)
+if ! python3 -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'; then
+    echo "❌ Error: Python $PYTHON_VERSION is too old"
+    echo "   Please install Python 3.10 or later"
+    exit 1
+fi
 echo "✓ Found Python $PYTHON_VERSION"
 echo ""
 
