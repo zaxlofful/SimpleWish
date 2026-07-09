@@ -27,7 +27,7 @@ Notes on flags you'll likely need:
 Also note: `generate_qr_svg.py` recognizes an additional per-file meta key `qr-decoration-type` (and the existing `qr-tree-style`) to choose the decoration variant. The generator will emit SVGs with class `qr-svg` and a `data-qr-default-foreground-color` attribute. The SVG modules use currentColor, so page CSS can recolor the QR by setting `.qr-svg { color: #... }` — the data attribute contains the original/default color.
 
 ## Per-file meta tags and how the generator uses them
--- The HTML may include meta tags the generators read to adjust color/decoration. Look for examples in `index.html` header comments. Supported keys (checked by scripts): `qr-foreground-color`, `qr-background-color`, `qr-decorate`, `qr-tree-style`, `qr-decoration-type`.
+- The HTML may include meta tags the generators read to adjust color/decoration. Look for examples in `index.html` header comments. Supported keys (checked by scripts): `qr-foreground-color`, `qr-background-color`, `qr-decorate`, `qr-tree-style`, `qr-decoration-type`.
   - Example:
     <meta name="qr-foreground-color" content="#0b6623">
     <meta name="qr-background-color" content="#ffffff">
@@ -106,9 +106,9 @@ If you need to change the default QR color in-browser without regenerating the S
 This repository includes several GitHub Actions workflows that power CI, testing, image builds, QR generation, and optional deployments. Read the workflow YAML files in `.github/workflows/` before editing CI logic.
 
 - `build-ci-image.yml` — Build, scan, and publish optional CI images to GHCR (produces `simplewish-qr` and `simplewish-infra`). Trigger: relevant pushes to `main` and manual (`workflow_dispatch`).
--- `lint.yml` — Run flake8 with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
--- `pytest.yml` — Run pytest with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
--- `pr-ci.yml` — (removed) Previously provided a combined PR check; lint and test workflows now run individually on PRs.
+- `lint.yml` — Run flake8 with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
+- `pytest.yml` — Run pytest with hash-verified dependencies. Trigger: manual, push to `main`, and pull requests.
+- `pr-ci.yml` — (removed) Previously provided a combined PR check; lint and test workflows now run individually on PRs.
 - `generate-qrs.yml` — Generate QR SVGs and inject them into HTML files, then commit changes. Trigger: manual or HTML pushes to `main`. This workflow reads the `ROOT_DOMAIN` repo variable/secret and installs hash-verified dependencies directly.
 - `deploy-pages.yml` — Optional, manual deployment to GitHub Pages. It stages only `index.html` and recipient-manifest pages into `public/` before upload. Trigger: manual (`workflow_dispatch`).
 
