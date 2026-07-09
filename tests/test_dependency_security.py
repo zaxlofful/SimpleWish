@@ -10,14 +10,39 @@ def test_python_requirements_are_exact_and_hashed():
         content = (
             REPO_ROOT / 'scripts' / name
         ).read_text(encoding='utf-8')
-        entries = re.split(r'(?m)(?=^[A-Za-z0-9])', content)
-        entries = [entry for entry in entries if entry.strip()]
 
-        assert entries
-        for entry in entries:
-            requirement = entry.splitlines()[0]
-            assert '==' in requirement
-            assert '--hash=sha256:' in entry
+        # Validate line by line so stray pip options (--index-url,
+        # --trusted-host, ...) cannot hide between requirement entries.
+        hash_counts = {}
+        requirement = None
+        for raw_line in content.splitlines():
+            line = raw_line.strip()
+            if line.endswith('\\'):
+                line = line[:-1].strip()
+            if not line or line.startswith('#'):
+                continue
+            if line.startswith('--hash=sha256:'):
+                assert requirement is not None, (
+                    f'{name}: hash before any requirement: {raw_line}'
+                )
+                hash_counts[requirement] += 1
+                continue
+            assert not line.startswith('-'), (
+                f'{name}: unexpected pip option: {raw_line}'
+            )
+            specifier = line.split(';', 1)[0].strip()
+            assert '==' in specifier, (
+                f'{name}: requirement is not exact-pinned: {raw_line}'
+            )
+            requirement = line
+            assert requirement not in hash_counts, (
+                f'{name}: duplicate requirement: {raw_line}'
+            )
+            hash_counts[requirement] = 0
+
+        assert hash_counts, f'{name}: no requirements found'
+        for pinned, count in hash_counts.items():
+            assert count > 0, f'{name}: missing hash for {pinned}'
 
 
 def test_automation_requires_hashes_without_upgrading_pip():

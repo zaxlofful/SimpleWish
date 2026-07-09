@@ -16,8 +16,20 @@ def test_workflow_actions_are_pinned_to_commit_shas():
             content,
             flags=re.MULTILINE,
         ):
+            if reference.startswith(('./', '../')):
+                # Local actions ship with the repository; there is no
+                # external revision to pin.
+                continue
             _, separator, revision = reference.rpartition('@')
-            if not separator or not re.fullmatch(r'[0-9a-f]{40}', revision):
+            if reference.startswith('docker://'):
+                pinned = separator and re.fullmatch(
+                    r'sha256:[0-9a-f]{64}', revision
+                )
+            else:
+                pinned = separator and re.fullmatch(
+                    r'[0-9a-f]{40}', revision
+                )
+            if not pinned:
                 unpinned.append(f'{workflow.name}: {reference}')
 
     assert unpinned == []
