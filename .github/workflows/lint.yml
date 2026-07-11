@@ -32,14 +32,8 @@ jobs:
           ./.venv/bin/python -m pip install --require-hashes -r scripts/requirements.txt -r scripts/requirements-dev.txt
 
       - name: Run flake8
-        id: flake8
-        continue-on-error: true
         run: |
           ./.venv/bin/python -m flake8 -q
-
-      - name: Fail workflow if flake8 failed
-        if: steps.flake8.outcome == 'failure'
-        run: exit 1
 
   report-lint-failure:
     needs: flake8
