@@ -22,8 +22,12 @@ def test_inject_basic(tmp_path):
 
     new_content = html.read_text(encoding='utf-8')
     assert '<svg' in new_content
-    # ensure injection happened between markers
+    # ensure injection happened between markers (ordering check)
     assert MARKER_START in new_content and MARKER_END in new_content
+    start_pos = new_content.index(MARKER_START)
+    svg_pos = new_content.index('<svg')
+    end_pos = new_content.index(MARKER_END)
+    assert start_pos < svg_pos < end_pos, 'SVG must be injected between the start and end markers'
 
 
 def test_inject_preserve_manual(tmp_path):

@@ -140,3 +140,35 @@ def test_update_todo_file_nonexistent_file():
     modified = update_todo_file(todo_path, completed_items)
 
     assert modified is False
+
+
+def test_update_todo_file_no_partial_match():
+    """Test that a completed item does not remove a longer, distinct line.
+
+    Regression for the word-subset overmatch bug: completing 'Add feature'
+    must NOT remove 'Add feature X (extended)' because they are different items.
+    """
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        todo_path = Path(f.name)
+
+    try:
+        todo_content = "1. Add feature\n2. Add feature X (extended)\n"
+        todo_path.write_text(todo_content, encoding='utf-8')
+
+        completed_items = ['Add feature']
+        modified = update_todo_file(todo_path, completed_items)
+
+        assert modified is True
+
+        new_content = todo_path.read_text(encoding='utf-8')
+        # Only the exact match should be gone
+        assert 'Add feature X (extended)' in new_content, (
+            'Partial-match overshoot: a distinct longer item was incorrectly removed'
+        )
+        # The exact item must be gone
+        lines = [l.strip() for l in new_content.splitlines() if l.strip()]
+        assert not any(l.lower().endswith('add feature') for l in lines), (
+            'The completed item "Add feature" should have been removed'
+        )
+    finally:
+        todo_path.unlink()

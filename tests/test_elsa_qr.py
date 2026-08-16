@@ -6,6 +6,13 @@ import scripts.generate_qr_svg as gen_module
 
 
 def test_elsa_qr_matches_reference():
+    """Regression guard: elsa.html QR with snowman decoration must be deterministic.
+
+    The reference file (tests/reference_elsa_qr.svg) was captured from a
+    known-good run.  If the generator changes intentionally, regenerate it with
+    scripts/regenerate_reference.py and commit the updated file alongside the
+    logic change.
+    """
     # Ensure overlay globals match CLI defaults
     gen_module.__overlay_multiplier__ = 3.0
     gen_module.__overlay_shift_x__ = 0.90

@@ -164,6 +164,12 @@ def test_qr_generation_matches_reference():
     python scripts/generate_qr_svg.py --root-domain "https://example.com"
     --pattern "index.html" --out-dir scripts/generated_qr) and compares its
     hash to a reference file to ensure the QR generation is deterministic.
+
+    Note: this test is a regression guard, not an independent oracle.  The
+    reference file (tests/reference_qr.svg) was captured from a known-good run
+    of the generator.  If the QR algorithm or decoration logic changes
+    intentionally, regenerate the reference with scripts/regenerate_reference.py
+    and commit the updated file alongside any logic changes.
     """
     from scripts.generate_qr_svg import sanitize_svg_for_html
     import scripts.generate_qr_svg as gen_module

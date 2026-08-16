@@ -36,3 +36,24 @@ def test_ensure_badge_links_wraps_and_links(tmp_path, monkeypatch):
     assert new_content.count('](') >= 2
     # the actions badge should now link to the workflow page (pytest.yml)
     assert 'actions/workflows/pytest.yml' in new_content
+
+
+def test_get_owner_repo_fallback_no_env(monkeypatch, tmp_path):
+    """Test fallback when GITHUB_REPOSITORY is not set.
+
+    With no env var and no valid git remote (we monkeypatch into a temp dir
+    that has no .git), the function should still return a two-element tuple
+    of non-empty strings rather than raising.
+    """
+    monkeypatch.delenv('GITHUB_REPOSITORY', raising=False)
+    # Run outside any real git repo so the git-remote fallback also fails
+    monkeypatch.chdir(str(tmp_path))
+
+    result = get_owner_repo()
+
+    assert isinstance(result, tuple) and len(result) == 2, (
+        'get_owner_repo() must return a (owner, repo) tuple'
+    )
+    owner, repo = result
+    assert isinstance(owner, str) and owner.strip(), 'owner must be a non-empty string'
+    assert isinstance(repo, str) and repo.strip(), 'repo must be a non-empty string'

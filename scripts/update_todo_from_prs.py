@@ -107,16 +107,19 @@ def update_todo_file(todo_path, completed_items):
                 ).strip()
 
                 # Check for substantial match using word-based comparison
-                # to avoid false positives from simple substring matching
+                # to avoid false positives from simple substring matching.
+                # A completed item matches a line only when the sets of words
+                # are equal (after normalisation), not merely when the
+                # completed-item words are a subset of the line's words.
+                # This prevents "Add feature" from matching the distinct item
+                # "Add feature X (extended)".
                 completed_words = set(completed_normalized.split())
                 line_words = set(line_normalized.split())
 
-                # Match if completed item words are subset of line words,
-                # or if there's exact equality
+                # Match only on exact equality of the normalised word sets
                 exact_match = (completed_normalized == line_normalized)
-                has_words = (completed_words and line_words)
-                word_subset = has_words and completed_words.issubset(line_words)
-                if exact_match or word_subset:
+                word_set_match = bool(completed_words) and (completed_words == line_words)
+                if exact_match or word_set_match:
                     should_keep = False
                     removed_count += 1
                     print(f"Removing completed item: {line_stripped}")
