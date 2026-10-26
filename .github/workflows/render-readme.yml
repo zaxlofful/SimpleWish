@@ -6,7 +6,9 @@ on:
     branches: [ main ]
     # Only run when files that affect README rendering change
     paths:
-      - 'scripts/render_readme.py'
+      - 'src/automation.rs'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
       - '.github/workflows/render-readme.yml'
       - 'README.md'
 
@@ -24,13 +26,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
 
       - name: Render README
-        run: python scripts/render_readme.py
+        run: cargo run --release -- render-readme
 
       - name: Check for changes
         id: git-changes

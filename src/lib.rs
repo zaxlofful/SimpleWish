@@ -33,33 +33,33 @@ pub fn url_encode_path(value: &str) -> String {
 }
 
 pub fn matches_pattern(pattern: &str, filename: &str) -> bool {
-    if pattern == "*" || pattern == filename {
-        return true;
-    }
-    if let Some(extension) = pattern.strip_prefix("*.") {
-        return filename.ends_with(&format!(".{extension}"));
-    }
-    let mut pattern_chars = pattern.chars().peekable();
-    let mut name_chars = filename.chars().peekable();
-    while let Some(pattern_char) = pattern_chars.next() {
-        match pattern_char {
-            '*' => {
-                if pattern_chars.peek().is_none() {
-                    return true;
-                }
-                let remaining: String = pattern_chars.collect();
-                return filename[name_chars.collect::<String>().len()..].contains(&remaining);
-            }
-            '?' => {
-                if name_chars.next().is_none() {
-                    return false;
-                }
-            }
-            literal if Some(literal) != name_chars.next() => return false,
-            _ => {}
+    let pattern = pattern.chars().collect::<Vec<_>>();
+    let text = filename.chars().collect::<Vec<_>>();
+    let (mut pattern_index, mut text_index) = (0, 0);
+    let (mut last_star, mut star_match) = (None, 0);
+    while text_index < text.len() {
+        if pattern
+            .get(pattern_index)
+            .is_some_and(|character| *character == '?' || *character == text[text_index])
+        {
+            pattern_index += 1;
+            text_index += 1;
+        } else if pattern.get(pattern_index) == Some(&'*') {
+            last_star = Some(pattern_index);
+            pattern_index += 1;
+            star_match = text_index;
+        } else if let Some(star) = last_star {
+            star_match += 1;
+            text_index = star_match;
+            pattern_index = star + 1;
+        } else {
+            return false;
         }
     }
-    name_chars.next().is_none()
+    while pattern.get(pattern_index) == Some(&'*') {
+        pattern_index += 1;
+    }
+    pattern_index == pattern.len()
 }
 
 #[cfg(test)]
@@ -82,5 +82,7 @@ mod tests {
         assert!(matches_pattern("*.html", "index.html"));
         assert!(!matches_pattern("*.html", "index.svg"));
         assert!(matches_pattern("index.html", "index.html"));
+        assert!(matches_pattern("list-?.html", "list-1.html"));
+        assert!(matches_pattern("*.html", "winter🎄.html"));
     }
 }

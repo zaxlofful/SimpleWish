@@ -8,7 +8,10 @@ pub fn is_todo_empty(path: &Path) -> bool {
     match fs::read_to_string(path) {
         Ok(content) => content.trim().is_empty(),
         Err(error) => {
-            eprintln!("TODO.md not found or unreadable at {}: {error}", path.display());
+            eprintln!(
+                "TODO.md not found or unreadable at {}: {error}",
+                path.display()
+            );
             true
         }
     }
@@ -56,17 +59,25 @@ fn normalize_todo_line(line: &str) -> String {
     if matches!(chars.peek().map(|(_, ch)| *ch), Some('-' | '*' | '+')) {
         prefix_end = chars.next().map_or(0, |(index, ch)| index + ch.len_utf8());
         while matches!(chars.peek().map(|(_, ch)| *ch), Some(' ' | '\t')) {
-            prefix_end = chars.next().map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
+            prefix_end = chars
+                .next()
+                .map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
         }
     } else {
         let start = prefix_end;
         while matches!(chars.peek().map(|(_, ch)| *ch), Some(ch) if ch.is_ascii_digit()) {
-            prefix_end = chars.next().map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
+            prefix_end = chars
+                .next()
+                .map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
         }
         if prefix_end > start && matches!(chars.peek().map(|(_, ch)| *ch), Some('.')) {
-            prefix_end = chars.next().map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
+            prefix_end = chars
+                .next()
+                .map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
             while matches!(chars.peek().map(|(_, ch)| *ch), Some(' ' | '\t')) {
-                prefix_end = chars.next().map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
+                prefix_end = chars
+                    .next()
+                    .map_or(prefix_end, |(index, ch)| index + ch.len_utf8());
             }
         } else {
             prefix_end = 0;
@@ -194,9 +205,7 @@ pub fn update_todo_cli(_args: &[String]) -> Result<u8, Box<dyn std::error::Error
     }
     if !completed.is_empty() {
         println!("\nTotal completed items to remove: {}", completed.len());
-        if update_todo_file(Path::new("TODO.md"), &completed)
-            .map_err(std::io::Error::other)?
-        {
+        if update_todo_file(Path::new("TODO.md"), &completed).map_err(std::io::Error::other)? {
             println!("\nTODO.md has been updated");
         } else {
             println!("\nTODO.md was not modified");
@@ -208,22 +217,19 @@ pub fn update_todo_cli(_args: &[String]) -> Result<u8, Box<dyn std::error::Error
 }
 
 fn owner_repo() -> (String, String) {
-    if let Ok(repository) = std::env::var("GITHUB_REPOSITORY") {
-        if let Some((owner, repo)) = repository.split_once('/') {
-            return (owner.to_string(), repo.to_string());
-        }
+    if let Ok(repository) = std::env::var("GITHUB_REPOSITORY")
+        && let Some((owner, repo)) = repository.split_once('/')
+    {
+        return (owner.to_string(), repo.to_string());
     }
     if let Ok(output) = Command::new("git")
         .args(["remote", "get-url", "origin"])
         .output()
+        && output.status.success()
+        && let Some((owner, repo)) =
+            parse_github_repository(String::from_utf8_lossy(&output.stdout).trim())
     {
-        if output.status.success() {
-            if let Some((owner, repo)) =
-                parse_github_repository(String::from_utf8_lossy(&output.stdout).trim())
-            {
-                return (owner, repo);
-            }
-        }
+        return (owner, repo);
     }
     ("ZaxLofful".to_string(), "SimpleWish".to_string())
 }
@@ -256,19 +262,11 @@ fn image_bounds(text: &str, start: usize) -> Option<(usize, usize, String)> {
 
 fn workflow_link(owner: &str, repo: &str, filename: &str) -> Option<String> {
     let workflows = Path::new(".github/workflows");
-    let mut candidate = filename.to_string();
+    let candidate = filename.to_string();
     if workflows.join(&candidate).is_file() {
         return Some(format!(
             "https://github.com/{owner}/{repo}/actions/workflows/{candidate}"
         ));
-    }
-    if matches!(filename, "test.yml" | "test.yaml") {
-        candidate = "pytest.yml".to_string();
-        if workflows.join(&candidate).is_file() {
-            return Some(format!(
-                "https://github.com/{owner}/{repo}/actions/workflows/{candidate}"
-            ));
-        }
     }
     let stem = Path::new(filename).file_stem()?.to_str()?.to_lowercase();
     let entries = fs::read_dir(workflows).ok()?;
@@ -281,7 +279,10 @@ fn workflow_link(owner: &str, repo: &str, filename: &str) -> Option<String> {
                     continue;
                 };
                 if key.eq_ignore_ascii_case("name")
-                    && value.trim().trim_matches(['\'', '"']).eq_ignore_ascii_case(&stem)
+                    && value
+                        .trim()
+                        .trim_matches(['\'', '"'])
+                        .eq_ignore_ascii_case(&stem)
                 {
                     return Some(format!(
                         "https://github.com/{owner}/{repo}/actions/workflows/{name}"
@@ -293,29 +294,24 @@ fn workflow_link(owner: &str, repo: &str, filename: &str) -> Option<String> {
     None
 }
 
-fn canonical_image_link(
-    image_url: &str,
-    owner: &str,
-    repo: &str,
-    repo_url: &str,
-) -> String {
+fn canonical_image_link(image_url: &str, owner: &str, repo: &str, repo_url: &str) -> String {
     if image_url.contains("github.com")
         && image_url.contains("/actions/workflows/")
-        && parse_github_repository(image_url)
-            .is_some_and(|(image_owner, image_repo)| {
-                image_owner.eq_ignore_ascii_case(owner) && image_repo.eq_ignore_ascii_case(repo)
-            })
+        && parse_github_repository(image_url).is_some_and(|(image_owner, image_repo)| {
+            image_owner.eq_ignore_ascii_case(owner) && image_repo.eq_ignore_ascii_case(repo)
+        })
+        && let Some((_, tail)) = image_url.split_once("/actions/workflows/")
     {
-        if let Some((_, tail)) = image_url.split_once("/actions/workflows/") {
-            let filename = tail
-                .split('/')
-                .next()
-                .unwrap_or_default();
-            if let Some(url) = workflow_link(owner, repo, filename) {
-                return url;
-            }
-            return image_url.replace("/badge.svg", "").split('?').next().unwrap_or(image_url).to_string();
+        let filename = tail.split('/').next().unwrap_or_default();
+        if let Some(url) = workflow_link(owner, repo, filename) {
+            return url;
         }
+        return image_url
+            .replace("/badge.svg", "")
+            .split('?')
+            .next()
+            .unwrap_or(image_url)
+            .to_string();
     }
     repo_url.to_string()
 }
@@ -327,41 +323,43 @@ fn rewrite_readme_links(content: &str, owner: &str, repo: &str) -> (String, usiz
     for line in content.lines() {
         let mut rewritten = line.to_string();
         if rewritten.starts_with("[![") {
-            if let Some((image_start, image_end, image_url)) = image_bounds(&rewritten, 1) {
-                if let Some(link_start_relative) = rewritten[image_end..].find("](") {
-                    let link_start = image_end + link_start_relative + 2;
-                    if let Some(link_end_relative) = rewritten[link_start..].find(')') {
-                        let link_end = link_start + link_end_relative;
-                        let current_link = rewritten[link_start..link_end].trim();
-                        let parsed = parse_github_repository(current_link);
-                        if image_url.contains("/actions/workflows/")
-                            && parse_github_repository(&image_url).is_some_and(|(image_owner, image_repo)| {
+            if let Some((image_start, image_end, image_url)) = image_bounds(&rewritten, 1)
+                && let Some(link_start_relative) = rewritten[image_end..].find("](")
+            {
+                let link_start = image_end + link_start_relative + 2;
+                if let Some(link_end_relative) = rewritten[link_start..].find(')') {
+                    let link_end = link_start + link_end_relative;
+                    let current_link = rewritten[link_start..link_end].trim();
+                    let parsed = parse_github_repository(current_link);
+                    if image_url.contains("/actions/workflows/")
+                        && parse_github_repository(&image_url).is_some_and(
+                            |(image_owner, image_repo)| {
                                 image_owner.eq_ignore_ascii_case(owner)
                                     && image_repo.eq_ignore_ascii_case(repo)
-                            })
-                        {
-                            let workflow = canonical_image_link(&image_url, owner, repo, &repo_url);
-                            if current_link != workflow {
-                                rewritten.replace_range(link_start..link_end, &workflow);
-                                changes += 1;
-                            }
-                        } else if parsed.is_some_and(|(link_owner, link_repo)| {
-                            !(link_owner.eq_ignore_ascii_case(owner)
-                                && link_repo.eq_ignore_ascii_case(repo))
-                        }) {
-                            rewritten.replace_range(link_start..link_end, &repo_url);
+                            },
+                        )
+                    {
+                        let workflow = canonical_image_link(&image_url, owner, repo, &repo_url);
+                        if current_link != workflow {
+                            rewritten.replace_range(link_start..link_end, &workflow);
                             changes += 1;
                         }
-                        let _ = image_start;
+                    } else if parsed.is_some_and(|(link_owner, link_repo)| {
+                        !(link_owner.eq_ignore_ascii_case(owner)
+                            && link_repo.eq_ignore_ascii_case(repo))
+                    }) {
+                        rewritten.replace_range(link_start..link_end, &repo_url);
+                        changes += 1;
                     }
+                    let _ = image_start;
                 }
             }
-        } else if let Some((start, end, image_url)) = image_bounds(&rewritten, 0) {
-            if end == rewritten.trim_end().len() {
-                let target = canonical_image_link(&image_url, owner, repo, &repo_url);
-                rewritten = format!("[{}]({target})", &rewritten[start..end]);
-                changes += 1;
-            }
+        } else if let Some((start, end, image_url)) = image_bounds(&rewritten, 0)
+            && end == rewritten.trim_end().len()
+        {
+            let target = canonical_image_link(&image_url, owner, repo, &repo_url);
+            rewritten = format!("[{}]({target})", &rewritten[start..end]);
+            changes += 1;
         }
         output.push_str(&rewritten);
         output.push('\n');
@@ -383,7 +381,9 @@ pub fn render_readme_cli() -> Result<u8, Box<dyn std::error::Error>> {
     let (updated, changes) = rewrite_readme_links(&content, &owner, &repo);
     if changes > 0 {
         fs::write(&output, updated)?;
-        println!("Fixed or wrapped {changes} badge(s) to point to https://github.com/{owner}/{repo} in README.md");
+        println!(
+            "Fixed or wrapped {changes} badge(s) to point to https://github.com/{owner}/{repo} in README.md"
+        );
     } else {
         println!("No badge link changes required");
     }
@@ -394,7 +394,6 @@ pub fn render_readme_cli() -> Result<u8, Box<dyn std::error::Error>> {
 mod tests {
     use super::{extract_completed_items, is_todo_empty, update_todo_file};
     use std::fs;
-    use std::path::PathBuf;
 
     #[test]
     fn todo_empty_check_handles_empty_whitespace_and_content() {
@@ -416,10 +415,8 @@ mod tests {
 
     #[test]
     fn todo_update_removes_matching_numbered_items() {
-        let path = PathBuf::from(std::env::temp_dir()).join(format!(
-            "simplewish-update-{}.md",
-            std::process::id()
-        ));
+        let path =
+            std::env::temp_dir().join(format!("simplewish-update-{}.md", std::process::id()));
         fs::write(&path, "1. Coloring by CSS\n2. Another task\n\n").unwrap();
         assert!(update_todo_file(&path, &["Coloring by CSS".to_string()]).unwrap());
         let output = fs::read_to_string(&path).unwrap();
@@ -435,6 +432,6 @@ mod tests {
         let (result, count) = super::rewrite_readme_links(source, "owner", "repo");
         assert_eq!(count, 2);
         assert!(result.contains("](https://github.com/owner/repo)"));
-        assert!(result.contains("actions/workflows/pytest.yml"));
+        assert!(result.contains("actions/workflows/test.yml"));
     }
 }

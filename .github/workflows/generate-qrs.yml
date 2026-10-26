@@ -12,19 +12,13 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: read
-    container:
-      image: ghcr.io/${{ github.repository_owner }}/simplewish-qr:main
-      options: --user 0
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Create venv with --system-site-packages to use container's pre-installed packages
-      - name: Create venv with system-site-packages
-        run: |
-          python -m venv --system-site-packages .venv
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
 
       - name: Set ROOT_DOMAIN (with default)
         env:
@@ -44,11 +38,11 @@ jobs:
 
       - name: Generate URL SVG QR files
         run: |
-          ./.venv/bin/python scripts/generate_qr_svg.py --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
+          cargo run --release -- generate-qr --root-domain "$ROOT_DOMAIN" --pattern "*.html" --out-dir scripts/generated_qr
 
       - name: Inject SVGs into HTML files
         run: |
-          ./.venv/bin/python scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+          cargo run --release -- inject-qr --svg-dir scripts/generated_qr --pattern "*.html"
 
       - name: Check for changes
         id: git-changes

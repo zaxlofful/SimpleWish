@@ -25,6 +25,9 @@ fn replace_section(text: &mut String, start_tag: &str, end_tag: &str, replacemen
 }
 
 fn replace_css_variable(text: &mut String, variable: &str, value: &str) {
+    if !valid_hex_color(value) {
+        return;
+    }
     let Some(start) = text.find(variable) else {
         return;
     };
@@ -33,6 +36,21 @@ fn replace_css_variable(text: &mut String, variable: &str, value: &str) {
         return;
     };
     text.replace_range(value_start..value_start + relative_end, value);
+}
+
+fn valid_hex_color(value: &str) -> bool {
+    let value = value.strip_prefix('#').unwrap_or_default();
+    matches!(value.len(), 3 | 6) && value.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn safe_link(value: &str) -> bool {
+    let value = value.trim();
+    !value.bytes().any(|byte| byte.is_ascii_control())
+        && ["https://", "http://", "mailto:"].iter().any(|scheme| {
+            value
+                .get(..scheme.len())
+                .is_some_and(|prefix| prefix.eq_ignore_ascii_case(scheme))
+        })
 }
 
 fn json_field<'a>(data: &'a Value, key: &str) -> Option<&'a Value> {
@@ -48,7 +66,9 @@ pub fn render_from_template(template: &str, data: &Value) -> String {
         ("qr_decor_type", "qr-decoration-type"),
         ("qr_tree_style", "qr-tree-style"),
     ] {
-        if let Some(value) = json_field(data, field).filter(|value| !value.is_null() && !string_value(value).is_empty()) {
+        if let Some(value) = json_field(data, field)
+            .filter(|value| !value.is_null() && !string_value(value).is_empty())
+        {
             meta.push(format!(
                 "<meta name=\"{key}\" content=\"{}\">",
                 html_escape(&string_value(value), true)
@@ -72,13 +92,12 @@ pub fn render_from_template(template: &str, data: &Value) -> String {
             html_escape(&content, true)
         ));
     }
-    if !meta.is_empty() {
-        if let Some(start) = rendered.find("<!-- QR metadata:") {
-            if let Some(relative_end) = rendered[start..].find("-->") {
-                let end = start + relative_end + 3;
-                rendered.insert_str(end, &format!("\n  {}", meta.join("\n  ")));
-            }
-        }
+    if !meta.is_empty()
+        && let Some(start) = rendered.find("<!-- QR metadata:")
+        && let Some(relative_end) = rendered[start..].find("-->")
+    {
+        let end = start + relative_end + 3;
+        rendered.insert_str(end, &format!("\n  {}", meta.join("\n  ")));
     }
 
     if let Some(title) = json_field(data, "title") {
@@ -126,7 +145,7 @@ pub fn render_from_template(template: &str, data: &Value) -> String {
             let safe_text = html_escape(&text, true);
             if let Some(href) = gift
                 .get("href")
-                .filter(|href| !href.is_null() && !string_value(href).is_empty())
+                .filter(|href| !href.is_null() && safe_link(&string_value(href)))
             {
                 list.push_str(&format!(
                     "          <li><a href=\"{}\" target=\"_blank\" rel=\"noopener\">{safe_text}</a></li>\n",
@@ -136,48 +155,38 @@ pub fn render_from_template(template: &str, data: &Value) -> String {
                 list.push_str(&format!("          <li>{safe_text}</li>\n"));
             }
         }
-        if let Some(start) = rendered.find("<ul id=\"gift-list\"") {
-            if let Some(tag_end_relative) = rendered[start..].find('>') {
-                let content_start = start + tag_end_relative + 1;
-                if let Some(end) = rendered[content_start..].find("</ul>") {
-                    let content_end = content_start + end;
-                    rendered.replace_range(
-                        content_start..content_end,
-                        &format!("\n{list}        "),
-                    );
-                }
+        if let Some(start) = rendered.find("<ul id=\"gift-list\"")
+            && let Some(tag_end_relative) = rendered[start..].find('>')
+        {
+            let content_start = start + tag_end_relative + 1;
+            if let Some(end) = rendered[content_start..].find("</ul>") {
+                let content_end = content_start + end;
+                rendered.replace_range(content_start..content_end, &format!("\n{list}        "));
             }
         }
     }
-    if let Some(notes) = json_field(data, "notes") {
-        if let Some(section) = rendered.find("<section class=\"notes\">") {
-            if let Some(start_relative) = rendered[section..].find("<p>") {
-                let start = section + start_relative + 3;
-                if let Some(end_relative) = rendered[start..].find("</p>") {
-                    let end = start + end_relative;
-                    rendered.replace_range(
-                        start..end,
-                        &html_escape(&string_value(notes), true),
-                    );
-                }
-            }
+    if let Some(notes) = json_field(data, "notes")
+        && let Some(section) = rendered.find("<section class=\"notes\">")
+        && let Some(start_relative) = rendered[section..].find("<p>")
+    {
+        let start = section + start_relative + 3;
+        if let Some(end_relative) = rendered[start..].find("</p>") {
+            let end = start + end_relative;
+            rendered.replace_range(start..end, &html_escape(&string_value(notes), true));
         }
     }
-    if let Some(start) = rendered.find(crate::MARKER_START) {
-        if let Some(relative_end) = rendered[start + crate::MARKER_START.len()..].find(crate::MARKER_END) {
-            let content_start = start + crate::MARKER_START.len();
-            let content_end = content_start + relative_end;
-            rendered.replace_range(content_start..content_end, "\n");
-        }
+    if let Some(start) = rendered.find(crate::MARKER_START)
+        && let Some(relative_end) =
+            rendered[start + crate::MARKER_START.len()..].find(crate::MARKER_END)
+    {
+        let content_start = start + crate::MARKER_START.len();
+        let content_end = content_start + relative_end;
+        rendered.replace_range(content_start..content_end, "\n");
     }
     rendered
 }
 
-fn render_file(
-    template: &str,
-    data_path: &Path,
-    output: Option<&Path>,
-) -> Result<PathBuf, String> {
+fn render_file(template: &str, data_path: &Path, output: Option<&Path>) -> Result<PathBuf, String> {
     let contents = fs::read_to_string(data_path)
         .map_err(|error| format!("cannot read {}: {error}", data_path.display()))?;
     let data: Value = serde_json::from_str(&contents)
@@ -199,11 +208,22 @@ fn render_file(
 }
 
 pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        println!(
+            "Usage: simplewish generate-recipient [--data FILE | --bulk] \
+             [--template FILE] [--out FILE] [--recipients-dir DIR]"
+        );
+        return Ok(0);
+    }
     let template_path = PathBuf::from(super::qr::value_after(args, "--template", "index.html")?);
     let template = fs::read_to_string(&template_path)?;
     let bulk = args.iter().any(|arg| arg == "--bulk");
     if bulk {
-        let recipients_dir = PathBuf::from(super::qr::value_after(args, "--recipients-dir", "recipients")?);
+        let recipients_dir = PathBuf::from(super::qr::value_after(
+            args,
+            "--recipients-dir",
+            "recipients",
+        )?);
         if !recipients_dir.is_dir() {
             return Err(std::io::Error::other(format!(
                 "No recipients directory found at {}",
@@ -214,7 +234,10 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
         let mut data_files = fs::read_dir(&recipients_dir)?
             .filter_map(Result::ok)
             .map(|entry| entry.path())
-            .filter(|path| path.extension().is_some_and(|extension| extension == "json"))
+            .filter(|path| {
+                path.extension()
+                    .is_some_and(|extension| extension == "json")
+            })
             .collect::<Vec<_>>();
         data_files.sort();
         if data_files.is_empty() {
@@ -252,7 +275,10 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::render_from_template;
+    use serde_json::Value;
     use serde_json::json;
+    use std::fs;
+    use std::path::Path;
 
     #[test]
     fn renders_escaped_recipient_data_and_clears_qr_placeholder() {
@@ -274,5 +300,70 @@ mod tests {
         assert!(html.contains("a=1&amp;b=2"));
         assert!(html.contains("name=\"qr-foreground-color\""));
         assert!(html.contains("<!-- QR-PLACEHOLDER-START -->\n<!-- QR-PLACEHOLDER-END -->"));
+    }
+
+    #[test]
+    fn checked_in_recipient_files_match_the_expected_schema() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("recipients");
+        let files = fs::read_dir(root)
+            .unwrap()
+            .filter_map(Result::ok)
+            .collect::<Vec<_>>();
+        assert!(!files.is_empty());
+        for file in files {
+            if file
+                .path()
+                .extension()
+                .is_none_or(|extension| extension != "json")
+            {
+                continue;
+            }
+            let data: Value =
+                serde_json::from_str(&fs::read_to_string(file.path()).unwrap()).unwrap();
+            assert!(
+                data["recipient"]
+                    .as_str()
+                    .is_some_and(|value| !value.trim().is_empty())
+            );
+            assert!(
+                data["title"]
+                    .as_str()
+                    .is_some_and(|value| !value.trim().is_empty())
+            );
+            assert!(
+                data["gifts"]
+                    .as_array()
+                    .is_some_and(|gifts| !gifts.is_empty())
+            );
+            assert!(data["qr_decorate"].is_boolean());
+            for gift in data["gifts"].as_array().unwrap() {
+                assert!(
+                    gift["text"]
+                        .as_str()
+                        .is_some_and(|value| !value.trim().is_empty())
+                );
+                if let Some(href) = gift.get("href") {
+                    assert!(href.as_str().is_some_and(|value| !value.trim().is_empty()));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn unsafe_links_and_css_values_are_not_rendered() {
+        let template = "<a style=\"--accent: #123456;\" href=\"\">x</a>\
+            <ul id=\"gift-list\"></ul>";
+        let data = json!({
+            "accent": "red; background: url(https://example.invalid)",
+            "gifts": [
+                {"text":"unsafe","href":"javascript:alert(1)"},
+                {"text":"safe","href":"https://example.com"}
+            ]
+        });
+        let html = render_from_template(template, &data);
+        assert!(html.contains("--accent: #123456;"));
+        assert!(html.contains("<li>unsafe</li>"));
+        assert!(!html.contains("href=\"javascript:"));
+        assert!(html.contains("href=\"https://example.com\""));
     }
 }

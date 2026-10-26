@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::{matches_pattern, url_encode_path, MARKER_END, MARKER_START};
+use crate::{MARKER_END, MARKER_START, matches_pattern, url_encode_path};
 
 const DEFAULT_FOREGROUND: &str = "#0b6623";
 const KNOWN_META: [&str; 5] = [
@@ -96,8 +96,7 @@ fn parse_attributes(text: &str) -> HashMap<String, String> {
     let bytes = text.as_bytes();
     let mut cursor = 0;
     while cursor < bytes.len() {
-        while cursor < bytes.len()
-            && (bytes[cursor].is_ascii_whitespace() || bytes[cursor] == b'/')
+        while cursor < bytes.len() && (bytes[cursor].is_ascii_whitespace() || bytes[cursor] == b'/')
         {
             cursor += 1;
         }
@@ -159,11 +158,7 @@ pub fn generate_svg(url: &str, options: &QrOptions) -> Result<String, String> {
     for y in 0..width {
         for x in 0..width {
             if code[(x, y)] == Color::Dark {
-                modules.push_str(&format!(
-                    "M{} {}h1v1h-1z",
-                    x + border,
-                    y + border
-                ));
+                modules.push_str(&format!("M{} {}h1v1h-1z", x + border, y + border));
             }
         }
     }
@@ -369,43 +364,57 @@ fn float_after(args: &[String], option: &str, default: f64) -> Result<f64, std::
 }
 
 fn cli_options(args: &[String]) -> Result<QrOptions, std::io::Error> {
-    let mut options = QrOptions::default();
-    options.foreground = value_after(
+    let foreground = value_after(
         args,
         "--foreground-color",
         &value_after(args, "--foreground", DEFAULT_FOREGROUND)?,
     )?;
-    options.background = value_after(
+    let background = value_after(
         args,
         "--background-color",
         &value_after(args, "--background", "#ffffff")?,
     )?;
-    options.decorate = !args.iter().any(|arg| arg == "--no-decorate");
-    options.logo_size = float_after(args, "--logo-size", 20.0)?;
-    options.overlay_multiplier = float_after(args, "--overlay-mult", 3.0)?;
-    options.overlay_shift_x = float_after(args, "--overlay-shift-x", 0.90)?;
-    options.overlay_shift_y = float_after(args, "--overlay-shift-y", 0.50)?;
-    options.tree_style = value_after(args, "--tree-style", "fancy")?;
-    options.decoration_type = value_after(args, "--decoration-type", "tree")?;
-    options.ecc = match value_after(args, "--ecc", "H")?.to_ascii_uppercase().as_str() {
+    let ecc = match value_after(args, "--ecc", "H")?
+        .to_ascii_uppercase()
+        .as_str()
+    {
         "L" => EcLevel::L,
         "M" => EcLevel::M,
         "Q" => EcLevel::Q,
         "H" => EcLevel::H,
         _ => return Err(std::io::Error::other("--ecc must be one of L, M, Q, H")),
     };
-    Ok(options)
+    Ok(QrOptions {
+        foreground,
+        background,
+        decorate: !args.iter().any(|arg| arg == "--no-decorate"),
+        logo_size: float_after(args, "--logo-size", 20.0)?,
+        overlay_multiplier: float_after(args, "--overlay-mult", 3.0)?,
+        overlay_shift_x: float_after(args, "--overlay-shift-x", 0.90)?,
+        overlay_shift_y: float_after(args, "--overlay-shift-y", 0.50)?,
+        ecc,
+        tree_style: value_after(args, "--tree-style", "fancy")?,
+        decoration_type: value_after(args, "--decoration-type", "tree")?,
+    })
 }
 
 pub fn sanitize_svg_for_html(svg: &str, pretty: bool, indent_spaces: usize) -> String {
     let cleaned = svg
         .lines()
         .filter(|line| !line.trim_start().starts_with("<?xml"))
-        .filter(|line| !line.trim_start().to_ascii_uppercase().starts_with("<!DOCTYPE"))
+        .filter(|line| {
+            !line
+                .trim_start()
+                .to_ascii_uppercase()
+                .starts_with("<!DOCTYPE")
+        })
         .filter(|line| !line.trim().is_empty())
         .collect::<Vec<_>>();
     if !pretty {
-        return format!("{}\n", cleaned.iter().map(|line| line.trim()).collect::<String>());
+        return format!(
+            "{}\n",
+            cleaned.iter().map(|line| line.trim()).collect::<String>()
+        );
     }
     if cleaned.len() < 2 {
         return format!("{}\n", cleaned.join("\n"));
@@ -422,6 +431,16 @@ pub fn sanitize_svg_for_html(svg: &str, pretty: bool, indent_spaces: usize) -> S
 }
 
 pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        println!(
+            "Usage: simplewish generate-qr [--root-domain URL] [--pattern GLOB] [--out-dir DIR] \
+             [--foreground-color COLOR] [--background-color COLOR] [--no-decorate] \
+             [--logo-size PERCENT] [--overlay-mult NUMBER] [--overlay-shift-x NUMBER] \
+             [--overlay-shift-y NUMBER] [--ecc L|M|Q|H] [--tree-style fancy|plain] \
+             [--decoration-type tree|snowman|santa|gift|star|candy-cane|bell]"
+        );
+        return Ok(0);
+    }
     let root_domain = value_after(
         args,
         "--root-domain",
@@ -452,8 +471,14 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
         return Ok(0);
     }
     for path in html_files {
-        let filename = path.file_name().and_then(|name| name.to_str()).unwrap_or_default();
-        let basename = path.file_stem().and_then(|name| name.to_str()).unwrap_or_default();
+        let filename = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default();
+        let basename = path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default();
         let public_url = format!(
             "{}/{}",
             root_domain.trim_end_matches('/'),
@@ -468,19 +493,32 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
             options.background.clone_from(value);
         }
         if let Some(value) = meta.get("qr-decorate") {
-            options.decorate = matches!(value.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes");
+            options.decorate = matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "1" | "true" | "yes"
+            );
         }
-        if let Some(value) = meta.get("qr-tree-style") {
-            if matches!(value.trim().to_ascii_lowercase().as_str(), "fancy" | "plain") {
-                options.tree_style = value.trim().to_ascii_lowercase();
-            }
+        if let Some(value) = meta.get("qr-tree-style")
+            && matches!(
+                value.trim().to_ascii_lowercase().as_str(),
+                "fancy" | "plain"
+            )
+        {
+            options.tree_style = value.trim().to_ascii_lowercase();
         }
-        if let Some(value) = meta.get("qr-decoration-type") {
-            if ["tree", "snowman", "santa", "gift", "star", "candy-cane", "bell"]
-                .contains(&value.trim().to_ascii_lowercase().as_str())
-            {
-                options.decoration_type = value.trim().to_ascii_lowercase();
-            }
+        if let Some(value) = meta.get("qr-decoration-type")
+            && [
+                "tree",
+                "snowman",
+                "santa",
+                "gift",
+                "star",
+                "candy-cane",
+                "bell",
+            ]
+            .contains(&value.trim().to_ascii_lowercase().as_str())
+        {
+            options.decoration_type = value.trim().to_ascii_lowercase();
         }
         let svg = generate_svg(&public_url, &options).map_err(|message| {
             std::io::Error::other(format!(
@@ -489,16 +527,17 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
             ))
         })?;
         let output_path = output_dir.join(format!("{basename}.svg"));
-        fs::write(
-            &output_path,
-            sanitize_svg_for_html(&svg, !minify, indent),
-        )?;
+        fs::write(&output_path, sanitize_svg_for_html(&svg, !minify, indent))?;
         println!("Generated {} for {public_url}", output_path.display());
     }
     Ok(0)
 }
 
-pub fn inject_svg(svg_content: &str, html_path: &Path, preserve_manual: bool) -> Result<bool, String> {
+pub fn inject_svg(
+    svg_content: &str,
+    html_path: &Path,
+    preserve_manual: bool,
+) -> Result<bool, String> {
     let content = fs::read_to_string(html_path)
         .map_err(|error| format!("cannot read {}: {error}", html_path.display()))?;
     let Some(start) = content.find(MARKER_START) else {
@@ -512,7 +551,10 @@ pub fn inject_svg(svg_content: &str, html_path: &Path, preserve_manual: bool) ->
     let end = start + MARKER_START.len() + relative_end;
     let existing = &content[start + MARKER_START.len()..end];
     if preserve_manual && !existing.trim().is_empty() {
-        println!("Manual content detected in {}; skipping.", html_path.display());
+        println!(
+            "Manual content detected in {}; skipping.",
+            html_path.display()
+        );
         return Ok(false);
     }
     let line_start = content[..start].rfind('\n').map_or(0, |index| index + 1);
@@ -544,6 +586,12 @@ pub fn inject_svg(svg_content: &str, html_path: &Path, preserve_manual: bool) ->
 }
 
 pub fn inject_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
+    if args.iter().any(|arg| arg == "--help" || arg == "-h") {
+        println!(
+            "Usage: simplewish inject-qr [--svg-dir DIR] [--pattern GLOB] [--preserve-manual]"
+        );
+        return Ok(0);
+    }
     let svg_dir = PathBuf::from(value_after(args, "--svg-dir", "scripts/generated_qr")?);
     let pattern = value_after(args, "--pattern", "*.html")?;
     let preserve_manual = args.iter().any(|arg| arg == "--preserve-manual");
@@ -560,9 +608,18 @@ pub fn inject_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
     }
     let mut updated = 0;
     for svg_path in svg_files {
-        let basename = svg_path.file_stem().and_then(|name| name.to_str()).unwrap_or_default();
+        let basename = svg_path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or_default();
         let html_path = PathBuf::from(format!("{basename}.html"));
-        if !matches_pattern(&pattern, html_path.file_name().and_then(|name| name.to_str()).unwrap_or_default()) {
+        if !matches_pattern(
+            &pattern,
+            html_path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or_default(),
+        ) {
             continue;
         }
         if !html_path.exists() {
@@ -611,8 +668,20 @@ pub fn check_svg_cli(_args: &[String]) -> Result<u8, Box<dyn std::error::Error>>
 pub fn regenerate_reference_cli() -> Result<u8, Box<dyn std::error::Error>> {
     fs::create_dir_all("tests")?;
     for (filename, url, foreground, background, decoration_type) in [
-        ("reference_qr.svg", "https://example.com/index.html", "#0b6623", "#ffffff", "tree"),
-        ("reference_elsa_qr.svg", "https://example.com/elsa.html", "#1565C0", "#e3f2fd", "snowman"),
+        (
+            "reference_qr.svg",
+            "https://example.com/index.html",
+            "#0b6623",
+            "#ffffff",
+            "tree",
+        ),
+        (
+            "reference_elsa_qr.svg",
+            "https://example.com/elsa.html",
+            "#1565C0",
+            "#e3f2fd",
+            "snowman",
+        ),
     ] {
         let options = QrOptions {
             foreground: foreground.to_string(),
@@ -633,7 +702,9 @@ pub fn regenerate_reference_cli() -> Result<u8, Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod tests {
-    use super::{generate_svg, inject_svg, read_meta_tags_from_html, sanitize_svg_for_html, QrOptions};
+    use super::{
+        QrOptions, generate_svg, inject_svg, read_meta_tags_from_html, sanitize_svg_for_html,
+    };
     use crate::{MARKER_END, MARKER_START};
     use std::fs;
 
@@ -653,7 +724,15 @@ mod tests {
 
     #[test]
     fn all_decorations_and_tree_styles_are_supported() {
-        for decoration_type in ["tree", "snowman", "santa", "gift", "star", "candy-cane", "bell"] {
+        for decoration_type in [
+            "tree",
+            "snowman",
+            "santa",
+            "gift",
+            "star",
+            "candy-cane",
+            "bell",
+        ] {
             let options = QrOptions {
                 decoration_type: decoration_type.to_string(),
                 ..QrOptions::default()
@@ -666,9 +745,11 @@ mod tests {
             tree_style: "plain".to_string(),
             ..QrOptions::default()
         };
-        assert!(!generate_svg("https://example.com/plain", &plain)
-            .unwrap()
-            .contains("xmas-bow"));
+        assert!(
+            !generate_svg("https://example.com/plain", &plain)
+                .unwrap()
+                .contains("xmas-bow")
+        );
     }
 
     #[test]
@@ -687,13 +768,48 @@ mod tests {
     fn sanitizer_supports_pretty_and_minified_output() {
         let svg = "<svg>\n<path/>\n</svg>\n";
         assert!(sanitize_svg_for_html(svg, true, 2).contains("\n  <path"));
-        assert!(!sanitize_svg_for_html(svg, false, 2).trim_end().contains('\n'));
+        assert!(
+            !sanitize_svg_for_html(svg, false, 2)
+                .trim_end()
+                .contains('\n')
+        );
+    }
+
+    #[test]
+    fn reference_svgs_are_reproducible() {
+        for (url, foreground, decoration_type, reference_path) in [
+            (
+                "https://example.com/index.html",
+                "#0b6623",
+                "tree",
+                "tests/reference_qr.svg",
+            ),
+            (
+                "https://example.com/elsa.html",
+                "#1565C0",
+                "snowman",
+                "tests/reference_elsa_qr.svg",
+            ),
+        ] {
+            let options = QrOptions {
+                foreground: foreground.to_string(),
+                decoration_type: decoration_type.to_string(),
+                ..QrOptions::default()
+            };
+            let generated = sanitize_svg_for_html(&generate_svg(url, &options).unwrap(), true, 2);
+            let reference = fs::read_to_string(reference_path).unwrap();
+            assert_eq!(generated, reference, "{reference_path}");
+        }
     }
 
     #[test]
     fn injector_preserves_manual_content_and_marker_indentation() {
         let temp = std::env::temp_dir().join(format!("simplewish-{}.html", std::process::id()));
-        fs::write(&temp, format!("start\n\t{MARKER_START}\n\t\n\t{MARKER_END}\nend\n")).unwrap();
+        fs::write(
+            &temp,
+            format!("start\n\t{MARKER_START}\n\t\n\t{MARKER_END}\nend\n"),
+        )
+        .unwrap();
         assert!(inject_svg("<svg>\n<path/>\n</svg>", &temp, false).unwrap());
         let content = fs::read_to_string(&temp).unwrap();
         assert!(content.contains("\n\t<svg"));
@@ -704,7 +820,8 @@ mod tests {
 
     #[test]
     fn metadata_ignores_comments_and_reads_known_keys() {
-        let temp = std::env::temp_dir().join(format!("simplewish-meta-{}.html", std::process::id()));
+        let temp =
+            std::env::temp_dir().join(format!("simplewish-meta-{}.html", std::process::id()));
         fs::write(
             &temp,
             "<!-- <meta name=\"qr-decorate\" content=\"true\"> -->\
@@ -713,7 +830,10 @@ mod tests {
         )
         .unwrap();
         let tags = read_meta_tags_from_html(&temp);
-        assert_eq!(tags.get("qr-foreground-color").map(String::as_str), Some("#abc123"));
+        assert_eq!(
+            tags.get("qr-foreground-color").map(String::as_str),
+            Some("#abc123")
+        );
         assert!(!tags.contains_key("qr-decorate"));
         let _ = fs::remove_file(temp);
     }

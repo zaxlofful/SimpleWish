@@ -1,5 +1,5 @@
 [![Lint](https://github.com/ZaxLofful/SimpleWish/actions/workflows/lint.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/lint.yml)
-[![pytest](https://github.com/ZaxLofful/SimpleWish/actions/workflows/pytest.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/pytest.yml)
+[![Rust tests](https://github.com/ZaxLofful/SimpleWish/actions/workflows/test.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/test.yml)
 [![Generate QR](https://github.com/ZaxLofful/SimpleWish/actions/workflows/generate-qrs.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/generate-qrs.yml)
 [![Check Links](https://github.com/ZaxLofful/SimpleWish/actions/workflows/check-links.yml/badge.svg)](https://github.com/zaxlofful/SimpleWish/actions/workflows/check-links.yml)
 
@@ -75,8 +75,7 @@ This is the easiest way to get started. GitHub Actions will handle QR code gener
       ```
       
       The build command (`setup.sh --build`) automatically handles:
-      - Setting up Python virtual environment
-      - Installing dependencies
+      - Building and testing the Rust tools
       - Generating HTML from recipient JSON files
       - Creating QR codes with your domain (auto-detected or custom)
       - Injecting QR codes into HTML files
@@ -104,15 +103,10 @@ cd SimpleWish
 # Run the setup script (Linux/Mac)
 ./setup.sh
 
-# Or manually set up (all platforms)
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r scripts/requirements.txt
-pip install -r scripts/requirements-dev.txt
-
-# Run tests to verify
-python3 -m pytest
-python3 -m flake8
+# Or manually verify the Rust tools
+cargo test --all
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
 ```
 
 ## 📝 Customization
@@ -238,8 +232,8 @@ This project is licensed under the **Creative Commons Attribution-NonCommercial-
 ### CI/CD with GitHub Actions
 
 This repository includes automated workflows:
-- **Lint** — Runs flake8 on Python code
-- **pytest** — Runs pytest test suite
+- **Rust lint** — Runs rustfmt checks and Clippy
+- **Rust tests** — Runs the Cargo test suite
 - **Generate QR** — Automatically generates and commits QR codes
 - **Check Links** — Validates links in the repository and creates issues for broken ones
 
@@ -256,7 +250,7 @@ The link checker workflow (`.github/workflows/check-links.yml`) automatically va
 - **Smart Detection**: Avoids duplicate issues by checking for existing open link-check issues
 - **Detailed Reports**: Provides comprehensive reports with all broken links and suggested fixes
 
-The workflow scans all Markdown, HTML, JSON, and Python files for links and validates them with multiple retries and configurable timeouts to handle temporary failures.
+The workflow scans Markdown, HTML, JSON, and Rust files for links and validates them with multiple retries and configurable timeouts to handle temporary failures.
 
 **Copilot Trigger & Automation Label**
 
@@ -304,12 +298,13 @@ This repository is designed to work with **Cloudflare Pages** and custom domains
 
 ### Per-file Metadata
 
-The QR generation script reads metadata from HTML files:
+The Rust QR generator reads metadata from HTML files:
 
 - `qr-foreground-color` — QR module color
 - `qr-background-color` — QR background color
-- `qr-decorate` — Enable/disable Christmas tree decoration
+- `qr-decorate` — Enable/disable decoration
 - `qr-tree-style` — `fancy` (with baubles) or `plain`
+- `qr-decoration-type` — `tree`, `snowman`, `santa`, `gift`, `star`, `candy-cane`, or `bell`
 
 ### Privacy
 
@@ -350,37 +345,31 @@ Per-file metadata (`qr-foreground-color`, `qr-background-color`) are used by the
 Generating/updating SVGs via CI (recommended)
 - Use CI (GitHub Actions or other) to generate per-page QR images and inject them into the corresponding HTML files before publishing.
 
-Note on CLI defaults: The Python generator (`scripts/generate_qr_svg.py`) will read `ROOT_DOMAIN` from the environment if provided; otherwise it falls back to `https://example.com`. When building per-file public URLs the script appends the filename, so the effective fallback is `https://example.com/index.html` when run against `index.html` without configuration.
+Note on CLI defaults: `simplewish generate-qr` reads `ROOT_DOMAIN` from the environment if provided; otherwise it falls back to `https://example.com`. It appends each filename to the domain, so the effective fallback for `index.html` is `https://example.com/index.html`.
 
 Local run examples
 If you want to run the generator locally and ensure it uses your domain, set `ROOT_DOMAIN` in your shell and run the generator. Two examples below (POSIX shell and PowerShell):
 
 POSIX / macOS / Linux (bash/zsh):
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r scripts/requirements.txt
 export ROOT_DOMAIN="https://yourdomain.example"
-python3 scripts/generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
-python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+cargo run --release -- generate-qr --pattern "*.html" --out-dir scripts/generated_qr
+cargo run --release -- inject-qr --svg-dir scripts/generated_qr --pattern "*.html"
 ```
 
 Windows PowerShell:
 ```powershell
-python -m venv .venv
-& .\.venv\Scripts\Activate.ps1
-pip install -r scripts/requirements.txt
 $env:ROOT_DOMAIN = 'https://yourdomain.example'
-python .\scripts\generate_qr_svg.py --pattern "*.html" --out-dir scripts/generated_qr
-python .\scripts\inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+cargo run --release -- generate-qr --pattern "*.html" --out-dir scripts/generated_qr
+cargo run --release -- inject-qr --svg-dir scripts/generated_qr --pattern "*.html"
 ```
 
 Notes:
-- You can also pass `--root-domain` directly to `generate_qr_svg.py`; when `ROOT_DOMAIN` is set in the environment the CLI will use that by default so the explicit flag is optional.
+- You can also pass `--root-domain` directly to `generate-qr`; when `ROOT_DOMAIN` is set in the environment the explicit flag is optional.
 - High-level CI flow:
    1. Discover per-recipient files (e.g. `elsa.html`, `bob.html`) in the repo.
 	2. Map each filename to its public URL: `https://<root-domain>/<filename>` (ensure filenames are URL-safe).
-	3. Generate a QR SVG for that URL using a CLI or small script (`segno`, `qrcode`, `qrencode`, Node libs, etc.).
+	3. Generate a QR SVG for that URL with the Rust CLI.
 	4. Place the SVG (inline) or data-URI into the `.qrcode-box` region of that HTML file (use a clear marker comment so replacements are idempotent).
 	5. Commit the modified files back to the repo from CI.
 
@@ -402,23 +391,23 @@ Privacy
 
 ### Generating QR Codes
 
-The repository includes Python scripts to generate and inject QR codes into your HTML files.
+The repository includes Rust tools to generate and inject QR codes into your HTML files.
 
 **Two-step process:**
 
 ```bash
 # 1. Generate QR SVG files
-python3 scripts/generate_qr_svg.py --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
+cargo run --release -- generate-qr --root-domain "https://yourusername.github.io/SimpleWish" --pattern "*.html" --out-dir scripts/generated_qr
 
 # 2. Inject QR codes into HTML files
-python3 scripts/inject_qr_svg.py --svg-dir scripts/generated_qr --pattern "*.html"
+cargo run --release -- inject-qr --svg-dir scripts/generated_qr --pattern "*.html"
 ```
 
 **Customization options:**
 
 ```bash
 # Use custom colors
-python3 scripts/generate_qr_svg.py \
+cargo run --release -- generate-qr \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
@@ -426,52 +415,25 @@ python3 scripts/generate_qr_svg.py \
   --background-color "#E3F2FD"
 
 # Disable decoration
-python3 scripts/generate_qr_svg.py \
+cargo run --release -- generate-qr \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
   --no-decorate
 
 # Use plain tree style
-python3 scripts/generate_qr_svg.py \
+cargo run --release -- generate-qr \
   --root-domain "https://example.com" \
   --pattern "*.html" \
   --out-dir scripts/generated_qr \
   --tree-style plain
 ```
 
-See `python3 scripts/generate_qr_svg.py --help` for all options.
+Run `cargo run --release -- generate-qr --help` for command options.
 
-## CI image and secure runner notes
+## Rust tooling
 
-- This repository builds and publishes a minimal Debian-based CI image to GitHub Container Registry (GHCR) and uses that curated image for all CI runs on Linux runners. The image is built from `.github/ci/Dockerfile` (using `python:3.11-slim`) and pushed to `ghcr.io/<owner>/simplewish-ci:<sha>` and `:main` by the automated build workflow.
-- Workflows pin to the `main` image tag and the SHA-tagged image for immutability. Cryptographic signing was previously used but has been removed from the automated build workflow and will be rethought.
-  
-TODO: Re-evaluate image signing and verification
-- The repository previously used `cosign` (keyless) to sign published images. That signing step has been removed from the automated build workflow. Consider one of the following approaches in future iterations:
-	- Reintroduce cosign with a vetted key-management approach (e.g., short-lived KMS-backed keys and GitHub OIDC), or
-	- Use GitHub Container Registry immutability settings and repository variables to pin approved SHA tags, and document a manual verification procedure.
-  
-For now the CI image workflow publishes an image tagged with the commit SHA and, when on `main`, a `:main` tag; consuming workflows should pin to the SHA tag exposed via the `CI_IMAGE_TAG` repository variable.
-
-Note about CI workflow linter warnings
-- You may see linter/editor warnings about `vars.CI_IMAGE_TAG` being unavailable for `container.image` at workflow-compile time. These are expected because the variable is created by the build workflow and may not exist at compile-time for consumer workflows. The repository intentionally uses `workflow_run` and fallbacks to ensure jobs run even when the variable is not set.
-
-Build and publish the CI image (done automatically on push to `main`):
-
-```bash
-# Build locally (optional)
-docker build -f .github/ci/Dockerfile -t ghcr.io/$GITHUB_ACTOR/simplewish-ci:local .
-
-# Push (requires GHCR login)
-docker tag ghcr.io/$GITHUB_ACTOR/simplewish-ci:local ghcr.io/<owner>/simplewish-ci:main
-docker push ghcr.io/<owner>/simplewish-ci:main
-```
-
-Security notes:
-- The CI image is pinned by tag in workflows; for fully immutable runs the image is also published with the commit SHA as a tag (the build workflow does this).
-- The build workflow also runs a vulnerability scan (Trivy). Image signing via `cosign` was previously used but is not performed by the automated build workflow anymore.
-- CI currently runs on Linux runners only and uses the curated GHCR image to minimize runtime attack surface. If you need stricter isolation, consider ephemeral self-hosted runners in a locked-down VPC.
+All repository automation is implemented in the `simplewish` Rust CLI. Install the stable Rust toolchain with `rustfmt` and `clippy`; Cargo manages the small set of required libraries. Run `./setup.sh` to format-check, lint, and test the project.
 
 
 Enjoy! Merry Christmas!
