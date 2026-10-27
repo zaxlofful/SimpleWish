@@ -706,32 +706,54 @@ mod tests {
         QrOptions, generate_svg, inject_svg, read_meta_tags_from_html, sanitize_svg_for_html,
     };
     use crate::{MARKER_END, MARKER_START};
+    use qrcode::{Color, EcLevel, QrCode};
+    use std::collections::HashMap;
     use std::fs;
 
+    fn expected_qr_path(url: &str, border: usize) -> String {
+        let code = QrCode::with_error_correction_level(url.as_bytes(), EcLevel::H).unwrap();
+        let mut path = String::new();
+        for y in 0..code.width() {
+            for x in 0..code.width() {
+                if code[(x, y)] == Color::Dark {
+                    path.push_str(&format!("M{} {}h1v1h-1z", x + border, y + border));
+                }
+            }
+        }
+        path
+    }
+
     #[test]
-    fn generated_svg_has_current_color_and_requested_decoration() {
+    fn generated_svg_encodes_the_url_and_uses_requested_color_and_decoration() {
+        let url = "https://example.com/test";
         let options = QrOptions {
             foreground: "#112233".to_string(),
             decoration_type: "gift".to_string(),
             ..QrOptions::default()
         };
-        let svg = generate_svg("https://example.com/test", &options).unwrap();
-        assert!(svg.contains("fill=\"currentColor\""));
+        let svg = generate_svg(url, &options).unwrap();
+        assert!(svg.contains(&format!("<path fill=\"currentColor\" d=\"{}\"/>", expected_qr_path(url, 0))));
         assert!(svg.contains("data-qr-default-foreground-color=\"#112233\""));
         assert!(svg.contains("id=\"xmas-decoration\""));
-        assert!(svg.contains("fill=\"#b71c1c\""));
+        assert!(svg.contains("<rect x=\"60\" y=\"100\" width=\"80\" height=\"70\" fill=\"#b71c1c\""));
+        let other_url = generate_svg("https://example.com/other", &options).unwrap();
+        assert_ne!(expected_qr_path(url, 0), expected_qr_path("https://example.com/other", 0));
+        assert!(other_url.contains(&format!(
+            "<path fill=\"currentColor\" d=\"{}\"/>",
+            expected_qr_path("https://example.com/other", 0)
+        )));
     }
 
     #[test]
     fn all_decorations_and_tree_styles_are_supported() {
-        for decoration_type in [
-            "tree",
-            "snowman",
-            "santa",
-            "gift",
-            "star",
-            "candy-cane",
-            "bell",
+        for (decoration_type, distinctive_markup) in [
+            ("tree", "points=\"100,54.11"),
+            ("snowman", "circle cx=\"100\" cy=\"160\" r=\"35\""),
+            ("santa", "circle cx=\"100\" cy=\"100\" r=\"45\""),
+            ("gift", "rect x=\"60\" y=\"100\" width=\"80\" height=\"70\""),
+            ("star", "points=\"100,50 110,85"),
+            ("candy-cane", "stroke-width=\"16\""),
+            ("bell", "Q72,82 100,82"),
         ] {
             let options = QrOptions {
                 decoration_type: decoration_type.to_string(),
@@ -739,16 +761,24 @@ mod tests {
             };
             let svg = generate_svg("https://example.com/test", &options).unwrap();
             assert!(svg.contains("id=\"xmas-decoration\""), "{decoration_type}");
-            assert!(svg.len() > 500, "{decoration_type}");
+            assert!(svg.contains(distinctive_markup), "{decoration_type}");
         }
-        let plain = QrOptions {
+        let plain = generate_svg(
+            "https://example.com/plain",
+            &QrOptions {
             tree_style: "plain".to_string(),
             ..QrOptions::default()
-        };
-        assert!(
-            !generate_svg("https://example.com/plain", &plain)
-                .unwrap()
-                .contains("xmas-bow")
+            },
+        )
+        .unwrap();
+        let fancy = generate_svg("https://example.com/plain", &QrOptions::default()).unwrap();
+        assert!(!plain.contains("xmas-bow"));
+        assert!(plain.contains("<polygon points=\"50,185 100,115 150,185\""));
+        assert!(fancy.contains("xmas-bow"));
+        assert_ne!(plain, fancy);
+        assert_eq!(
+            super::decoration("unknown", "fancy"),
+            super::decoration("tree", "fancy")
         );
     }
 
@@ -759,20 +789,30 @@ mod tests {
             ..QrOptions::default()
         };
         let svg = generate_svg("https://example.com/plain", &options).unwrap();
+        let code = QrCode::with_error_correction_level(
+            b"https://example.com/plain",
+            options.ecc,
+        )
+        .unwrap();
         assert!(!svg.contains("xmas-decoration"));
-        assert!(svg.contains("viewBox=\"0 0 "));
-        assert!(svg.contains("M8 8"));
+        let size = code.width() + 16;
+        assert!(svg.contains(&format!("viewBox=\"0 0 {size} {size}\"")));
+        assert!(svg.contains(&format!(
+            "<path fill=\"currentColor\" d=\"{}\"/>",
+            expected_qr_path("https://example.com/plain", 8)
+        )));
     }
 
     #[test]
     fn sanitizer_supports_pretty_and_minified_output() {
-        let svg = "<svg>\n<path/>\n</svg>\n";
-        assert!(sanitize_svg_for_html(svg, true, 2).contains("\n  <path"));
-        assert!(
-            !sanitize_svg_for_html(svg, false, 2)
-                .trim_end()
-                .contains('\n')
+        let svg = "<?xml version=\"1.0\"?>\n<!DOCTYPE svg>\n<svg>\n  <path/>\n</svg>\n";
+        assert_eq!(
+            sanitize_svg_for_html(svg, true, 2),
+            "<svg>\n  <path/>\n</svg>\n"
         );
+        assert_eq!(sanitize_svg_for_html(svg, true, 4), "<svg>\n    <path/>\n</svg>\n");
+        assert_eq!(sanitize_svg_for_html(svg, false, 2), "<svg><path/></svg>\n");
+        assert_eq!(sanitize_svg_for_html("<svg/>\n", true, 2), "<svg/>\n");
     }
 
     #[test]
@@ -805,16 +845,20 @@ mod tests {
     #[test]
     fn injector_preserves_manual_content_and_marker_indentation() {
         let temp = std::env::temp_dir().join(format!("simplewish-{}.html", std::process::id()));
-        fs::write(
-            &temp,
-            format!("start\n\t{MARKER_START}\n\t\n\t{MARKER_END}\nend\n"),
-        )
-        .unwrap();
+        let original = format!("start\n\t{MARKER_START}\n\t\n\t{MARKER_END}\nend\n");
+        fs::write(&temp, &original).unwrap();
         assert!(inject_svg("<svg>\n<path/>\n</svg>", &temp, false).unwrap());
         let content = fs::read_to_string(&temp).unwrap();
-        assert!(content.contains("\n\t<svg"));
-        assert!(content.contains(MARKER_END));
+        assert_eq!(
+            content,
+            format!("start\n\t{MARKER_START}\n\t<svg>\n\t<path/>\n\t</svg>\n\t{MARKER_END}\nend\n")
+        );
         assert!(!inject_svg("<svg/>", &temp, true).unwrap());
+        assert_eq!(fs::read_to_string(&temp).unwrap(), content);
+        fs::write(&temp, format!("start\n{MARKER_START}manual{MARKER_END}\nend\n")).unwrap();
+        let manual = fs::read_to_string(&temp).unwrap();
+        assert!(!inject_svg("<svg/>", &temp, true).unwrap());
+        assert_eq!(fs::read_to_string(&temp).unwrap(), manual);
         let _ = fs::remove_file(temp);
     }
 
@@ -825,16 +869,94 @@ mod tests {
         fs::write(
             &temp,
             "<!-- <meta name=\"qr-decorate\" content=\"true\"> -->\
-             <meta content='#abc123' name='qr-foreground-color'>\
+             <META content='#abc123' name='qr-foreground-color'>\
+             <meta name=\"qr-background-color\" content=\"#ffffff\">\
+             <meta name=\"qr-decorate\" content=\"false\">\
+             <meta name=\"qr-tree-style\" content=plain>\
+             <meta name=\"qr-decoration-type\" content=\"gift\">\
              <meta name=\"unknown\" content=\"no\">",
         )
         .unwrap();
         let tags = read_meta_tags_from_html(&temp);
         assert_eq!(
-            tags.get("qr-foreground-color").map(String::as_str),
-            Some("#abc123")
+            tags,
+            HashMap::from([
+                ("qr-foreground-color".to_string(), "#abc123".to_string()),
+                ("qr-background-color".to_string(), "#ffffff".to_string()),
+                ("qr-decorate".to_string(), "false".to_string()),
+                ("qr-tree-style".to_string(), "plain".to_string()),
+                ("qr-decoration-type".to_string(), "gift".to_string()),
+            ])
         );
-        assert!(!tags.contains_key("qr-decorate"));
         let _ = fs::remove_file(temp);
+    }
+
+    #[test]
+    fn html_comment_and_case_insensitive_scanners_handle_boundaries() {
+        assert_eq!(super::remove_html_comments("a<!-- one -->b<!-- two -->c"), "abc");
+        assert_eq!(super::remove_html_comments("before<!-- unfinished"), "before");
+        assert_eq!(super::find_ascii_case_insensitive("xxMeTa>yy", "<meta"), Some(2));
+        assert_eq!(super::find_ascii_case_insensitive("unchanged", "<meta"), None);
+    }
+
+    #[test]
+    fn parses_attributes_with_quotes_spacing_and_unquoted_values() {
+        assert_eq!(
+            super::parse_attributes(" NAME = 'qr-tree-style' content=plain /"),
+            HashMap::from([
+                ("name".to_string(), "qr-tree-style".to_string()),
+                ("content".to_string(), "plain".to_string()),
+            ])
+        );
+        assert_eq!(
+            super::parse_attributes("name=\"x\" name=\"last\" disabled"),
+            HashMap::from([("name".to_string(), "last".to_string())])
+        );
+    }
+
+    #[test]
+    fn parses_qr_command_options_and_rejects_invalid_values() {
+        let defaults = super::cli_options(&[]).unwrap();
+        assert_eq!(defaults.foreground, "#0b6623");
+        assert_eq!(defaults.background, "#ffffff");
+        assert_eq!(defaults.ecc, EcLevel::H);
+        assert!(defaults.decorate);
+
+        let args = [
+            "--foreground-color",
+            "#123456",
+            "--background-color",
+            "#abcdef",
+            "--ecc",
+            "q",
+            "--no-decorate",
+            "--logo-size",
+            "15.5",
+            "--tree-style",
+            "plain",
+            "--decoration-type",
+            "bell",
+        ]
+        .map(str::to_string);
+        let options = super::cli_options(&args).unwrap();
+        assert_eq!(options.foreground, "#123456");
+        assert_eq!(options.background, "#abcdef");
+        assert_eq!(options.ecc, EcLevel::Q);
+        assert!(!options.decorate);
+        assert_eq!(options.logo_size, 15.5);
+        assert_eq!(options.tree_style, "plain");
+        assert_eq!(options.decoration_type, "bell");
+
+        assert!(super::cli_options(&["--ecc".to_string(), "X".to_string()]).is_err());
+        assert!(super::cli_options(&["--logo-size".to_string(), "large".to_string()]).is_err());
+        assert!(super::value_after(&["--name".to_string()], "--name", "default").is_err());
+        assert_eq!(
+            super::value_after(&[], "--name", "default").unwrap(),
+            "default"
+        );
+        assert_eq!(
+            super::float_after(&["--size".to_string(), "2.5".to_string()], "--size", 1.0).unwrap(),
+            2.5
+        );
     }
 }

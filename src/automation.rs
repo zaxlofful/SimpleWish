@@ -407,21 +407,56 @@ mod tests {
 
     #[test]
     fn extracts_completed_lines_and_checkboxes() {
-        let body = "Fixed: Add styling\n- [x] Finish tests\n- [ ] Pending";
+        let body = "Fixed: Add styling\nCOMPLETED: Review output\nDone: Handle cases\n\
+            Resolved: Update docs\n- [x] Finish tests\n- [X] Also finished\n- [ ] Pending\nDone:";
         let completed = extract_completed_items(Some(body));
-        assert_eq!(completed, ["Add styling", "Finish tests"]);
+        assert_eq!(
+            completed,
+            [
+                "Add styling",
+                "Review output",
+                "Handle cases",
+                "Update docs",
+                "Finish tests",
+                "Also finished"
+            ]
+        );
         assert!(extract_completed_items(None).is_empty());
     }
 
     #[test]
-    fn todo_update_removes_matching_numbered_items() {
+    fn todo_update_removes_matching_items_and_preserves_unmatched_content() {
         let path =
             std::env::temp_dir().join(format!("simplewish-update-{}.md", std::process::id()));
-        fs::write(&path, "1. Coloring by CSS\n2. Another task\n\n").unwrap();
-        assert!(update_todo_file(&path, &["Coloring by CSS".to_string()]).unwrap());
+        fs::write(
+            &path,
+            "  1. Coloring by CSS  \n- [ ] Finish tests\n+ Keep this task\n\n",
+        )
+        .unwrap();
+        assert!(
+            update_todo_file(
+                &path,
+                &["  coloring by css ".to_string(), "Finish tests".to_string()]
+            )
+            .unwrap()
+        );
         let output = fs::read_to_string(&path).unwrap();
         assert!(!output.contains("Coloring by CSS"));
-        assert!(output.contains("Another task"));
+        assert!(!output.contains("Finish tests"));
+        assert_eq!(output, "+ Keep this task\n");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn todo_update_leaves_file_unchanged_without_a_match() {
+        let path =
+            std::env::temp_dir().join(format!("simplewish-update-none-{}.md", std::process::id()));
+        let original = "1. Keep this task\n";
+        fs::write(&path, original).unwrap();
+        assert!(!update_todo_file(&path, &["Different task".to_string()]).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
+        assert!(!update_todo_file(&path, &[]).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), original);
         let _ = fs::remove_file(path);
     }
 
@@ -431,7 +466,40 @@ mod tests {
             [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/elsewhere/nope)\n";
         let (result, count) = super::rewrite_readme_links(source, "owner", "repo");
         assert_eq!(count, 2);
-        assert!(result.contains("](https://github.com/owner/repo)"));
-        assert!(result.contains("actions/workflows/test.yml"));
+        assert_eq!(
+            result,
+            "[![build](https://img.shields.io/x)](https://github.com/owner/repo)\n\
+             [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/test.yml)\n"
+        );
+    }
+
+    #[test]
+    fn parses_github_repository_urls_and_rejects_non_github_urls() {
+        assert_eq!(
+            super::parse_github_repository("https://github.com/owner/repo"),
+            Some(("owner".to_string(), "repo".to_string()))
+        );
+        assert_eq!(
+            super::parse_github_repository("git@github.com:owner/repo.git"),
+            Some(("owner".to_string(), "repo".to_string()))
+        );
+        assert_eq!(super::parse_github_repository("https://example.com/o/r"), None);
+        assert_eq!(super::parse_github_repository("https://github.com/owner"), None);
+    }
+
+    #[test]
+    fn extracts_image_bounds_without_consuming_trailing_markdown() {
+        let image = "![build status](https://img.example/build.svg)";
+        assert_eq!(
+            super::image_bounds(image, 0),
+            Some((0, image.len(), "https://img.example/build.svg".to_string()))
+        );
+        assert_eq!(
+            super::image_bounds("prefix ![x](url) suffix", 7),
+            Some((7, 16, "url".to_string()))
+        );
+        assert_eq!(super::image_bounds("not an image", 0), None);
+        assert_eq!(super::image_bounds("![missing destination]", 0), None);
+        assert_eq!(super::image_bounds("é![x](url)", 1), None);
     }
 }

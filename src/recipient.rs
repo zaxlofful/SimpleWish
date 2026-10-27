@@ -291,15 +291,26 @@ mod tests {
             "recipient": "Elsa & Friends",
             "gifts": [{"text":"A <gift>","href":"https://example.com/?a=1&b=2"}],
             "qr_decorate": true,
-            "qr_foreground":"#abc123"
+            "qr_foreground":"#abc123",
+            "qr_background":"#ffffff",
+            "qr_decor_type":"gift",
+            "qr_tree_style":"plain"
         });
         let html = render_from_template(template, &data);
         assert!(html.contains("<title>Elsa&#x27;s List</title>"));
         assert!(html.contains("Christmas List for Elsa &amp; Friends"));
         assert!(html.contains("A &lt;gift&gt;"));
         assert!(html.contains("a=1&amp;b=2"));
-        assert!(html.contains("name=\"qr-foreground-color\""));
+        assert!(html.contains("<meta name=\"qr-foreground-color\" content=\"#abc123\">"));
+        assert!(html.contains("<meta name=\"qr-background-color\" content=\"#ffffff\">"));
+        assert!(html.contains("<meta name=\"qr-decoration-type\" content=\"gift\">"));
+        assert!(html.contains("<meta name=\"qr-tree-style\" content=\"plain\">"));
+        assert!(html.contains("<meta name=\"qr-decorate\" content=\"true\">"));
         assert!(html.contains("<!-- QR-PLACEHOLDER-START -->\n<!-- QR-PLACEHOLDER-END -->"));
+        assert!(!html.contains("<li>Old</li>"));
+        assert!(html.contains(
+            "<li><a href=\"https://example.com/?a=1&amp;b=2\" target=\"_blank\" rel=\"noopener\">A &lt;gift&gt;</a></li>"
+        ));
     }
 
     #[test]
@@ -352,18 +363,99 @@ mod tests {
     #[test]
     fn unsafe_links_and_css_values_are_not_rendered() {
         let template = "<a style=\"--accent: #123456;\" href=\"\">x</a>\
+            <p style=\"--muted: #abc;\">muted</p>\
             <ul id=\"gift-list\"></ul>";
         let data = json!({
             "accent": "red; background: url(https://example.invalid)",
+            "muted": "#gggggg",
             "gifts": [
                 {"text":"unsafe","href":"javascript:alert(1)"},
-                {"text":"safe","href":"https://example.com"}
+                {"text":"safe","href":"https://example.com"},
+                {"text":"mail","href":"mailto:friend@example.com"},
+                {"text":"control","href":"https://example.com/\nheader"}
             ]
         });
         let html = render_from_template(template, &data);
         assert!(html.contains("--accent: #123456;"));
+        assert!(html.contains("--muted: #abc;"));
         assert!(html.contains("<li>unsafe</li>"));
         assert!(!html.contains("href=\"javascript:"));
         assert!(html.contains("href=\"https://example.com\""));
+        assert!(html.contains("href=\"mailto:friend@example.com\""));
+        assert!(html.contains("<li>control</li>"));
+    }
+
+    #[test]
+    fn value_and_section_helpers_handle_null_and_missing_markers() {
+        assert_eq!(super::string_value(&json!("hello")), "hello");
+        assert_eq!(super::string_value(&Value::Null), "");
+        assert_eq!(super::string_value(&json!(42)), "42");
+
+        let mut text = "before<title>old</title>after".to_string();
+        super::replace_section(&mut text, "<title>", "</title>", "new");
+        assert_eq!(text, "before<title>new</title>after");
+        super::replace_section(&mut text, "<missing>", "</missing>", "ignored");
+        super::replace_section(&mut text, "<title>", "</missing>", "ignored");
+        assert_eq!(text, "before<title>new</title>after");
+        assert_eq!(
+            super::json_field(&json!({"key": 1}), "key").and_then(Value::as_i64),
+            Some(1)
+        );
+        assert_eq!(super::json_field(&json!({}), "key"), None);
+    }
+
+    #[test]
+    fn accepts_only_valid_hex_colors_and_safe_link_schemes() {
+        for color in ["#abc", "#ABC", "#123456"] {
+            assert!(super::valid_hex_color(color), "{color}");
+        }
+        for color in ["abc", "#12", "#12345", "#1234567", "#ggg", "#00000"] {
+            assert!(!super::valid_hex_color(color), "{color}");
+        }
+        for link in [
+            "https://example.com",
+            "HTTP://example.com",
+            "mailto:friend@example.com",
+        ] {
+            assert!(super::safe_link(link), "{link}");
+        }
+        for link in [        "javascript:alert(1)", "data:text/html,x", "https://example.com/a\nb"] {
+            assert!(!super::safe_link(link), "{link:?}");
+        }
+    }
+
+    #[test]
+    fn renders_css_colors_only_when_valid_and_semicolon_is_present() {
+        let mut text = "a{--accent:#123456;--muted:#abc}".to_string();
+        super::replace_css_variable(&mut text, "--accent:", "#abcdef");
+        super::replace_css_variable(&mut text, "--muted:", "#12345");
+        assert_eq!(text, "a{--accent:#abcdef;--muted:#abc}");
+        super::replace_css_variable(&mut text, "--missing:", "#fff");
+        assert_eq!(text, "a{--accent:#abcdef;--muted:#abc}");
+    }
+
+    #[test]
+    fn render_file_reads_json_and_writes_the_requested_output() {
+        let base = std::env::temp_dir().join(format!("simplewish-render-{}", std::process::id()));
+        let data_path = base.with_extension("json");
+        let output_path = base.with_extension("html");
+        fs::write(&data_path, r#"{"title":"Test title"}"#).unwrap();
+        let result = super::render_file("<title>Old</title>", &data_path, Some(&output_path))
+            .unwrap();
+        assert_eq!(result, output_path);
+        assert_eq!(
+            fs::read_to_string(&output_path).unwrap(),
+            "<title>Test title</title>"
+        );
+
+        fs::write(&data_path, "{invalid json").unwrap();
+        assert!(super::render_file("template", &data_path, Some(&output_path))
+            .unwrap_err()
+            .contains("cannot parse"));
+        assert!(super::render_file("template", &base.with_extension("missing"), None)
+            .unwrap_err()
+            .contains("cannot read"));
+        let _ = fs::remove_file(data_path);
+        let _ = fs::remove_file(output_path);
     }
 }

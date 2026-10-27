@@ -70,11 +70,17 @@ mod tests {
     fn escapes_text_and_attributes() {
         assert_eq!(html_escape("A & <B>", false), "A &amp; &lt;B&gt;");
         assert_eq!(html_escape("'\"&", true), "&#x27;&quot;&amp;");
+        assert_eq!(html_escape("'\"", false), "'\"");
     }
 
     #[test]
     fn encodes_url_path_segments() {
         assert_eq!(url_encode_path("winter list.html"), "winter%20list.html");
+        assert_eq!(
+            url_encode_path("a/b?x=1&y=🎄"),
+            "a%2Fb%3Fx%3D1%26y%3D%F0%9F%8E%84"
+        );
+        assert_eq!(url_encode_path("-_.~AZaz09"), "-_.~AZaz09");
     }
 
     #[test]
@@ -84,5 +90,11 @@ mod tests {
         assert!(matches_pattern("index.html", "index.html"));
         assert!(matches_pattern("list-?.html", "list-1.html"));
         assert!(matches_pattern("*.html", "winter🎄.html"));
+        assert!(!matches_pattern("list-?.html", "list-.html"));
+        assert!(matches_pattern("a*b", "axxxb"));
+        assert!(!matches_pattern("a*b", "axxxc"));
+        assert!(matches_pattern("a**b", "ab"));
+        assert!(matches_pattern("*", ""));
+        assert!(!matches_pattern("", "x"));
     }
 }
