@@ -419,7 +419,11 @@ mod tests {
         ] {
             assert!(super::safe_link(link), "{link}");
         }
-        for link in [        "javascript:alert(1)", "data:text/html,x", "https://example.com/a\nb"] {
+        for link in [
+            "javascript:alert(1)",
+            "data:text/html,x",
+            "https://example.com/a\nb",
+        ] {
             assert!(!super::safe_link(link), "{link:?}");
         }
     }
@@ -440,8 +444,8 @@ mod tests {
         let data_path = base.with_extension("json");
         let output_path = base.with_extension("html");
         fs::write(&data_path, r#"{"title":"Test title"}"#).unwrap();
-        let result = super::render_file("<title>Old</title>", &data_path, Some(&output_path))
-            .unwrap();
+        let result =
+            super::render_file("<title>Old</title>", &data_path, Some(&output_path)).unwrap();
         assert_eq!(result, output_path);
         assert_eq!(
             fs::read_to_string(&output_path).unwrap(),
@@ -449,12 +453,16 @@ mod tests {
         );
 
         fs::write(&data_path, "{invalid json").unwrap();
-        assert!(super::render_file("template", &data_path, Some(&output_path))
-            .unwrap_err()
-            .contains("cannot parse"));
-        assert!(super::render_file("template", &base.with_extension("missing"), None)
-            .unwrap_err()
-            .contains("cannot read"));
+        assert!(
+            super::render_file("template", &data_path, Some(&output_path))
+                .unwrap_err()
+                .contains("cannot parse")
+        );
+        assert!(
+            super::render_file("template", &base.with_extension("missing"), None)
+                .unwrap_err()
+                .contains("cannot read")
+        );
         let _ = fs::remove_file(data_path);
         let _ = fs::remove_file(output_path);
     }

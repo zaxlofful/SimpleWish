@@ -51,3 +51,33 @@ fn print_help() {
            regenerate-reference Regenerate QR SVG reference files"
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::run;
+
+    #[test]
+    fn dispatches_help_to_top_level_and_subcommands() {
+        assert_eq!(run(Vec::new()).unwrap(), 0);
+        assert_eq!(run(vec!["help".to_string()]).unwrap(), 0);
+        assert_eq!(
+            run(vec!["generate-qr".to_string(), "--help".to_string()]).unwrap(),
+            0
+        );
+        assert_eq!(
+            run(vec!["generate-recipient".to_string(), "--help".to_string()]).unwrap(),
+            0
+        );
+        assert_eq!(
+            run(vec!["inject-qr".to_string(), "--help".to_string()]).unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_commands_with_the_command_name() {
+        let error = run(vec!["unknown-command".to_string()]).unwrap_err();
+        assert!(error.to_string().contains("unknown-command"));
+        assert!(error.to_string().contains("simplewish help"));
+    }
+}

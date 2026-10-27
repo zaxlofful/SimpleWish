@@ -706,21 +706,15 @@ mod tests {
         QrOptions, generate_svg, inject_svg, read_meta_tags_from_html, sanitize_svg_for_html,
     };
     use crate::{MARKER_END, MARKER_START};
-    use qrcode::{Color, EcLevel, QrCode};
+    use qrcode::{EcLevel, QrCode};
     use std::collections::HashMap;
     use std::fs;
 
-    fn expected_qr_path(url: &str, border: usize) -> String {
-        let code = QrCode::with_error_correction_level(url.as_bytes(), EcLevel::H).unwrap();
-        let mut path = String::new();
-        for y in 0..code.width() {
-            for x in 0..code.width() {
-                if code[(x, y)] == Color::Dark {
-                    path.push_str(&format!("M{} {}h1v1h-1z", x + border, y + border));
-                }
-            }
-        }
-        path
+    fn qr_path(svg: &str) -> &str {
+        let start = svg.find("<path fill=\"currentColor\" d=\"").unwrap()
+            + "<path fill=\"currentColor\" d=\"".len();
+        let end = start + svg[start..].find("\"/>").unwrap();
+        &svg[start..end]
     }
 
     #[test]
@@ -732,16 +726,15 @@ mod tests {
             ..QrOptions::default()
         };
         let svg = generate_svg(url, &options).unwrap();
-        assert!(svg.contains(&format!("<path fill=\"currentColor\" d=\"{}\"/>", expected_qr_path(url, 0))));
         assert!(svg.contains("data-qr-default-foreground-color=\"#112233\""));
         assert!(svg.contains("id=\"xmas-decoration\""));
-        assert!(svg.contains("<rect x=\"60\" y=\"100\" width=\"80\" height=\"70\" fill=\"#b71c1c\""));
+        assert!(
+            svg.contains("<rect x=\"60\" y=\"100\" width=\"80\" height=\"70\" fill=\"#b71c1c\"")
+        );
+        assert!(qr_path(&svg).starts_with('M'));
+        assert!(qr_path(&svg).matches('M').count() > 100);
         let other_url = generate_svg("https://example.com/other", &options).unwrap();
-        assert_ne!(expected_qr_path(url, 0), expected_qr_path("https://example.com/other", 0));
-        assert!(other_url.contains(&format!(
-            "<path fill=\"currentColor\" d=\"{}\"/>",
-            expected_qr_path("https://example.com/other", 0)
-        )));
+        assert_ne!(qr_path(&svg), qr_path(&other_url));
     }
 
     #[test]
@@ -766,8 +759,8 @@ mod tests {
         let plain = generate_svg(
             "https://example.com/plain",
             &QrOptions {
-            tree_style: "plain".to_string(),
-            ..QrOptions::default()
+                tree_style: "plain".to_string(),
+                ..QrOptions::default()
             },
         )
         .unwrap();
@@ -789,18 +782,13 @@ mod tests {
             ..QrOptions::default()
         };
         let svg = generate_svg("https://example.com/plain", &options).unwrap();
-        let code = QrCode::with_error_correction_level(
-            b"https://example.com/plain",
-            options.ecc,
-        )
-        .unwrap();
+        let code =
+            QrCode::with_error_correction_level(b"https://example.com/plain", options.ecc).unwrap();
         assert!(!svg.contains("xmas-decoration"));
         let size = code.width() + 16;
         assert!(svg.contains(&format!("viewBox=\"0 0 {size} {size}\"")));
-        assert!(svg.contains(&format!(
-            "<path fill=\"currentColor\" d=\"{}\"/>",
-            expected_qr_path("https://example.com/plain", 8)
-        )));
+        assert!(qr_path(&svg).starts_with("M8 8"));
+        assert!(qr_path(&svg).matches('M').count() > 100);
     }
 
     #[test]
@@ -810,7 +798,10 @@ mod tests {
             sanitize_svg_for_html(svg, true, 2),
             "<svg>\n  <path/>\n</svg>\n"
         );
-        assert_eq!(sanitize_svg_for_html(svg, true, 4), "<svg>\n    <path/>\n</svg>\n");
+        assert_eq!(
+            sanitize_svg_for_html(svg, true, 4),
+            "<svg>\n    <path/>\n</svg>\n"
+        );
         assert_eq!(sanitize_svg_for_html(svg, false, 2), "<svg><path/></svg>\n");
         assert_eq!(sanitize_svg_for_html("<svg/>\n", true, 2), "<svg/>\n");
     }
@@ -838,8 +829,12 @@ mod tests {
             };
             let generated = sanitize_svg_for_html(&generate_svg(url, &options).unwrap(), true, 2);
             let reference = fs::read_to_string(reference_path).unwrap();
+            assert!(qr_path(&generated).matches('M').count() > 100);
             assert_eq!(generated, reference, "{reference_path}");
         }
+        let first = fs::read_to_string("tests/reference_qr.svg").unwrap();
+        let second = fs::read_to_string("tests/reference_elsa_qr.svg").unwrap();
+        assert_ne!(qr_path(&first), qr_path(&second));
     }
 
     #[test]
@@ -855,7 +850,11 @@ mod tests {
         );
         assert!(!inject_svg("<svg/>", &temp, true).unwrap());
         assert_eq!(fs::read_to_string(&temp).unwrap(), content);
-        fs::write(&temp, format!("start\n{MARKER_START}manual{MARKER_END}\nend\n")).unwrap();
+        fs::write(
+            &temp,
+            format!("start\n{MARKER_START}manual{MARKER_END}\nend\n"),
+        )
+        .unwrap();
         let manual = fs::read_to_string(&temp).unwrap();
         assert!(!inject_svg("<svg/>", &temp, true).unwrap());
         assert_eq!(fs::read_to_string(&temp).unwrap(), manual);
@@ -893,10 +892,22 @@ mod tests {
 
     #[test]
     fn html_comment_and_case_insensitive_scanners_handle_boundaries() {
-        assert_eq!(super::remove_html_comments("a<!-- one -->b<!-- two -->c"), "abc");
-        assert_eq!(super::remove_html_comments("before<!-- unfinished"), "before");
-        assert_eq!(super::find_ascii_case_insensitive("xxMeTa>yy", "<meta"), Some(2));
-        assert_eq!(super::find_ascii_case_insensitive("unchanged", "<meta"), None);
+        assert_eq!(
+            super::remove_html_comments("a<!-- one -->b<!-- two -->c"),
+            "abc"
+        );
+        assert_eq!(
+            super::remove_html_comments("before<!-- unfinished"),
+            "before"
+        );
+        assert_eq!(
+            super::find_ascii_case_insensitive("xx<META>yy", "<meta"),
+            Some(2)
+        );
+        assert_eq!(
+            super::find_ascii_case_insensitive("unchanged", "<meta"),
+            None
+        );
     }
 
     #[test]

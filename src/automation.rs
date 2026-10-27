@@ -461,6 +461,25 @@ mod tests {
     }
 
     #[test]
+    fn normalizes_list_prefixes_and_checkboxes_before_matching() {
+        assert_eq!(
+            super::normalize_todo_line("  - [x] Add Feature  "),
+            "add feature"
+        );
+        assert_eq!(
+            super::normalize_todo_line("* [ ] Add Feature"),
+            "add feature"
+        );
+        assert_eq!(super::normalize_todo_line("+ Add Feature"), "add feature");
+        assert_eq!(
+            super::normalize_todo_line("12.\tAdd Feature"),
+            "add feature"
+        );
+        assert_eq!(super::normalize_todo_line("  Plain text  "), "plain text");
+        assert_eq!(super::normalize_todo_line("   "), "");
+    }
+
+    #[test]
     fn readme_badge_links_are_repaired() {
         let source = "![build](https://img.shields.io/x)\n\
             [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/elsewhere/nope)\n";
@@ -483,8 +502,14 @@ mod tests {
             super::parse_github_repository("git@github.com:owner/repo.git"),
             Some(("owner".to_string(), "repo".to_string()))
         );
-        assert_eq!(super::parse_github_repository("https://example.com/o/r"), None);
-        assert_eq!(super::parse_github_repository("https://github.com/owner"), None);
+        assert_eq!(
+            super::parse_github_repository("https://example.com/o/r"),
+            None
+        );
+        assert_eq!(
+            super::parse_github_repository("https://github.com/owner"),
+            None
+        );
     }
 
     #[test]
