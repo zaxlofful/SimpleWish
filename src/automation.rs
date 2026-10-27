@@ -42,10 +42,17 @@ pub fn extract_completed_items(body: Option<&str>) -> Vec<String> {
                 }
             }
         }
-        if let Some(index) = trimmed.to_ascii_lowercase().find("- [x]") {
-            let item = trimmed[index + 5..].trim();
-            if !item.is_empty() {
-                completed.push(item.to_string());
+        let lower = trimmed.to_ascii_lowercase();
+        for (index, _) in lower.match_indices('-') {
+            let after_marker = &lower[index + 1..];
+            let whitespace =
+                after_marker.len() - after_marker.trim_start_matches([' ', '\t']).len();
+            if whitespace > 0 && after_marker[whitespace..].starts_with("[x]") {
+                let item = trimmed[index + 1 + whitespace + 3..].trim();
+                if !item.is_empty() {
+                    completed.push(item.to_string());
+                }
+                break;
             }
         }
     }
@@ -92,8 +99,11 @@ fn normalize_todo_line(line: &str) -> String {
     remaining.to_ascii_lowercase()
 }
 
-fn words(value: &str) -> HashSet<&str> {
-    value.split_whitespace().collect()
+fn words(value: &str) -> HashSet<String> {
+    value
+        .split_whitespace()
+        .map(str::to_ascii_lowercase)
+        .collect()
 }
 
 pub fn update_todo_file(path: &Path, completed: &[String]) -> Result<bool, String> {
@@ -111,7 +121,10 @@ pub fn update_todo_file(path: &Path, completed: &[String]) -> Result<bool, Strin
     }
     let completed = completed
         .iter()
-        .map(|item| (item.trim().to_ascii_lowercase(), words(item)))
+        .map(|item| {
+            let normalized = item.trim().to_ascii_lowercase();
+            (normalized.clone(), words(&normalized))
+        })
         .collect::<Vec<_>>();
     let mut removed = 0;
     let mut lines = Vec::new();
@@ -127,7 +140,7 @@ pub fn update_todo_file(path: &Path, completed: &[String]) -> Result<bool, Strin
                 || (!item_words.is_empty()
                     && item_words
                         .iter()
-                        .all(|word| normalized_words.contains(word)))
+                        .all(|word| normalized_words.contains(word.as_str())))
         });
         if matched {
             println!("Removing completed item: {}", line.trim());
@@ -321,46 +334,63 @@ fn rewrite_readme_links(content: &str, owner: &str, repo: &str) -> (String, usiz
     let mut changes = 0;
     let mut output = String::new();
     for line in content.lines() {
-        let mut rewritten = line.to_string();
-        if rewritten.starts_with("[![") {
-            if let Some((image_start, image_end, image_url)) = image_bounds(&rewritten, 1)
-                && let Some(link_start_relative) = rewritten[image_end..].find("](")
-            {
-                let link_start = image_end + link_start_relative + 2;
-                if let Some(link_end_relative) = rewritten[link_start..].find(')') {
+        let mut rewritten = String::new();
+        let mut cursor = 0;
+        while let Some(start) = line[cursor..].find("![").map(|offset| cursor + offset) {
+            let Some((start, end, image_url)) = image_bounds(line, start) else {
+                cursor = start + 2;
+                continue;
+            };
+            let linked =
+                start > 0 && line.as_bytes()[start - 1] == b'[' && line[end..].starts_with("](");
+            let image_prefix_start = if linked { start - 1 } else { start };
+            rewritten.push_str(&line[cursor..image_prefix_start]);
+            if linked {
+                let link_start = end + 2;
+                if let Some(link_end_relative) = line[link_start..].find(')') {
                     let link_end = link_start + link_end_relative;
-                    let current_link = rewritten[link_start..link_end].trim();
-                    let parsed = parse_github_repository(current_link);
-                    if image_url.contains("/actions/workflows/")
+                    let current_link = &line[link_start..link_end];
+                    let parsed = parse_github_repository(current_link.trim());
+                    let target = if image_url.contains("/actions/workflows/")
                         && parse_github_repository(&image_url).is_some_and(
                             |(image_owner, image_repo)| {
                                 image_owner.eq_ignore_ascii_case(owner)
                                     && image_repo.eq_ignore_ascii_case(repo)
                             },
-                        )
-                    {
-                        let workflow = canonical_image_link(&image_url, owner, repo, &repo_url);
-                        if current_link != workflow {
-                            rewritten.replace_range(link_start..link_end, &workflow);
-                            changes += 1;
-                        }
+                        ) {
+                        Some(canonical_image_link(&image_url, owner, repo, &repo_url))
                     } else if parsed.is_some_and(|(link_owner, link_repo)| {
                         !(link_owner.eq_ignore_ascii_case(owner)
                             && link_repo.eq_ignore_ascii_case(repo))
                     }) {
-                        rewritten.replace_range(link_start..link_end, &repo_url);
-                        changes += 1;
+                        Some(repo_url.clone())
+                    } else {
+                        None
+                    };
+                    rewritten.push_str(&line[image_prefix_start..link_start]);
+                    if let Some(target) = target {
+                        if current_link.trim() != target {
+                            changes += 1;
+                        }
+                        rewritten.push_str(&target);
+                    } else {
+                        rewritten.push_str(current_link);
                     }
-                    let _ = image_start;
+                    rewritten.push(')');
+                    cursor = link_end + 1;
+                    continue;
                 }
             }
-        } else if let Some((start, end, image_url)) = image_bounds(&rewritten, 0)
-            && end == rewritten.trim_end().len()
-        {
             let target = canonical_image_link(&image_url, owner, repo, &repo_url);
-            rewritten = format!("[{}]({target})", &rewritten[start..end]);
+            rewritten.push('[');
+            rewritten.push_str(&line[start..end]);
+            rewritten.push_str("](");
+            rewritten.push_str(&target);
+            rewritten.push(')');
             changes += 1;
+            cursor = end;
         }
+        rewritten.push_str(&line[cursor..]);
         output.push_str(&rewritten);
         output.push('\n');
     }
@@ -408,7 +438,8 @@ mod tests {
     #[test]
     fn extracts_completed_lines_and_checkboxes() {
         let body = "Fixed: Add styling\nCOMPLETED: Review output\nDone: Handle cases\n\
-            Resolved: Update docs\n- [x] Finish tests\n- [X] Also finished\n- [ ] Pending\nDone:";
+            Resolved: Update docs\n- [x] Finish tests\n- [X] Also finished\n\
+            -   [x] Extra spaces\n-\t[X] Tab spacing\n- [ ] Pending\nDone:";
         let completed = extract_completed_items(Some(body));
         assert_eq!(
             completed,
@@ -418,7 +449,9 @@ mod tests {
                 "Handle cases",
                 "Update docs",
                 "Finish tests",
-                "Also finished"
+                "Also finished",
+                "Extra spaces",
+                "Tab spacing"
             ]
         );
         assert!(extract_completed_items(None).is_empty());
@@ -461,6 +494,16 @@ mod tests {
     }
 
     #[test]
+    fn todo_update_matches_mixed_case_completion_subsets() {
+        let path =
+            std::env::temp_dir().join(format!("simplewish-update-case-{}.md", std::process::id()));
+        fs::write(&path, "1. Add coloring by CSS\n").unwrap();
+        assert!(update_todo_file(&path, &["Coloring by CSS".to_string()]).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
     fn normalizes_list_prefixes_and_checkboxes_before_matching() {
         assert_eq!(
             super::normalize_todo_line("  - [x] Add Feature  "),
@@ -489,6 +532,23 @@ mod tests {
             result,
             "[![build](https://img.shields.io/x)](https://github.com/owner/repo)\n\
              [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/test.yml)\n"
+        );
+    }
+
+    #[test]
+    fn readme_rewrites_multiple_badges_with_surrounding_markdown() {
+        let source = "Before ![plain](https://img.shields.io/plain) after \
+            [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/elsewhere/nope) \
+            and [![other](https://img.shields.io/other)](https://github.com/another/project) end \
+            ![last](https://img.shields.io/last)";
+        let (result, count) = super::rewrite_readme_links(source, "owner", "repo");
+        assert_eq!(count, 4);
+        assert_eq!(
+            result,
+            "Before [![plain](https://img.shields.io/plain)](https://github.com/owner/repo) after \
+            [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/test.yml) \
+            and [![other](https://img.shields.io/other)](https://github.com/owner/repo) end \
+            [![last](https://img.shields.io/last)](https://github.com/owner/repo)"
         );
     }
 

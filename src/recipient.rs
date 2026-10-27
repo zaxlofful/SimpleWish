@@ -245,10 +245,7 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
             return Ok(0);
         }
         for data_path in data_files {
-            let filename = data_path.with_extension("html");
-            if let Err(error) = render_file(&template, &data_path, Some(&filename)) {
-                eprintln!("Failed to render {}: {error}", data_path.display());
-            }
+            render_file(&template, &data_path, None)?;
         }
         return Ok(0);
     }
@@ -465,5 +462,67 @@ mod tests {
         );
         let _ = fs::remove_file(data_path);
         let _ = fs::remove_file(output_path);
+    }
+
+    #[test]
+    fn bulk_generation_writes_recipient_pages_to_current_directory() {
+        let base = std::env::temp_dir().join(format!("simplewish-bulk-{}", std::process::id()));
+        let recipients = base.join("recipients");
+        let template = base.join("template.html");
+        let stem = format!("bulk-recipient-{}", std::process::id());
+        let name = format!("{stem}.html");
+        let output = Path::new(&name);
+        fs::create_dir_all(&recipients).unwrap();
+        fs::write(&template, "<title>Old</title>").unwrap();
+        fs::write(
+            recipients.join(format!("{stem}.json")),
+            r#"{"title":"Test"}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            super::generate_cli(&[
+                "--bulk".to_string(),
+                "--template".to_string(),
+                template.to_string_lossy().into_owned(),
+                "--recipients-dir".to_string(),
+                recipients.to_string_lossy().into_owned(),
+            ])
+            .unwrap(),
+            0
+        );
+        assert_eq!(fs::read_to_string(output).unwrap(), "<title>Test</title>");
+        assert!(!recipients.join(format!("{stem}.html")).exists());
+        let _ = fs::remove_file(output);
+        let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn bulk_generation_propagates_output_write_failures() {
+        let base =
+            std::env::temp_dir().join(format!("simplewish-bulk-error-{}", std::process::id()));
+        let recipients = base.join("recipients");
+        let template = base.join("template.html");
+        let stem = format!("bulk-write-error-{}", std::process::id());
+        let name = format!("{stem}.html");
+        fs::create_dir_all(&recipients).unwrap();
+        fs::create_dir_all(&name).unwrap();
+        fs::write(&template, "<title>Old</title>").unwrap();
+        fs::write(
+            recipients.join(format!("{stem}.json")),
+            r#"{"title":"Test"}"#,
+        )
+        .unwrap();
+        assert!(
+            super::generate_cli(&[
+                "--bulk".to_string(),
+                "--template".to_string(),
+                template.to_string_lossy().into_owned(),
+                "--recipients-dir".to_string(),
+                recipients.to_string_lossy().into_owned(),
+            ])
+            .is_err()
+        );
+        let _ = fs::remove_dir(name);
+        let _ = fs::remove_dir_all(base);
     }
 }

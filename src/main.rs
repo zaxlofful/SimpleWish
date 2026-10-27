@@ -16,6 +16,14 @@ fn run(args: Vec<String>) -> Result<u8, Box<dyn std::error::Error>> {
         print_help();
         return Ok(0);
     };
+    if matches!(
+        command,
+        "update-todo-from-prs" | "render-readme" | "regenerate-reference"
+    ) && args[1..].iter().any(|arg| arg == "--help" || arg == "-h")
+    {
+        print_help();
+        return Ok(0);
+    }
     match command {
         "generate-qr" => simplewish::qr::generate_cli(&args[1..]),
         "inject-qr" => simplewish::qr::inject_cli(&args[1..]),
@@ -72,6 +80,19 @@ mod tests {
             run(vec!["inject-qr".to_string(), "--help".to_string()]).unwrap(),
             0
         );
+    }
+
+    #[test]
+    fn side_effecting_commands_return_help_before_dispatch() {
+        for command in [
+            "update-todo-from-prs",
+            "render-readme",
+            "regenerate-reference",
+        ] {
+            for flag in ["--help", "-h"] {
+                assert_eq!(run(vec![command.to_string(), flag.to_string()]).unwrap(), 0);
+            }
+        }
     }
 
     #[test]
