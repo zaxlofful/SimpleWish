@@ -96,14 +96,11 @@ fn normalize_todo_line(line: &str) -> String {
     } else {
         remaining
     };
-    remaining.to_ascii_lowercase()
+    remaining.to_lowercase()
 }
 
 fn words(value: &str) -> HashSet<String> {
-    value
-        .split_whitespace()
-        .map(str::to_ascii_lowercase)
-        .collect()
+    value.split_whitespace().map(str::to_lowercase).collect()
 }
 
 pub fn update_todo_file(path: &Path, completed: &[String]) -> Result<bool, String> {
@@ -122,7 +119,7 @@ pub fn update_todo_file(path: &Path, completed: &[String]) -> Result<bool, Strin
     let completed = completed
         .iter()
         .map(|item| {
-            let normalized = item.trim().to_ascii_lowercase();
+            let normalized = item.trim().to_lowercase();
             (normalized.clone(), words(&normalized))
         })
         .collect::<Vec<_>>();
@@ -338,6 +335,7 @@ fn rewrite_readme_links(content: &str, owner: &str, repo: &str) -> (String, usiz
         let mut cursor = 0;
         while let Some(start) = line[cursor..].find("![").map(|offset| cursor + offset) {
             let Some((start, end, image_url)) = image_bounds(line, start) else {
+                rewritten.push_str(&line[cursor..start + 2]);
                 cursor = start + 2;
                 continue;
             };
@@ -504,6 +502,18 @@ mod tests {
     }
 
     #[test]
+    fn todo_update_matches_non_ascii_mixed_case_completions() {
+        let path = std::env::temp_dir().join(format!(
+            "simplewish-update-unicode-{}.md",
+            std::process::id()
+        ));
+        fs::write(&path, "1. Éclairage\n").unwrap();
+        assert!(update_todo_file(&path, &["éclairage".to_string()]).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "");
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
     fn normalizes_list_prefixes_and_checkboxes_before_matching() {
         assert_eq!(
             super::normalize_todo_line("  - [x] Add Feature  "),
@@ -549,6 +559,17 @@ mod tests {
             [![tests](https://github.com/owner/repo/actions/workflows/test.yml/badge.svg)](https://github.com/owner/repo/actions/workflows/test.yml) \
             and [![other](https://img.shields.io/other)](https://github.com/owner/repo) end \
             [![last](https://img.shields.io/last)](https://github.com/owner/repo)"
+        );
+    }
+
+    #[test]
+    fn readme_rewrite_preserves_incomplete_image_syntax() {
+        let source = "Before ![build](https://img.shields.io/build) after ![incomplete";
+        let (result, count) = super::rewrite_readme_links(source, "owner", "repo");
+        assert_eq!(count, 1);
+        assert_eq!(
+            result,
+            "Before [![build](https://img.shields.io/build)](https://github.com/owner/repo) after ![incomplete"
         );
     }
 

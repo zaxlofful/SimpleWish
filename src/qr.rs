@@ -430,6 +430,70 @@ pub fn sanitize_svg_for_html(svg: &str, pretty: bool, indent_spaces: usize) -> S
     format!("{}\n", output.join("\n"))
 }
 
+fn path_matches_pattern(pattern: &str, path: &Path) -> bool {
+    let pattern_absolute = Path::new(pattern).is_absolute();
+    if pattern_absolute != path.is_absolute() {
+        return false;
+    }
+    let path_string = path.to_string_lossy();
+    let pattern_components = pattern
+        .split('/')
+        .filter(|component| !component.is_empty() && *component != ".");
+    let path_components = path_string
+        .split('/')
+        .filter(|component| !component.is_empty() && *component != ".");
+    let pattern_components = pattern_components.collect::<Vec<_>>();
+    let path_components = path_components.collect::<Vec<_>>();
+    pattern_components.len() == path_components.len()
+        && pattern_components
+            .iter()
+            .zip(path_components)
+            .all(|(pattern, component)| matches_pattern(pattern, component))
+}
+
+fn expand_html_pattern(pattern: &str) -> Vec<PathBuf> {
+    let absolute = Path::new(pattern).is_absolute();
+    let mut paths = vec![if absolute {
+        PathBuf::from("/")
+    } else {
+        PathBuf::from(".")
+    }];
+    let components = pattern
+        .split('/')
+        .filter(|component| !component.is_empty() && *component != ".")
+        .collect::<Vec<_>>();
+    for component in components {
+        let has_wildcard = component.contains(['*', '?']);
+        let mut next = Vec::new();
+        for path in paths {
+            if has_wildcard {
+                if let Ok(entries) = fs::read_dir(&path) {
+                    for entry in entries.filter_map(Result::ok) {
+                        let entry_path = entry.path();
+                        let name = entry.file_name();
+                        if name
+                            .to_str()
+                            .is_some_and(|name| matches_pattern(component, name))
+                        {
+                            next.push(entry_path);
+                        }
+                    }
+                }
+            } else {
+                let path = path.join(component);
+                if path.exists() {
+                    next.push(path);
+                }
+            }
+        }
+        paths = next;
+    }
+    paths
+        .into_iter()
+        .filter(|path| path.is_file() && path_matches_pattern(pattern, path))
+        .collect()
+}
+
 pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
     if args.iter().any(|arg| arg == "--help" || arg == "-h") {
         println!(
@@ -455,16 +519,7 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
     let minify = args.iter().any(|arg| arg == "--minify");
     let defaults = cli_options(args)?;
     fs::create_dir_all(&output_dir)?;
-    let mut html_files = fs::read_dir(".")?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.is_file())
-        .filter(|path| {
-            path.file_name()
-                .and_then(|name| name.to_str())
-                .is_some_and(|name| matches_pattern(&pattern, name))
-        })
-        .collect::<Vec<_>>();
+    let mut html_files = expand_html_pattern(&pattern);
     html_files.sort();
     if html_files.is_empty() {
         println!("No files found matching pattern");
@@ -703,12 +758,14 @@ pub fn regenerate_reference_cli() -> Result<u8, Box<dyn std::error::Error>> {
 #[cfg(test)]
 mod tests {
     use super::{
-        QrOptions, generate_svg, inject_svg, read_meta_tags_from_html, sanitize_svg_for_html,
+        QrOptions, expand_html_pattern, generate_svg, inject_svg, path_matches_pattern,
+        read_meta_tags_from_html, sanitize_svg_for_html,
     };
     use crate::{MARKER_END, MARKER_START};
     use qrcode::{EcLevel, QrCode};
     use std::collections::HashMap;
     use std::fs;
+    use std::path::Path;
 
     fn qr_path(svg: &str) -> &str {
         let start = svg.find("<path fill=\"currentColor\" d=\"").unwrap()
@@ -735,6 +792,26 @@ mod tests {
         assert!(qr_path(&svg).matches('M').count() > 100);
         let other_url = generate_svg("https://example.com/other", &options).unwrap();
         assert_ne!(qr_path(&svg), qr_path(&other_url));
+    }
+
+    #[test]
+    fn expands_qr_patterns_using_directory_components() {
+        let root = std::env::temp_dir().join(format!("simplewish-qr-glob-{}", std::process::id()));
+        let nested = root.join("nested");
+        fs::create_dir_all(&nested).unwrap();
+        let html = nested.join("target.html");
+        fs::write(&html, "<html></html>").unwrap();
+
+        assert_eq!(
+            expand_html_pattern(&format!("{}/*.html", nested.display())),
+            vec![html]
+        );
+        assert!(path_matches_pattern("./*.html", Path::new("./index.html")));
+        assert!(!path_matches_pattern(
+            "nested/*.html",
+            Path::new("nested/deeper/target.html")
+        ));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

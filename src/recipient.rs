@@ -1,4 +1,5 @@
 use serde_json::Value;
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -215,15 +216,62 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
         );
         return Ok(0);
     }
-    let template_path = PathBuf::from(super::qr::value_after(args, "--template", "index.html")?);
+    let mut seen = HashSet::new();
+    let mut bulk = false;
+    let mut data_path = None;
+    let mut template_path = PathBuf::from("index.html");
+    let mut output = None;
+    let mut recipients_dir = None;
+    let mut index = 0;
+    while index < args.len() {
+        let option = args[index].as_str();
+        if !seen.insert(option.to_string()) {
+            return Err(std::io::Error::other(format!(
+                "option {option} may only be specified once"
+            ))
+            .into());
+        }
+        match option {
+            "--bulk" => {
+                bulk = true;
+                index += 1;
+            }
+            "--data" | "--template" | "--out" | "--recipients-dir" => {
+                let value = args
+                    .get(index + 1)
+                    .filter(|value| !value.starts_with('-') && !value.is_empty())
+                    .ok_or_else(|| std::io::Error::other(format!("{option} requires a path")))?;
+                match option {
+                    "--data" => data_path = Some(PathBuf::from(value)),
+                    "--template" => template_path = PathBuf::from(value),
+                    "--out" => output = Some(PathBuf::from(value)),
+                    "--recipients-dir" => recipients_dir = Some(PathBuf::from(value)),
+                    _ => unreachable!(),
+                }
+                index += 2;
+            }
+            _ => {
+                return Err(
+                    std::io::Error::other(format!("unexpected argument `{option}`")).into(),
+                );
+            }
+        }
+    }
+    if bulk && data_path.is_some() {
+        return Err(std::io::Error::other("--data cannot be used with --bulk").into());
+    }
+    if !bulk && data_path.is_none() {
+        return Err(std::io::Error::other("--data is required unless --bulk is specified").into());
+    }
+    if bulk && output.is_some() {
+        return Err(std::io::Error::other("--out cannot be used with --bulk").into());
+    }
+    if !bulk && recipients_dir.is_some() {
+        return Err(std::io::Error::other("--recipients-dir requires --bulk").into());
+    }
     let template = fs::read_to_string(&template_path)?;
-    let bulk = args.iter().any(|arg| arg == "--bulk");
     if bulk {
-        let recipients_dir = PathBuf::from(super::qr::value_after(
-            args,
-            "--recipients-dir",
-            "recipients",
-        )?);
+        let recipients_dir = recipients_dir.unwrap_or_else(|| PathBuf::from("recipients"));
         if !recipients_dir.is_dir() {
             return Err(std::io::Error::other(format!(
                 "No recipients directory found at {}",
@@ -249,23 +297,11 @@ pub fn generate_cli(args: &[String]) -> Result<u8, Box<dyn std::error::Error>> {
         }
         return Ok(0);
     }
-    let Some(data_arg) = args.iter().position(|arg| arg == "--data") else {
-        return Err(std::io::Error::other("--data is required unless --bulk is specified").into());
-    };
-    let data_path = PathBuf::from(
-        args.get(data_arg + 1)
-            .ok_or_else(|| std::io::Error::other("--data requires a file path"))?,
-    );
-    let output = args
-        .iter()
-        .position(|arg| arg == "--out")
-        .map(|index| {
-            args.get(index + 1)
-                .map(Path::new)
-                .ok_or_else(|| std::io::Error::other("--out requires a file path"))
-        })
-        .transpose()?;
-    render_file(&template, &data_path, output)?;
+    render_file(
+        &template,
+        data_path.as_deref().expect("required above"),
+        output.as_deref(),
+    )?;
     Ok(0)
 }
 
@@ -275,7 +311,7 @@ mod tests {
     use serde_json::Value;
     use serde_json::json;
     use std::fs;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn renders_escaped_recipient_data_and_clears_qr_placeholder() {
@@ -344,6 +380,19 @@ mod tests {
                     .is_some_and(|gifts| !gifts.is_empty())
             );
             assert!(data["qr_decorate"].is_boolean());
+            for field in [
+                "qr_foreground",
+                "qr_background",
+                "qr_decor_type",
+                "qr_tree_style",
+            ] {
+                assert!(
+                    data.get(field).is_none_or(Value::is_string),
+                    "{} in {} must be a string when present",
+                    field,
+                    file.path().display()
+                );
+            }
             for gift in data["gifts"].as_array().unwrap() {
                 assert!(
                     gift["text"]
@@ -524,5 +573,39 @@ mod tests {
         );
         let _ = fs::remove_dir(name);
         let _ = fs::remove_dir_all(base);
+    }
+
+    #[test]
+    fn generate_recipient_rejects_invalid_options_before_writing() {
+        let base =
+            std::env::temp_dir().join(format!("simplewish-invalid-cli-{}", std::process::id()));
+        let data = base.with_extension("json");
+        let output = PathBuf::from(format!(
+            "{}.html",
+            base.file_stem().and_then(|stem| stem.to_str()).unwrap()
+        ));
+        fs::write(&data, r#"{"title":"Test"}"#).unwrap();
+        fs::write(&output, "preserve this file").unwrap();
+
+        assert!(
+            super::generate_cli(&[
+                "--data".to_string(),
+                data.to_string_lossy().into_owned(),
+                "--otu".to_string(),
+                "preview.html".to_string(),
+            ])
+            .is_err()
+        );
+        assert_eq!(fs::read_to_string(&output).unwrap(), "preserve this file");
+        assert!(
+            super::generate_cli(&[
+                "--data".to_string(),
+                data.to_string_lossy().into_owned(),
+                "--out".to_string(),
+            ])
+            .is_err()
+        );
+        let _ = fs::remove_file(data);
+        let _ = fs::remove_file(output);
     }
 }

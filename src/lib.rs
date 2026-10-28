@@ -38,16 +38,16 @@ pub fn matches_pattern(pattern: &str, filename: &str) -> bool {
     let (mut pattern_index, mut text_index) = (0, 0);
     let (mut last_star, mut star_match) = (None, 0);
     while text_index < text.len() {
-        if pattern
+        if pattern.get(pattern_index) == Some(&'*') {
+            last_star = Some(pattern_index);
+            pattern_index += 1;
+            star_match = text_index;
+        } else if pattern
             .get(pattern_index)
             .is_some_and(|character| *character == '?' || *character == text[text_index])
         {
             pattern_index += 1;
             text_index += 1;
-        } else if pattern.get(pattern_index) == Some(&'*') {
-            last_star = Some(pattern_index);
-            pattern_index += 1;
-            star_match = text_index;
         } else if let Some(star) = last_star {
             star_match += 1;
             text_index = star_match;
@@ -95,6 +95,7 @@ mod tests {
         assert!(!matches_pattern("a*b", "axxxc"));
         assert!(matches_pattern("a**b", "ab"));
         assert!(matches_pattern("*", ""));
+        assert!(matches_pattern("*", "*list.html"));
         assert!(!matches_pattern("", "x"));
     }
 }
