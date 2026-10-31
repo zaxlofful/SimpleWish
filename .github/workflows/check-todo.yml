@@ -17,18 +17,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - name: Install Rust toolchain
+        run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
 
       - name: Check if TODO.md is empty
         id: check-todo
         run: |
-          if python3 scripts/check_todo.py; then
+          if cargo run --quiet -- check-todo; then
             echo "has_content=false" >> $GITHUB_OUTPUT
           else
-            echo "has_content=true" >> $GITHUB_OUTPUT
+            status=$?
+            if [ "$status" -eq 1 ]; then
+              echo "has_content=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "TODO check failed with exit status $status" >&2
+              exit "$status"
+            fi
           fi
 
       - name: Check for existing TODO issue
@@ -161,8 +165,8 @@ jobs:
 
           Before creating the final commit or PR, run the repository linter and tests and fix any failures:
 
-          - Run the linter: `flake8`
-          - Run the test suite: `pytest`
+          - Run the linter: `cargo fmt --all -- --check` and `cargo clippy --all-targets --all-features -- -D warnings`
+          - Run the test suite: `cargo test --all`
 
           Only create the final PR/commit when both the linter and tests pass. Include the linter and test results in the PR description or a CI run log.
 
