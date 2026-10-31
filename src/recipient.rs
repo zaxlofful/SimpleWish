@@ -33,7 +33,7 @@ fn replace_css_variable(text: &mut String, variable: &str, value: &str) {
         return;
     };
     let value_start = start + variable.len();
-    let Some(relative_end) = text[value_start..].find(';') else {
+    let Some(relative_end) = text[value_start..].find([';', '}']) else {
         return;
     };
     text.replace_range(value_start..value_start + relative_end, value);
@@ -314,6 +314,13 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     #[test]
+    fn css_replacement_preserves_following_rules_without_semicolon() {
+        let mut text = "a{--muted:#abc}b{color:red;}".to_string();
+        super::replace_css_variable(&mut text, "--muted:", "#def");
+        assert_eq!(text, "a{--muted:#def}b{color:red;}");
+    }
+
+    #[test]
     fn renders_escaped_recipient_data_and_clears_qr_placeholder() {
         let template = "<title>Original</title><h1 id=\"recipient\">Original</h1>\
             <ul id=\"gift-list\"><li>Old</li></ul>\
@@ -351,17 +358,20 @@ mod tests {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("recipients");
         let files = fs::read_dir(root)
             .unwrap()
-            .filter_map(Result::ok)
+            .map(Result::unwrap)
+            .filter(|entry| {
+                let path = entry.path();
+                path.is_file()
+                    && path
+                        .extension()
+                        .is_some_and(|extension| extension == "json")
+            })
             .collect::<Vec<_>>();
-        assert!(!files.is_empty());
+        assert!(
+            !files.is_empty(),
+            "at least one recipient JSON file is required"
+        );
         for file in files {
-            if file
-                .path()
-                .extension()
-                .is_none_or(|extension| extension != "json")
-            {
-                continue;
-            }
             let data: Value =
                 serde_json::from_str(&fs::read_to_string(file.path()).unwrap()).unwrap();
             assert!(

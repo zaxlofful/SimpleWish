@@ -18,7 +18,11 @@ fn run(args: Vec<String>) -> Result<u8, Box<dyn std::error::Error>> {
     };
     if matches!(
         command,
-        "update-todo-from-prs" | "render-readme" | "regenerate-reference"
+        "update-todo-from-prs"
+            | "render-readme"
+            | "regenerate-reference"
+            | "check-todo"
+            | "check-svg"
     ) && args[1..].iter().any(|arg| arg == "--help" || arg == "-h")
     {
         print_help();

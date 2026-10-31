@@ -34,15 +34,18 @@ pub fn extract_completed_items(body: Option<&str>) -> Vec<String> {
     let mut completed = Vec::new();
     for line in body.lines() {
         let trimmed = line.trim();
-        for prefix in ["fixed:", "completed:", "done:", "resolved:"] {
-            if let Some(index) = trimmed.to_ascii_lowercase().find(prefix) {
-                let item = trimmed[index + prefix.len()..].trim();
-                if !item.is_empty() {
-                    completed.push(item.to_string());
-                }
-            }
-        }
         let lower = trimmed.to_ascii_lowercase();
+        if let Some((index, prefix)) = ["fixed:", "completed:", "done:", "resolved:"]
+            .into_iter()
+            .filter_map(|prefix| lower.find(prefix).map(|index| (index, prefix)))
+            .min_by_key(|(index, _)| *index)
+        {
+            let item = trimmed[index + prefix.len()..].trim();
+            if !item.is_empty() {
+                completed.push(item.to_string());
+            }
+            continue;
+        }
         for (index, _) in lower.match_indices('-') {
             let after_marker = &lower[index + 1..];
             let whitespace =
@@ -422,6 +425,18 @@ pub fn render_readme_cli() -> Result<u8, Box<dyn std::error::Error>> {
 mod tests {
     use super::{extract_completed_items, is_todo_empty, update_todo_file};
     use std::fs;
+
+    #[test]
+    fn nested_completion_prefix_preserves_unrelated_todos() {
+        let path =
+            std::env::temp_dir().join(format!("simplewish-nested-{}.md", std::process::id()));
+        fs::write(&path, "- hide completed: tasks\n- Keep pending tasks\n").unwrap();
+        let completed = extract_completed_items(Some("Fixed: hide completed: tasks"));
+        assert_eq!(completed, ["hide completed: tasks"]);
+        assert!(update_todo_file(&path, &completed).unwrap());
+        assert_eq!(fs::read_to_string(&path).unwrap(), "- Keep pending tasks\n");
+        fs::remove_file(path).unwrap();
+    }
 
     #[test]
     fn todo_empty_check_handles_empty_whitespace_and_content() {
